@@ -1,0 +1,46 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Environment variables
+.env.local
+.env.*.local
+
+# Next.js
+.next/
+out/
+
+# Production build
+dist/
+build/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Prisma
+prisma/migrations/*/migration.sql
+
+# Docs
+.docs/phases/*
+.docs/prompts/*
+.docs/dev-log.md
+.docs/dod-global.md
+CLAUDE.md
+current-pipeline.md
+TASK.md
+TASK-example.md
+.cursor/
+

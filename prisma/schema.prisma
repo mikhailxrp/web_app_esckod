@@ -1,0 +1,348 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum LogType {
+  SUCCESS
+  ERROR
+  INFO
+}
+
+enum ChatType {
+  DETECTIVE
+  MARINA
+}
+
+enum ConditionType {
+  ALWAYS
+  CHOICE
+  TRIGGER
+}
+
+enum MissionType {
+  CRACK
+  DECIPHER
+  RDP
+}
+
+enum CipherType {
+  PLAYFAIR
+  VIGENERE
+}
+
+// ==================== USERS AND ACCESS ====================
+
+model User {
+  id                String    @id @default(cuid())
+  name              String
+  email             String    @unique
+  passwordHash      String
+  isBlocked         Boolean   @default(false)
+  onboardingDone    Boolean   @default(false)
+  consentMarketing  Boolean   @default(false)
+  consentPolicy     Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+
+  accessKey         AccessKey @relation(fields: [accessKeyId], references: [id])
+  accessKeyId       String
+
+  progress          GameProgress?
+  chatState         ChatState?
+  operationLogs     OperationLog[]
+  missionProgress   MissionProgress[]
+  crackSessions     CrackSession[]
+  hintProgress      UserHintProgress?
+
+  @@index([accessKeyId])
+}
+
+model AccessKey {
+  id                  String    @id @default(cuid())
+  key                 String    @unique
+  isBlocked           Boolean   @default(false)
+  maxActivations      Int       @default(5)
+  currentActivations  Int       @default(0)
+  blockedAt           DateTime?
+  blockReason         String?
+  createdAt           DateTime  @default(now())
+
+  users               User[]
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  lastLoginAt  DateTime?
+}
+
+// ==================== GAME PROGRESS ====================
+
+model GameProgress {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+
+  marinaTriggered   Boolean   @default(false)
+  finalReportDone   Boolean   @default(false)
+  finalScore        Int?
+  version           Int       @default(0)
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model OperationLog {
+  id        String    @id @default(cuid())
+  userId    String
+  type      LogType
+  message   String
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ==================== CHATS ====================
+
+model ChatScript {
+  id          String    @id @default(cuid())
+  chatType    ChatType
+  code        String    @unique
+  text        String
+  audioUrl    String?
+  hasChoices  Boolean   @default(false)
+  choices     Json?
+  isStart     Boolean   @default(false)
+  isEnd       Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  outgoingTransitions    ChatTransition[] @relation("FromMessage")
+  incomingTransitions    ChatTransition[] @relation("ToMessage")
+  currentDetectiveStates ChatState[]      @relation("CurrentDetective")
+  currentMarinaStates    ChatState[]      @relation("CurrentMarina")
+
+  @@index([chatType])
+  @@index([code])
+}
+
+model ChatTransition {
+  id              String        @id @default(cuid())
+  fromMessageId   String
+  toMessageId     String
+  conditionType   ConditionType
+  conditionValue  String?
+  priority        Int           @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  fromMessage     ChatScript    @relation("FromMessage", fields: [fromMessageId], references: [id], onDelete: Cascade)
+  toMessage       ChatScript    @relation("ToMessage", fields: [toMessageId], references: [id], onDelete: Cascade)
+
+  @@index([fromMessageId])
+}
+
+model ChatState {
+  id                        String       @id @default(cuid())
+  userId                    String       @unique
+  currentDetectiveMessageId String?
+  currentMarinaMessageId    String?
+  playerChoices            Json         @default("{}")
+  finalChoice              String?
+  detectiveFinished        Boolean      @default(false)
+  marinaFinished           Boolean      @default(false)
+  version                  Int          @default(0)
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime     @updatedAt
+
+  user                     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentDetectiveMessage  ChatScript?  @relation("CurrentDetective", fields: [currentDetectiveMessageId], references: [id], onDelete: SetNull)
+  currentMarinaMessage     ChatScript?  @relation("CurrentMarina", fields: [currentMarinaMessageId], references: [id], onDelete: SetNull)
+}
+
+// ==================== MISSIONS AND SESSIONS ====================
+
+model MissionSlot {
+  id            String       @id @default(cuid())
+  slotKey       String       @unique
+  missionType   MissionType
+  orderIndex    Int
+  isActive      Boolean      @default(true)
+  displayName   String
+
+  // Crack content
+  targetWord       String?
+  targetUrl        String?
+  targetEmail      String?
+  resultPassword   String?
+  // Crack params
+  crackMaxAttempts Int?      @default(6)
+
+  // Decipher content
+  cipherType         CipherType?
+  encryptedWord      String?
+  cipherKey          String?
+  folderPassword     String?
+  folderPath         String?
+  // Decipher -> RDP link
+  unlocksRdpFolder   String?
+  unlocksRdpSlotKey  String?
+
+  // RDP content
+  correctIp       String?
+  rdpScenario     Int?
+  logSubjectName  String?
+  nextRdpSlotKey  String?
+  // RDP params
+  timerSeconds       Int?
+  rdpPuzzleGridSize  Int?
+
+  // Common
+  hintText        String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  missionProgresses MissionProgress[]
+  crackSessions     CrackSession[]
+  rdpFiles          RdpFile[]
+
+  @@index([missionType])
+  @@index([isActive])
+}
+
+model MissionProgress {
+  id            String       @id @default(cuid())
+  userId        String
+  slotId        String
+  completed     Boolean      @default(false)
+  completedAt   DateTime?
+  metadata      Json?
+  version       Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slot          MissionSlot  @relation(fields: [slotId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slotId])
+  @@index([userId])
+}
+
+model CrackSession {
+  id            String       @id @default(cuid())
+  userId        String
+  slotId        String
+  targetWord    String
+  maxAttempts   Int          @default(6)
+  wordList      Json
+  attemptsUsed  Int          @default(0)
+  attempts      Json         @default("[]")
+  version       Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slot          MissionSlot  @relation(fields: [slotId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, slotId])
+  @@index([userId])
+}
+
+model RdpFile {
+  id        String       @id @default(cuid())
+  slotId    String
+  name      String
+  url       String
+  size      Int?
+  folder    String
+  isLocked  Boolean      @default(false)
+  createdAt DateTime     @default(now())
+
+  slot      MissionSlot  @relation(fields: [slotId], references: [id], onDelete: Cascade)
+
+  @@index([slotId])
+}
+
+// ==================== FINAL REPORT ====================
+
+model FinalReportQuestion {
+  id            String    @id @default(cuid())
+  orderIndex    Int
+  questionText  String
+  options       Json
+  correctOption Int
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([orderIndex])
+}
+
+model FinalReportContent {
+  id                String    @id @default(cuid())
+  finalChoiceValue  String    @unique
+  title             String
+  bodyText          String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+// ==================== DETECTIVE HINTS ====================
+
+model DetectiveHint {
+  id          String    @id @default(cuid())
+  orderIndex  Int       @unique
+  text        String    @db.Text
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([orderIndex])
+  @@index([isActive])
+}
+
+model UserHintProgress {
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  lastSeenHintIndex Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ==================== ADMIN AND SETTINGS ====================
+
+model AppSettings {
+  id                       String   @id @default(cuid())
+  defaultMarketingConsent  Boolean  @default(false)
+  supportEmail             String   @default("support@example.com")
+  privacyPolicyUrl         String   @default("https://example.com/privacy")
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+model AdminAuditLog {
+  id        String   @id @default(cuid())
+  type      String
+  userId    String?
+  adminId   String?
+  message   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([type])
+  @@index([createdAt])
+  @@index([userId])
+  @@index([adminId])
+}
