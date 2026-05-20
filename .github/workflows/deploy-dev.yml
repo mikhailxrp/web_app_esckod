@@ -19,7 +19,7 @@ jobs:
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             cd /apps/esckod-dev
             git pull origin dev
-            npm ci
+            npm install
             ./node_modules/.bin/prisma migrate deploy
             npm run build
             pm2 restart esckod-dev || pm2 start /root/.nvm/versions/node/v20.20.2/bin/node --name "esckod-dev" -- /apps/esckod-dev/node_modules/.bin/next start -p 3001
