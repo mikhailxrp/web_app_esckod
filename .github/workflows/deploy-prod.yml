@@ -20,7 +20,7 @@ jobs:
             cd /apps/esckod-prod
             git pull origin main
             npm ci
-            npx prisma migrate deploy
+            ./node_modules/.bin/prisma migrate deploy
             npm run build
             pm2 restart esckod-prod || pm2 start /root/.nvm/versions/node/v20.20.2/bin/node --name "esckod-prod" -- /apps/esckod-prod/node_modules/.bin/next start -p 3000
             pm2 save
