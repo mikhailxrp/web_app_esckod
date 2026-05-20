@@ -1,0 +1,26 @@
+name: Deploy DEV
+
+on:
+  push:
+    branches: [dev]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            cd /apps/esckod-dev
+            git pull origin dev
+            npm install
+            ./node_modules/.bin/prisma migrate deploy
+            npm run build
+            pm2 restart esckod-dev || pm2 start /root/.nvm/versions/node/v20.20.2/bin/node --name "esckod-dev" -- /apps/esckod-dev/node_modules/.bin/next start -p 3001
+            pm2 save
