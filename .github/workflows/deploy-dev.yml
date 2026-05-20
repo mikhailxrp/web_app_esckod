@@ -1,0 +1,24 @@
+name: Deploy DEV
+
+on:
+  push:
+    branches: [dev]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /apps/esckod-dev
+            git pull origin dev
+            npm ci
+            npx prisma migrate deploy
+            npm run build
+            pm2 restart esckod-dev || pm2 start npm --name "esckod-dev" -- start -- -p 3001
+            pm2 save
