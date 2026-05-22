@@ -1,19 +1,355 @@
+/* =============================================================
+   GAME-CORP — globals.css
+   Подключается в app/layout.tsx
+   =============================================================
+   КАК ОБНОВЛЯТЬ:
+   При добавлении новых экранов — добавляй новые секции внизу.
+   Каждая секция помечена [ГРУППА ЭКРАНОВ].
+   НЕ удаляй существующее — только добавляй.
+   ============================================================= */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #0a0a0a;
-  --foreground: #e5e5e5;
+/* -----------------------------------------------------------
+   ШРИФТЫ — Локальные
+   ----------------------------------------------------------- */
+
+@font-face {
+  font-family: 'VCR OSD Mono';
+  src: url('/assets/fonts/vcrosdmonorusbydaymarius.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
 }
 
-html {
-  color-scheme: dark;
+/* -----------------------------------------------------------
+   BASE — Базовые стили
+   ----------------------------------------------------------- */
+
+@layer base {
+
+  html {
+    @apply bg-bg-page text-content-primary;
+    font-family: 'VCR OSD Mono', monospace;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply min-h-screen;
+    background: radial-gradient(ellipse 70% 70% at 50% 5%, #0d3540 0%, #000000 60%);
+    background-attachment: fixed;
+  }
+
+  /* Сброс outline — заменяем на кастомный focus-ring */
+  *:focus {
+    outline: none;
+  }
+
+  *:focus-visible {
+    @apply ring-1 ring-accent;
+  }
+
+  /* Убираем автозаполнение браузера */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 100px theme('colors.bg.input') inset;
+    -webkit-text-fill-color: theme('colors.content.primary');
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
 }
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  min-height: 100vh;
+/* -----------------------------------------------------------
+   [AUTH] — Стили для auth-экранов
+   вход, регистрация, восстановление пароля
+   ----------------------------------------------------------- */
+
+@layer components {
+
+  /* Фон страницы с градиентом */
+  .page-bg {
+    @apply relative min-h-screen overflow-hidden;
+    background: radial-gradient(ellipse 70% 70% at 50% -10%, #0d3540 0%, #000000 60%);
+  }
+
+  /* Контейнер SVG-букв ЭСКАПИСТ */
+  .page-bg__letters {
+    @apply absolute inset-0 pointer-events-none select-none;
+    z-index: theme('zIndex.bg-letters');
+  }
+
+  /* Одна SVG буква — координаты задаются через style={{ top, left }} */
+  .page-bg__letter {
+    @apply absolute;
+    /* top, left, width — из Figma */
+  }
+
+  /* Auth-карточка — центрированная форма */
+  .auth-card {
+    @apply relative flex flex-col overflow-hidden;
+    width: theme('spacing.card-padding') * 0; /* переопределяется инлайн */
+    max-width: 760px;
+    width: 760px;
+    background: theme('colors.bg.card');
+    border: 1px solid theme('colors.border.card');
+    border-radius: theme('borderRadius.game-xl');
+    box-shadow: theme('boxShadow.game-card');
+  }
+
+  /* Шапка auth-карточки */
+  .auth-card__header {
+    @apply flex items-center justify-between px-8 py-3.5;
+    border-bottom: 1px solid theme('colors.border.DEFAULT');
+  }
+
+  /* Заголовок auth-карточки */
+  .auth-card__title {
+    @apply font-mono font-semibold tracking-game-wide uppercase;
+    font-size: theme('fontSize.game-base[0]');
+    color: theme('colors.content.card-title');
+  }
+
+  /* Паттерн //// в шапке */
+  .auth-card__pattern {
+    @apply font-mono overflow-hidden whitespace-nowrap;
+    font-size: theme('fontSize.game-sm[0]');
+    color: theme('colors.border.DEFAULT');
+    letter-spacing: -0.05em;
+  }
+
+  /* Тело auth-карточки */
+  .auth-card__body {
+    @apply p-8;
+  }
+
+  /* Поле формы — обёртка */
+  .form-field {
+    @apply flex flex-col gap-2;
+  }
+
+  /* Лейбл поля */
+  .form-field__label {
+    @apply font-mono font-normal;
+    font-size: theme('fontSize.game-base[0]');
+    color: theme('colors.content.label');
+  }
+
+  /* Инпут */
+  .form-field__input {
+    @apply w-full font-mono transition-all duration-150;
+    height: theme('spacing.input-height');
+    padding: 0 16px;
+    background: theme('colors.bg.input');
+    border: 1px solid theme('colors.border.DEFAULT');
+    border-radius: theme('borderRadius.game-lg');
+    font-size: theme('fontSize.game-base[0]');
+    color: theme('colors.content.primary');
+  }
+
+  .form-field__input::placeholder {
+    color: theme('colors.content.muted');
+  }
+
+  .form-field__input:focus {
+    border-color: theme('colors.border.focus');
+    box-shadow: theme('boxShadow.game-focus');
+  }
+
+  /* Инпут в состоянии ошибки */
+  .form-field--error .form-field__input {
+    border-color: theme('colors.border.error');
+    box-shadow: theme('boxShadow.game-error');
+    color: theme('colors.semantic.error');
+  }
+
+  /* Текст ошибки под полем */
+  .form-field__error {
+    @apply font-mono;
+    font-size: theme('fontSize.game-sm[0]');
+    color: theme('colors.semantic.error');
+  }
+
+  /* Кнопка Primary */
+  .btn-primary {
+    @apply w-full flex items-center justify-center font-mono font-semibold uppercase tracking-game-wide cursor-pointer transition-all duration-150;
+    height: theme('spacing.input-height');
+    background: theme('colors.accent.DEFAULT');
+    color: theme('colors.content.inverse');
+    border-radius: theme('borderRadius.game-lg');
+    font-size: theme('fontSize.game-base[0]');
+    border: none;
+  }
+
+  .btn-primary:hover {
+    background: theme('colors.accent.hover');
+    box-shadow: theme('boxShadow.game-glow-sm');
+  }
+
+  .btn-primary:active {
+    background: theme('colors.accent.hover');
+    box-shadow: none;
+  }
+
+  .btn-primary:disabled {
+    @apply opacity-40 cursor-not-allowed pointer-events-none;
+  }
+
+  /* Кнопка Ghost */
+  .btn-ghost {
+    @apply flex items-center justify-center font-mono font-semibold uppercase tracking-game-wide cursor-pointer transition-all duration-150;
+    height: theme('spacing.input-height');
+    background: transparent;
+    color: theme('colors.accent.DEFAULT');
+    border: 1px solid theme('colors.accent.DEFAULT');
+    border-radius: theme('borderRadius.game-lg');
+    font-size: theme('fontSize.game-base[0]');
+  }
+
+  .btn-ghost:hover {
+    background: theme('colors.accent.muted');
+  }
+
+  /* Ссылка формы */
+  .form-link {
+    @apply font-mono underline underline-offset-2 transition-colors duration-150;
+    font-size: theme('fontSize.game-sm[0]');
+    color: theme('colors.content.secondary');
+  }
+
+  .form-link:hover {
+    color: theme('colors.content.primary');
+  }
+
+  /* Блок успеха */
+  .form-success__title {
+    @apply font-mono font-semibold;
+    font-size: theme('fontSize.game-base[0]');
+    color: theme('colors.semantic.success');
+  }
+
+  .form-success__text {
+    @apply font-mono;
+    font-size: theme('fontSize.game-base[0]');
+    color: theme('colors.content.primary');
+  }
+
+  /* Двухколоночный layout формы (регистрация) */
+  .form-split {
+    @apply grid gap-8;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .form-split__text {
+    @apply font-mono flex flex-col gap-4;
+    font-size: theme('fontSize.game-base[0]');
+    line-height: theme('fontSize.game-lg[1].lineHeight');
+    color: theme('colors.content.primary');
+  }
+
+  /* Loader — полноэкранный */
+  .loader-screen {
+    @apply fixed inset-0 flex items-center justify-center overflow-hidden;
+    z-index: theme('zIndex.loader');
+    background: radial-gradient(ellipse 70% 70% at 50% -10%, #0d3540 0%, #000000 60%);
+  }
+
+  .loader-screen__text {
+    @apply font-base text-content-primary mb-4 text-center;
+    font-size: theme('fontSize.game-base[0]');
+  }
+
+  .loader-screen__track {
+    height: 6px;
+    width: theme('spacing.progress-width');
+    background: transparent;
+    border: 1px solid theme('colors.border.DEFAULT');
+    border-radius: theme('borderRadius.game-full');
+    overflow: hidden;
+  }
+
+  .loader-screen__bar {
+    @apply h-full transition-all duration-200;
+    width: 0%;
+    background: theme('colors.accent.DEFAULT');
+    border-radius: theme('borderRadius.game-full');
+  }
+
+  .loader-screen--hidden {
+    @apply opacity-0 pointer-events-none transition-opacity duration-400;
+  }
+
+}
+
+/* -----------------------------------------------------------
+   [AUTH] — Кастомные CSS анимации
+   (то чего нет в Tailwind даже с config)
+   ----------------------------------------------------------- */
+
+/* Typewriter эффект — печатающийся текст */
+@keyframes typewriter {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+.typewriter {
+  overflow: hidden;
+  white-space: nowrap;
+  animation: typewriter 2s steps(40) forwards;
+}
+
+/* -----------------------------------------------------------
+   [DASHBOARD] — Добавить сюда при получении экранов dashboard
+   Пример секции:
+
+   .connection-status-bar { ... }
+   .tool-panel { ... }
+   .action-log { ... }
+
+   ----------------------------------------------------------- */
+
+/* -----------------------------------------------------------
+   [GAME] — Добавить сюда при получении игровых экранов
+   Пример секции:
+
+   .hacker-terminal { ... }
+   .cipher-grid { ... }
+   .chat-bubble { ... }
+
+   ----------------------------------------------------------- */
+
+/* -----------------------------------------------------------
+   UTILITIES — Кастомные утилиты
+   ----------------------------------------------------------- */
+
+@layer utilities {
+
+  /* Паттерн //// для разделителей */
+  .slash-pattern::after {
+    content: '////////////////////////////////////////////////////////////////////';
+    @apply font-mono overflow-hidden whitespace-nowrap;
+    font-size: theme('fontSize.game-sm[0]');
+    color: theme('colors.border.DEFAULT');
+    letter-spacing: -0.05em;
+  }
+
+  /* Uppercase моно лейбл */
+  .mono-label {
+    @apply font-mono uppercase tracking-game-wide;
+    font-size: theme('fontSize.game-sm[0]');
+    color: theme('colors.content.secondary');
+  }
+
+  /* Мигающий курсор */
+  .cursor-blink::after {
+    content: '█';
+    @apply animate-blink;
+    color: theme('colors.accent.DEFAULT');
+  }
+
+  /* [DASHBOARD] — добавить утилиты для dashboard-компонентов */
+
 }
