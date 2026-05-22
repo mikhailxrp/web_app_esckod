@@ -141,7 +141,7 @@ if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
 ```typescript
 import { auth } from "@/lib/auth";
 
-export default auth((req) => {
+export const proxy = auth((req) => {
   // req.auth содержит сессию
 });
 ```
@@ -329,7 +329,7 @@ return 200 { success: true, emailSent: true };
 
 ```typescript
 // lib/auth.ts (фрагмент)
-CredentialsProvider({
+Credentials({
   id: "player",
   name: "Player",
   credentials: {
@@ -411,7 +411,7 @@ declare module "next-auth" {
 
 ```typescript
 // lib/auth.ts (второй провайдер)
-CredentialsProvider({
+Credentials({
   id: "admin",
   name: "Admin",
   credentials: {

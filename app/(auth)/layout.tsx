@@ -5,11 +5,7 @@ export default function AuthLayout({
 }) {
   return (
     <div
-      className="min-h-screen flex items-center justify-center bg-center bg-no-repeat"
-      style={{
-        backgroundImage: "url('/assets/img/auth-bg.png')",
-        backgroundSize: "75% auto",
-      }}
+      className="min-h-screen flex items-center justify-center bg-center bg-no-repeat bg-[url('/assets/img/auth-bg.png')] bg-[length:75%_auto]"
     >
       {children}
     </div>
