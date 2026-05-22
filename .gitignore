@@ -33,6 +33,7 @@ Thumbs.db
 
 # Docs
 .docs/phases/*
+.docs/ref/*
 .docs/prompts/*
 .docs/dev-log.md
 .docs/dod-global.md

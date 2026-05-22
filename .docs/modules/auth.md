@@ -275,7 +275,7 @@ try {
     }
   });
 } catch (e) {
-  if (e.message === 'ACTIVATIONS_EXCEEDED') return 400 'ACTIVATIONS_EXCEEDED';
+  if (e instanceof Error && e.message === 'ACTIVATIONS_EXCEEDED') return 400 'ACTIVATIONS_EXCEEDED';
   throw e;
 }
 
