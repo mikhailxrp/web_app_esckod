@@ -337,7 +337,7 @@ export function renderLogMessage(templateKey: LogTemplateKey, params: Record<str
 | `ERROR` | Красный | `--accent-error` |
 | `INFO` | Светло-серый/жёлтый | `--text-secondary` |
 
-Финальные значения цветов — из `templates/` (от заказчика, в Фазе 11). На старте — Tailwind-токены или временные CSS-переменные.
+Цвета верстаются на Tailwind по ходу фазы.
 
 ### Обновление в реальном времени
 
