@@ -1,10 +1,5 @@
-export default function RegisterPage() {
-  return (
-    <main className="flex min-h-screen items-center justify-center">
-      <div className="rounded-lg border border-gray-800 bg-gray-900 p-8">
-        <h1 className="text-2xl font-bold">Регистрация</h1>
-        <p className="mt-4 text-gray-400">Заглушка страницы регистрации</p>
-      </div>
-    </main>
-  );
+import { RegisterForm } from '@/components/auth/RegisterForm';
+
+export default function RegisterPage(): React.ReactElement {
+  return <RegisterForm />;
 }
