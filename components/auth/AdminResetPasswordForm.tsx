@@ -13,8 +13,7 @@ const INPUT_BASE =
 
 const INPUT_ERROR = 'ring-2 ring-red-400';
 
-const SUCCESS_MESSAGE =
-  'Если такой email зарегистрирован, на него отправлено письмо с новым паролем';
+const SUCCESS_MESSAGE = 'Пароль отправлен на указанный Email';
 
 interface ResetSuccessResponse {
   success: true;
@@ -22,7 +21,7 @@ interface ResetSuccessResponse {
 
 interface ResetErrorResponse {
   success: false;
-  error: 'VALIDATION_ERROR';
+  error: 'VALIDATION_ERROR' | 'ADMIN_NOT_FOUND' | 'RATE_LIMIT_EXCEEDED';
 }
 
 type ResetResponse = ResetSuccessResponse | ResetErrorResponse;
@@ -45,7 +44,7 @@ export function AdminResetPasswordForm(): React.ReactElement {
     setServerError(null);
 
     try {
-      const response = await fetch('/api/auth/reset-password', {
+      const response = await fetch('/api/admin/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -54,6 +53,11 @@ export function AdminResetPasswordForm(): React.ReactElement {
       const result = (await response.json()) as ResetResponse;
 
       if (!result.success) {
+        if (result.error === 'ADMIN_NOT_FOUND') {
+          setServerError('Администратор с таким email не найден');
+          return;
+        }
+
         setServerError('Проверьте правильность введённых данных');
         return;
       }

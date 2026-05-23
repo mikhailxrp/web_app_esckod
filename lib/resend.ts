@@ -71,3 +71,25 @@ export async function sendPasswordResetEmail(
     throw new Error(error.message);
   }
 }
+
+export async function sendAdminPasswordResetEmail(
+  to: string,
+  password: string,
+): Promise<void> {
+  const resend = getResendClient();
+  const { error } = await resend.emails.send({
+    from: getFromEmail(),
+    to,
+    subject: 'Код доступа: корпорация — новый пароль администратора',
+    html: `
+      <p>Здравствуйте!</p>
+      <p>Вы запросили восстановление пароля администратора.</p>
+      <p>Ваш новый пароль: <strong>${password}</strong></p>
+      <p>Рекомендуем сохранить пароль в надёжном месте.</p>
+    `,
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
