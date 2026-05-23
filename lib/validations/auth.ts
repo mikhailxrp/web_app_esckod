@@ -33,3 +33,16 @@ export const registerFormSchema = registerSchema
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type RegisterFormInput = z.infer<typeof registerFormSchema>;
+
+export const loginFormSchema = z.object({
+  email: z.string().email('Введите корректный email').toLowerCase().trim(),
+  password: z.string().min(1, 'Введите пароль'),
+});
+
+export type LoginFormInput = z.infer<typeof loginFormSchema>;
+
+export const checkBlockSchema = z.object({
+  email: z.string().email().toLowerCase().trim(),
+});
+
+export type CheckBlockInput = z.infer<typeof checkBlockSchema>;
