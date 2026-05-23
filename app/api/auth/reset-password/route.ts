@@ -2,10 +2,13 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { generatePassword, hashPassword } from '@/lib/password';
+import { checkRateLimit } from '@/lib/rateLimit';
 import { sendPasswordResetEmail } from '@/lib/resend';
 import { resetSchema } from '@/lib/validations/auth';
 
 const PASSWORD_LENGTH = 12;
+const RESET_RATE_LIMIT_MAX = 3;
+const RESET_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 
 const SUCCESS_RESPONSE = { success: true } as const;
 
@@ -34,6 +37,24 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     throw error;
+  }
+
+  const ip =
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown';
+
+  if (
+    !checkRateLimit(
+      `${ip}:${data.email}`,
+      RESET_RATE_LIMIT_MAX,
+      RESET_RATE_LIMIT_WINDOW_MS,
+    )
+  ) {
+    return NextResponse.json(
+      { success: false, error: 'RATE_LIMIT_EXCEEDED' },
+      { status: 429 },
+    );
   }
 
   const user = await prisma.user.findUnique({

@@ -2,10 +2,13 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { generatePassword, hashPassword } from '@/lib/password';
+import { checkRateLimit } from '@/lib/rateLimit';
 import { sendPasswordEmail } from '@/lib/resend';
 import { registerSchema } from '@/lib/validations/auth';
 
 const PASSWORD_LENGTH = 12;
+const REGISTER_RATE_LIMIT_MAX = 5;
+const REGISTER_RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const ACTIVATIONS_EXCEEDED_ERROR = 'ACTIVATIONS_EXCEEDED';
 
 type RegisterErrorCode =
@@ -23,6 +26,18 @@ function errorResponse(
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
+  const ip =
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown';
+
+  if (!checkRateLimit(ip, REGISTER_RATE_LIMIT_MAX, REGISTER_RATE_LIMIT_WINDOW_MS)) {
+    return NextResponse.json(
+      { success: false, error: 'RATE_LIMIT_EXCEEDED' },
+      { status: 429 },
+    );
+  }
+
   let body: unknown;
 
   try {
