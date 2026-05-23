@@ -77,6 +77,20 @@ const config: Config = {
           'info-bg':  'rgba(5, 80, 174, 0.10)',
         },
 
+        // [ADMIN] — административная зона
+        admin: {
+          accent:         '#6E39CB',                  // основной акцент
+          'accent-hover': '#5A2DB0',                  // hover-состояние
+          'accent-muted': 'rgba(110, 57, 203, 0.12)', // subtle-подложка
+          'card-bg':      '#FFFFFF',                  // фон карточки
+          'card-border':  'rgba(0, 0, 0, 0.08)',      // граница карточки
+          'input-bg':     '#EDEEF2',                  // фон инпута
+          'input-text':   '#111827',                  // текст инпута
+          'label':        '#374151',                  // лейбл поля
+          'placeholder':  '#9CA3AF',                  // placeholder
+          // [ADMIN-DASHBOARD] — добавить цвета панели управления
+        },
+
         // [DASHBOARD] — добавить цвета статусов соединения
         // status: { connected: '...', disconnected: '...', scanning: '...' },
 
@@ -155,6 +169,9 @@ const config: Config = {
 
         // Error инпута
         'game-error':   '0 0 0 1px #CF222E',
+
+        // Admin — карточка формы входа
+        'admin-card': '0 4px 24px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.06)',
 
         // [DASHBOARD] — добавить тени панелей инструментов
       },

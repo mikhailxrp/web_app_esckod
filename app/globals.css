@@ -52,6 +52,20 @@
     @apply ring-1 ring-accent;
   }
 
+  /* -----------------------------------------------------------
+     [ADMIN] — Переопределение autofill для светлых инпутов формы входа
+     Глобальный input:-webkit-autofill применяет тёмный фон игры —
+     нужно явно перебить для admin-формы
+     ----------------------------------------------------------- */
+
+  .admin-input:-webkit-autofill,
+  .admin-input:-webkit-autofill:hover,
+  .admin-input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 100px #EDEEF2 inset;
+    -webkit-text-fill-color: #111827;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
   /* Убираем автозаполнение браузера */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
@@ -90,10 +104,7 @@
 
   /* Auth-карточка — центрированная форма */
   .auth-card {
-    @apply relative flex flex-col overflow-hidden;
-    width: theme('spacing.card-padding') * 0; /* переопределяется инлайн */
-    max-width: 760px;
-    width: 760px;
+    @apply relative z-card flex w-full max-w-[840px] flex-col overflow-hidden;
     background: theme('colors.bg.card');
     border: 1px solid theme('colors.border.card');
     border-radius: theme('borderRadius.game-xl');
@@ -239,15 +250,51 @@
 
   /* Двухколоночный layout формы (регистрация) */
   .form-split {
-    @apply grid gap-8;
-    grid-template-columns: 1fr 1fr;
+    @apply grid grid-cols-1 gap-8;
+  }
+
+  @screen md {
+    .form-split {
+      grid-template-columns: 1fr 1fr;
+    }
   }
 
   .form-split__text {
-    @apply font-mono flex flex-col gap-4;
-    font-size: theme('fontSize.game-base[0]');
+    @apply flex flex-col gap-4 font-mono;
+    font-size: theme('fontSize.game-lg[0]');
     line-height: theme('fontSize.game-lg[1].lineHeight');
     color: theme('colors.content.primary');
+  }
+
+  .form-split__fields {
+    @apply flex flex-col gap-4;
+  }
+
+  .form-field__checkbox-label {
+    @apply flex items-start gap-3 font-mono;
+    font-size: theme('fontSize.game-sm[0]');
+    color: theme('colors.content.primary');
+  }
+
+  .form-field__checkbox {
+    @apply mt-0.5 size-4 shrink-0 accent-accent;
+  }
+
+  .form-alert {
+    @apply rounded-game-lg border px-3 py-2 font-mono;
+    font-size: theme('fontSize.game-sm[0]');
+  }
+
+  .form-alert--error {
+    border-color: theme('colors.semantic.error');
+    background: theme('colors.semantic.error-bg');
+    color: theme('colors.semantic.error');
+  }
+
+  .form-alert--warning {
+    border-color: theme('colors.semantic.warning');
+    background: theme('colors.semantic.warning-bg');
+    color: theme('colors.semantic.warning');
   }
 
   /* Loader — полноэкранный */
