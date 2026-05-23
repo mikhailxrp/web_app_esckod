@@ -46,3 +46,9 @@ export const checkBlockSchema = z.object({
 });
 
 export type CheckBlockInput = z.infer<typeof checkBlockSchema>;
+
+export const resetSchema = z.object({
+  email: z.string().email('Введите корректный email').toLowerCase().trim(),
+});
+
+export type ResetInput = z.infer<typeof resetSchema>;

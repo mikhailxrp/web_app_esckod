@@ -52,6 +52,20 @@
     @apply ring-1 ring-accent;
   }
 
+  /* -----------------------------------------------------------
+     [ADMIN] — Переопределение autofill для светлых инпутов формы входа
+     Глобальный input:-webkit-autofill применяет тёмный фон игры —
+     нужно явно перебить для admin-формы
+     ----------------------------------------------------------- */
+
+  .admin-input:-webkit-autofill,
+  .admin-input:-webkit-autofill:hover,
+  .admin-input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 100px #EDEEF2 inset;
+    -webkit-text-fill-color: #111827;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
   /* Убираем автозаполнение браузера */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
