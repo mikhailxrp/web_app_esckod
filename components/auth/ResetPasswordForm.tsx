@@ -1,16 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/components/ui/Input';
 import { resetSchema, type ResetInput } from '@/lib/validations/auth';
 
 const AUTH_CARD_PATTERN = '/'.repeat(60);
+const FALLBACK_SUPPORT_EMAIL = 'support@example.com';
 
-const SUCCESS_MESSAGE =
-  'Если такой email зарегистрирован, на него отправлено письмо с новым паролем';
+interface RegistrationDefaults {
+  supportEmail: string;
+}
 
 interface ResetSuccessResponse {
   success: true;
@@ -18,7 +20,7 @@ interface ResetSuccessResponse {
 
 interface ResetErrorResponse {
   success: false;
-  error: 'VALIDATION_ERROR';
+  error: 'VALIDATION_ERROR' | 'EMAIL_NOT_FOUND' | 'RATE_LIMIT_EXCEEDED';
 }
 
 type ResetResponse = ResetSuccessResponse | ResetErrorResponse;
@@ -37,6 +39,29 @@ function AuthCardHeader(): React.ReactElement {
 export function ResetPasswordForm(): React.ReactElement {
   const [isSuccess, setIsSuccess] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [isEmailNotFound, setIsEmailNotFound] = useState(false);
+  const [supportEmail, setSupportEmail] = useState(FALLBACK_SUPPORT_EMAIL);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadSupportEmail(): Promise<void> {
+      try {
+        const res = await fetch('/api/settings/registration-defaults');
+        if (!res.ok) return;
+        const data = (await res.json()) as RegistrationDefaults;
+        if (isMounted) setSupportEmail(data.supportEmail);
+      } catch (error) {
+        console.error('Failed to load support email:', error);
+      }
+    }
+
+    void loadSupportEmail();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const {
     register,
@@ -51,6 +76,7 @@ export function ResetPasswordForm(): React.ReactElement {
 
   async function onSubmit(data: ResetInput): Promise<void> {
     setServerError(null);
+    setIsEmailNotFound(false);
 
     try {
       const response = await fetch('/api/auth/reset-password', {
@@ -62,7 +88,14 @@ export function ResetPasswordForm(): React.ReactElement {
       const result = (await response.json()) as ResetResponse;
 
       if (!result.success) {
-        setServerError('Проверьте правильность введённых данных');
+        if (result.error === 'EMAIL_NOT_FOUND') {
+          setServerError('Почта не найдена');
+          setIsEmailNotFound(true);
+        } else if (result.error === 'RATE_LIMIT_EXCEEDED') {
+          setServerError('Слишком много попыток. Попробуйте позже');
+        } else {
+          setServerError('Проверьте правильность введённых данных');
+        }
         return;
       }
 
@@ -80,9 +113,22 @@ export function ResetPasswordForm(): React.ReactElement {
 
         <div className="auth-card__body">
           <div className="flex flex-col items-center gap-6 py-6">
-            <p id="reset-success-title" className="max-w-[360px] text-center">
-              {SUCCESS_MESSAGE}
-            </p>
+            <div
+              id="reset-success-title"
+              className="flex max-w-[360px] flex-col gap-2 text-center"
+            >
+              <p>На ваш email отправлено письмо с новым паролем</p>
+              <p className="text-content-secondary">
+                Если письмо не приходит: обращайтесь в службу поддержки по
+                адресу{' '}
+                <a
+                  href={`mailto:${supportEmail}`}
+                  className="text-accent hover:text-accent-hover"
+                >
+                  {supportEmail}
+                </a>
+              </p>
+            </div>
             <Link href="/login" className="btn-primary">
               ВЕРНУТЬСЯ К ЛОГИНУ
             </Link>
@@ -135,9 +181,15 @@ export function ResetPasswordForm(): React.ReactElement {
             </button>
 
             <p className="text-center">
-              <Link href="/login" className="form-link">
-                Вернуться к логину
-              </Link>
+              {isEmailNotFound ? (
+                <Link href="/register" className="form-link">
+                  Зарегистрироваться
+                </Link>
+              ) : (
+                <Link href="/login" className="form-link">
+                  Вернуться к логину
+                </Link>
+              )}
             </p>
           </div>
         </form>

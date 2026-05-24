@@ -265,7 +265,7 @@ export function RegisterForm(): React.ReactElement {
                   {...register('consentPolicy')}
                 />
                 <span>
-                  Я согласен на обработку персональных данных (
+                  Я согласен(-на) на обработку персональных данных (
                   <a
                     href={defaults.privacyPolicyUrl}
                     target="_blank"
@@ -287,7 +287,7 @@ export function RegisterForm(): React.ReactElement {
                   className="form-field__checkbox"
                   {...register('consentMarketing')}
                 />
-                <span>Согласен на маркетинговые рассылки</span>
+                <span>Я согласен(-на) на маркетинговые рассылки</span>
               </label>
 
               {serverError ? (
