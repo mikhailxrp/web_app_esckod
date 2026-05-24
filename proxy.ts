@@ -1,21 +1,32 @@
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { auth } from '@/lib/auth';
 
-export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+export const proxy = auth((req) => {
+  const session = req.auth;
+  const { pathname } = req.nextUrl;
 
-  // Игровая зона — редирект на /login
   if (pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    if (!session) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
+
+    if (session.user.type !== 'PLAYER') {
+      return NextResponse.redirect(new URL('/admin', req.url));
+    }
   }
 
-  // Админская зона (кроме /admin-login) — редирект на /admin-login
   if (pathname.startsWith('/admin') && pathname !== '/admin-login') {
-    return NextResponse.redirect(new URL('/admin-login', request.url));
+    if (!session) {
+      return NextResponse.redirect(new URL('/admin-login', req.url));
+    }
+
+    if (session.user.type !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/dashboard', req.url));
+    }
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: ['/dashboard/:path*', '/admin/:path*'],
