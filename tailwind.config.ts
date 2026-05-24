@@ -103,9 +103,9 @@ const config: Config = {
       // ТИПОГРАФИКА — Шрифты
       // -----------------------------------------------------------
       fontFamily: {
-        mono:   ['"VCR OSD Mono"', '"JetBrains Mono"', 'monospace'],
-        accent: ['"Space Grotesk"', 'Inter', 'system-ui', 'sans-serif'],
-        base:   ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+        mono:   ['"VCR OSD Mono"', 'monospace'],
+        accent: ['"VCR OSD Mono"', 'monospace'],
+        base:   ['"VCR OSD Mono"', 'monospace'],
       },
 
       // -----------------------------------------------------------

@@ -61,7 +61,14 @@ export async function POST(request: Request): Promise<NextResponse> {
     where: { email: data.email },
   });
 
-  if (!user || user.isBlocked) {
+  if (!user) {
+    return NextResponse.json(
+      { success: false, error: 'EMAIL_NOT_FOUND' },
+      { status: 404 },
+    );
+  }
+
+  if (user.isBlocked) {
     return NextResponse.json(SUCCESS_RESPONSE);
   }
 
