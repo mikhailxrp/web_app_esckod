@@ -287,7 +287,7 @@ export function RegisterForm(): React.ReactElement {
                   className="form-field__checkbox"
                   {...register('consentMarketing')}
                 />
-                <span>Я согласен(-на) на маркетинговые рассылки</span>
+                <span>Я согласен(-на) получать информационную рассылку</span>
               </label>
 
               {serverError ? (
