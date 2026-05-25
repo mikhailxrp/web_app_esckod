@@ -226,13 +226,27 @@ const config: Config = {
         // [DASHBOARD] — scanline анимация
         // scanline: { ... }
 
+        // Появление backdrop модального окна
+        'modal-backdrop': {
+          '0%':   { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+
+        // Появление панели модального окна (масштаб + сдвиг + opacity)
+        'modal-panel': {
+          '0%':   { opacity: '0', transform: 'scale(0.95) translateY(-10px)' },
+          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+        },
+
       },
 
       animation: {
-        'blink':      'blink 1s step-end infinite',
-        'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
-        'slide-in':   'slide-in 0.2s ease forwards',
-        'fade-out':   'fade-out 0.4s ease forwards',
+        'blink':          'blink 1s step-end infinite',
+        'glow-pulse':     'glow-pulse 2s ease-in-out infinite',
+        'slide-in':       'slide-in 0.2s ease forwards',
+        'fade-out':       'fade-out 0.4s ease forwards',
+        'modal-backdrop': 'modal-backdrop 0.2s ease forwards',
+        'modal-panel':    'modal-panel 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards',
         // [DASHBOARD] — добавить glitch, scanline
       },
 
