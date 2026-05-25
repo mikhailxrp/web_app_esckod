@@ -4,6 +4,7 @@ import Image from "next/image";
 import type { MissionType } from "@prisma/client";
 import { StatusBar } from "@/components/game/StatusBar";
 import { MissionCard } from "@/components/game/MissionCard";
+import { OperationHistory } from "@/components/game/operation-log/OperationHistory";
 
 const MISSION_ORDER: MissionType[] = ["CRACK", "DECIPHER", "RDP"];
 
@@ -50,32 +51,6 @@ function ChatPanel({ label }: ChatPanelProps): React.ReactElement {
         height={24}
       />
     </div>
-  );
-}
-
-// ─── Operation history placeholder (Task 3) ───────────────────────────────────
-
-function OperationHistoryPlaceholder(): React.ReactElement {
-  return (
-    <section
-      className="rounded-game-lg border border-border px-5 py-4"
-      aria-label="История действий"
-    >
-      <div className="mb-4 flex items-center gap-2.5">
-        <Image
-          src="/assets/img/icon/history-icon.svg"
-          alt=""
-          width={24}
-          height={24}
-          aria-hidden="true"
-        />
-        <h2 className="font-mono text-game-sm uppercase tracking-game-wide text-content-secondary">
-          История действий
-        </h2>
-      </div>
-
-      <p className="font-mono text-game-sm text-content-muted">Нет записей</p>
-    </section>
   );
 }
 
@@ -129,8 +104,7 @@ export function DashboardClient({
             )}
           </section>
 
-          {/* Operation history — полный компонент в Task 3 */}
-          <OperationHistoryPlaceholder />
+          <OperationHistory />
         </div>
 
         {/* Right sidebar: chat panels */}
