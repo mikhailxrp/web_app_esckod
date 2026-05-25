@@ -1,0 +1,35 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+
+const DEFAULT_LOG_LIMIT = 100;
+const MAX_LOG_LIMIT = 500;
+
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  const session = await auth();
+
+  if (!session || session.user.type !== 'PLAYER') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const rawLimit = Number(searchParams.get('limit'));
+  const limit = Math.min(
+    Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : DEFAULT_LOG_LIMIT,
+    MAX_LOG_LIMIT,
+  );
+
+  const logs = await prisma.operationLog.findMany({
+    where: { userId: session.user.id },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+    select: {
+      id: true,
+      type: true,
+      message: true,
+      createdAt: true,
+    },
+  });
+
+  return NextResponse.json({ logs });
+}
