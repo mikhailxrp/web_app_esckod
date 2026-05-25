@@ -56,11 +56,14 @@ function ChatPanel({ label }: ChatPanelProps): React.ReactElement {
 
 // ─── DashboardClient ──────────────────────────────────────────────────────────
 
+// TODO DEMO: убрать перед продакшном — заменить реальными данными из БД
+const DEMO_MISSION_TYPES: MissionType[] = ["CRACK", "DECIPHER", "RDP"];
+
 export function DashboardClient({
   activeMissionTypes,
 }: DashboardClientProps): React.ReactElement {
   const visibleMissions = MISSION_ORDER.filter((type) =>
-    activeMissionTypes.includes(type),
+    DEMO_MISSION_TYPES.includes(type),
   );
 
   return (
@@ -90,7 +93,7 @@ export function DashboardClient({
             aria-label="Миссии"
           >
             {visibleMissions.length > 0 ? (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 2xl:grid-cols-3">
                 {visibleMissions.map((type) => (
                   <MissionCard key={type} missionType={type} />
                 ))}
@@ -109,7 +112,7 @@ export function DashboardClient({
 
         {/* Right sidebar: chat panels */}
         <aside
-          className="flex w-[455px] flex-shrink-0 flex-col gap-3"
+          className="flex w-[320px] flex-shrink-0 flex-col gap-3 2xl:w-[455px]"
           aria-label="Чат-панели"
         >
           <ChatPanel label="Детектив" />

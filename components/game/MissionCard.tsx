@@ -328,7 +328,7 @@ export function MissionCard({
 
   return (
     <>
-      <article className="flex min-h-[480px] flex-col rounded-game-xl border border-white bg-bg-primary">
+      <article className="flex min-h-[200px] flex-col rounded-game-xl border border-white bg-bg-primary 2xl:min-h-[480px]">
         {/* Card header */}
         <div className="border-b border-white/30 px-4 pb-3 pt-4">
           <span className="font-mono text-game-lg text-accent">
@@ -343,6 +343,7 @@ export function MissionCard({
             alt={config.iconAlt}
             width={170}
             height={170}
+            className="h-[100px] w-[100px] 2xl:h-[170px] 2xl:w-[170px]"
           />
         </div>
 
