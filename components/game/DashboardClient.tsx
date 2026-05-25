@@ -5,6 +5,7 @@ import type { MissionType } from "@prisma/client";
 import { StatusBar } from "@/components/game/StatusBar";
 import { MissionCard } from "@/components/game/MissionCard";
 import { OperationHistory } from "@/components/game/operation-log/OperationHistory";
+import { GAME_TARGET_NAME } from "@/constants/gameConfig";
 
 const MISSION_ORDER: MissionType[] = ["CRACK", "DECIPHER", "RDP"];
 
@@ -56,21 +57,18 @@ function ChatPanel({ label }: ChatPanelProps): React.ReactElement {
 
 // ─── DashboardClient ──────────────────────────────────────────────────────────
 
-// TODO DEMO: убрать перед продакшном — заменить реальными данными из БД
-const DEMO_MISSION_TYPES: MissionType[] = ["CRACK", "DECIPHER", "RDP"];
-
 export function DashboardClient({
   activeMissionTypes,
 }: DashboardClientProps): React.ReactElement {
   const visibleMissions = MISSION_ORDER.filter((type) =>
-    DEMO_MISSION_TYPES.includes(type),
+    activeMissionTypes.includes(type),
   );
 
   return (
     <div className="flex min-h-screen flex-col gap-6 px-11 py-6">
       {/* Top bar: status + hint */}
       <div className="flex items-start justify-between gap-4">
-        <StatusBar />
+        <StatusBar targetName={GAME_TARGET_NAME} />
 
         {/* Подсказка — Phase 9 placeholder */}
         <button

@@ -300,15 +300,6 @@ function MissionModal({
           <FormComponent />
         </div>
 
-        {/* Modal footer */}
-        <div className="flex justify-end border-t border-border px-5 py-2.5">
-          <Image
-            src="/assets/img/icon/info-icon.svg"
-            alt="Информация"
-            width={24}
-            height={24}
-          />
-        </div>
       </div>
     </div>
   );
