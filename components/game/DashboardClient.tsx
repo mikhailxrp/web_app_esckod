@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import type { MissionType } from '@prisma/client';
-import { StatusBar } from '@/components/game/StatusBar';
-import { MissionCard } from '@/components/game/MissionCard';
+import Image from "next/image";
+import type { MissionType } from "@prisma/client";
+import { StatusBar } from "@/components/game/StatusBar";
+import { MissionCard } from "@/components/game/MissionCard";
 
-const MISSION_ORDER: MissionType[] = ['CRACK', 'DECIPHER', 'RDP'];
+const MISSION_ORDER: MissionType[] = ["CRACK", "DECIPHER", "RDP"];
 
 interface DashboardClientProps {
   activeMissionTypes: MissionType[];
@@ -37,7 +37,9 @@ function ChatPanel({ label }: ChatPanelProps): React.ReactElement {
           className="block overflow-hidden whitespace-nowrap font-mono text-game-xs text-border tracking-[-0.05em]"
           aria-hidden="true"
         >
-          ////////////////////////////////////////////////////////////////////
+          {
+            "////////////////////////////////////////////////////////////////////"
+          }
         </span>
       </div>
 
@@ -88,7 +90,6 @@ export function DashboardClient({
 
   return (
     <div className="flex min-h-screen flex-col gap-6 px-11 py-6">
-
       {/* Top bar: status + hint */}
       <div className="flex items-start justify-between gap-4">
         <StatusBar />
@@ -106,10 +107,8 @@ export function DashboardClient({
 
       {/* Main grid: left column + right sidebar */}
       <div className="flex flex-1 gap-6">
-
         {/* Left column: mission cards section + operation history */}
         <div className="flex min-w-0 flex-1 flex-col gap-6">
-
           {/* Mission cards section */}
           <section
             className="rounded-game-lg border border-border p-4"

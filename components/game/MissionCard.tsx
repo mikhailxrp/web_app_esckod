@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useState, useEffect, useCallback } from 'react';
-import type { MissionType } from '@prisma/client';
+import Image from "next/image";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState, useEffect, useCallback } from "react";
+import type { MissionType } from "@prisma/client";
 import {
   crackLaunchSchema,
   decipherLaunchSchema,
@@ -12,7 +12,7 @@ import {
   type CrackLaunchInput,
   type DecipherLaunchInput,
   type RdpLaunchInput,
-} from '@/lib/validations/missions';
+} from "@/lib/validations/missions";
 
 // ─── Static config per mission type ──────────────────────────────────────────
 
@@ -24,32 +24,32 @@ interface MissionConfig {
 
 const MISSION_CONFIG: Record<MissionType, MissionConfig> = {
   CRACK: {
-    label: 'Взломщик',
-    iconSrc: '/assets/img/icon/cracker-icon.svg',
-    iconAlt: 'Иконка миссии Взломщик',
+    label: "Взломщик",
+    iconSrc: "/assets/img/icon/cracker-icon.svg",
+    iconAlt: "Иконка миссии Взломщик",
   },
   DECIPHER: {
-    label: 'Дешифратор',
-    iconSrc: '/assets/img/icon/decoder-icon.svg',
-    iconAlt: 'Иконка миссии Дешифратор',
+    label: "Дешифратор",
+    iconSrc: "/assets/img/icon/decoder-icon.svg",
+    iconAlt: "Иконка миссии Дешифратор",
   },
   RDP: {
-    label: 'Удаленный доступ',
-    iconSrc: '/assets/img/icon/remote-access-icon.svg',
-    iconAlt: 'Иконка миссии Удаленный доступ',
+    label: "Удаленный доступ",
+    iconSrc: "/assets/img/icon/remote-access-icon.svg",
+    iconAlt: "Иконка миссии Удаленный доступ",
   },
 };
 
 // ─── Shared field + button styles ────────────────────────────────────────────
 
 const INPUT_CLASS =
-  'h-input-height w-full rounded-game-lg border border-border bg-bg-input px-4 font-mono text-game-base text-content-primary placeholder:text-content-muted focus:border-border-focus focus:shadow-game-focus focus:outline-none';
+  "h-input-height w-full rounded-game-lg border border-border bg-bg-input px-4 font-mono text-game-base text-content-primary placeholder:text-content-muted focus:border-border-focus focus:shadow-game-focus focus:outline-none";
 
-const LABEL_CLASS = 'font-mono text-game-base text-content-secondary';
+const LABEL_CLASS = "font-mono text-game-base text-content-secondary";
 
 // Кнопка визуально активна (как в референсе), функционально подключается в Phase 11/12/14
 const SUBMIT_BTN_CLASS =
-  'mt-2 h-input-height w-full rounded-game-full bg-accent font-mono text-game-sm uppercase tracking-game-wide text-content-inverse';
+  "mt-2 h-input-height w-full rounded-game-full bg-accent font-mono text-game-sm uppercase tracking-game-wide text-content-inverse";
 
 // ─── Form: CRACK ──────────────────────────────────────────────────────────────
 
@@ -59,38 +59,48 @@ function CrackForm(): React.ReactElement {
     formState: { errors },
   } = useForm<CrackLaunchInput>({
     resolver: zodResolver(crackLaunchSchema),
-    mode: 'onChange',
+    mode: "onChange",
   });
 
   return (
     <form className="mx-auto flex w-full max-w-[420px] flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <label htmlFor="crack-url" className={LABEL_CLASS}>Ссылка</label>
+        <label htmlFor="crack-url" className={LABEL_CLASS}>
+          Ссылка
+        </label>
         <input
-          {...register('url')}
+          {...register("url")}
           id="crack-url"
           type="url"
           aria-invalid={Boolean(errors.url)}
           className={INPUT_CLASS}
         />
         {errors.url ? (
-          <p className="font-mono text-game-sm text-semantic-error" role="alert">
+          <p
+            className="font-mono text-game-sm text-semantic-error"
+            role="alert"
+          >
             {errors.url.message}
           </p>
         ) : null}
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="crack-login" className={LABEL_CLASS}>Почта</label>
+        <label htmlFor="crack-login" className={LABEL_CLASS}>
+          Почта
+        </label>
         <input
-          {...register('login')}
+          {...register("login")}
           id="crack-login"
           type="email"
           aria-invalid={Boolean(errors.login)}
           className={INPUT_CLASS}
         />
         {errors.login ? (
-          <p className="font-mono text-game-sm text-semantic-error" role="alert">
+          <p
+            className="font-mono text-game-sm text-semantic-error"
+            role="alert"
+          >
             {errors.login.message}
           </p>
         ) : null}
@@ -112,38 +122,48 @@ function DecipherForm(): React.ReactElement {
     formState: { errors },
   } = useForm<DecipherLaunchInput>({
     resolver: zodResolver(decipherLaunchSchema),
-    mode: 'onChange',
+    mode: "onChange",
   });
 
   return (
     <form className="mx-auto flex w-full max-w-[420px] flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <label htmlFor="decipher-folderPath" className={LABEL_CLASS}>Ссылка / путь</label>
+        <label htmlFor="decipher-folderPath" className={LABEL_CLASS}>
+          Ссылка / путь
+        </label>
         <input
-          {...register('folderPath')}
+          {...register("folderPath")}
           id="decipher-folderPath"
           type="text"
           aria-invalid={Boolean(errors.folderPath)}
           className={INPUT_CLASS}
         />
         {errors.folderPath ? (
-          <p className="font-mono text-game-sm text-semantic-error" role="alert">
+          <p
+            className="font-mono text-game-sm text-semantic-error"
+            role="alert"
+          >
             {errors.folderPath.message}
           </p>
         ) : null}
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="decipher-cipherKey" className={LABEL_CLASS}>Ключ</label>
+        <label htmlFor="decipher-cipherKey" className={LABEL_CLASS}>
+          Ключ
+        </label>
         <input
-          {...register('cipherKey')}
+          {...register("cipherKey")}
           id="decipher-cipherKey"
           type="text"
           aria-invalid={Boolean(errors.cipherKey)}
           className={INPUT_CLASS}
         />
         {errors.cipherKey ? (
-          <p className="font-mono text-game-sm text-semantic-error" role="alert">
+          <p
+            className="font-mono text-game-sm text-semantic-error"
+            role="alert"
+          >
             {errors.cipherKey.message}
           </p>
         ) : null}
@@ -164,22 +184,27 @@ function RdpForm(): React.ReactElement {
     formState: { errors },
   } = useForm<RdpLaunchInput>({
     resolver: zodResolver(rdpLaunchSchema),
-    mode: 'onChange',
+    mode: "onChange",
   });
 
   return (
     <form className="mx-auto flex w-full max-w-[420px] flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <label htmlFor="rdp-ip" className={LABEL_CLASS}>IP адрес</label>
+        <label htmlFor="rdp-ip" className={LABEL_CLASS}>
+          IP адрес
+        </label>
         <input
-          {...register('ip')}
+          {...register("ip")}
           id="rdp-ip"
           type="text"
           aria-invalid={Boolean(errors.ip)}
           className={INPUT_CLASS}
         />
         {errors.ip ? (
-          <p className="font-mono text-game-sm text-semantic-error" role="alert">
+          <p
+            className="font-mono text-game-sm text-semantic-error"
+            role="alert"
+          >
             {errors.ip.message}
           </p>
         ) : null}
@@ -214,14 +239,14 @@ function MissionModal({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     },
     [onClose],
   );
 
   useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
   return (
@@ -254,7 +279,9 @@ function MissionModal({
               className="block overflow-hidden whitespace-nowrap font-mono text-game-xs text-border tracking-[-0.05em]"
               aria-hidden="true"
             >
-              ////////////////////////////////////////////////////////////////////
+              {
+                "////////////////////////////////////////////////////////////////////"
+              }
             </span>
           </div>
 
@@ -333,7 +360,10 @@ export function MissionCard({
       </article>
 
       {isOpen ? (
-        <MissionModal missionType={missionType} onClose={() => setIsOpen(false)} />
+        <MissionModal
+          missionType={missionType}
+          onClose={() => setIsOpen(false)}
+        />
       ) : null}
     </>
   );

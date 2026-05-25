@@ -400,3 +400,22 @@
   /* [DASHBOARD] — добавить утилиты для dashboard-компонентов */
 
 }
+
+/* -----------------------------------------------------------
+   [MOBILE-BLOCK] — CSS-страховка от FOUC на планшетах
+   Скрывает контент до гидрации MobileGuard при узком viewport
+   ----------------------------------------------------------- */
+
+.mobile-block-fallback {
+  display: none;
+}
+
+@media (max-width: 1023px), (max-height: 699px) {
+  html[data-device='tablet'] body > :not(.mobile-block-fallback) {
+    display: none;
+  }
+
+  html[data-device='tablet'] .mobile-block-fallback {
+    display: flex;
+  }
+}
