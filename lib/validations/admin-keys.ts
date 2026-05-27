@@ -11,7 +11,7 @@ export const listKeysQuerySchema = z.object({
 
 export const createKeySchema = z.object({
   key: z.string().min(1).max(100),
-  maxActivations: z.number().int().min(1).default(5),
+  maxActivations: z.number().int().min(1).max(100).default(5),
 });
 
 export const updateKeySchema = z
