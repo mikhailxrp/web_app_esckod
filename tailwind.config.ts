@@ -86,7 +86,13 @@ const config: Config = {
           "input-text": "#111827", // текст инпута
           label: "#374151", // лейбл поля
           placeholder: "#9CA3AF", // placeholder
-          // [ADMIN-DASHBOARD] — добавить цвета панели управления
+          // [ADMIN-DASHBOARD]
+          "sidebar-bg": "#F3F4F6",
+          "sidebar-border": "#E5E7EB",
+          "nav-text": "#374151",
+          "nav-active-bg": "#EDE9FE",
+          "nav-active-text": "#6E39CB",
+          "nav-hover-bg": "#F9FAFB",
         },
 
         // [DASHBOARD] — добавить цвета статусов соединения
