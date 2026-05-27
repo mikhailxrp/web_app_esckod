@@ -11,7 +11,7 @@ export default function KeysNewPage(): React.ReactElement {
       <h1 className="text-xl font-semibold text-admin-accent mb-6">
         Добавление ключей доступа
       </h1>
-      <div className="max-w-2xl">
+      <div className="w-[750px] mx-auto">
         <AddKeyForm />
         <BulkImportForm />
       </div>

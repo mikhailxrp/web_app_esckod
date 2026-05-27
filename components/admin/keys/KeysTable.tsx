@@ -463,20 +463,18 @@ export function KeysTable({
 
                     {isExpanded && (
                       <tr className="border-b border-admin-card-border bg-gray-50">
-                        <td colSpan={5} className="px-4">
-                          <KeyRowDetails
-                            detail={detail}
-                            onCollapse={() => setExpandedId(null)}
-                            onSaveLimit={(maxActivations) =>
-                              handleSaveLimit(keyItem.id, maxActivations)
-                            }
-                            onBlock={(reason) =>
-                              handleBlock(keyItem.id, reason)
-                            }
-                            onActivate={() => handleActivate(keyItem.id)}
-                            onDelete={() => handleDelete(keyItem.id)}
-                          />
-                        </td>
+                        <KeyRowDetails
+                          detail={detail}
+                          onCollapse={() => setExpandedId(null)}
+                          onSaveLimit={(maxActivations) =>
+                            handleSaveLimit(keyItem.id, maxActivations)
+                          }
+                          onBlock={(reason) =>
+                            handleBlock(keyItem.id, reason)
+                          }
+                          onActivate={() => handleActivate(keyItem.id)}
+                          onDelete={() => handleDelete(keyItem.id)}
+                        />
                       </tr>
                     )}
                   </Fragment>
