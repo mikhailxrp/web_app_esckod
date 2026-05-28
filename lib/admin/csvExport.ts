@@ -5,16 +5,18 @@ export function generateKeysCsv(
     currentActivations: number;
     isBlocked: boolean;
     createdAt: Date;
+    users: { email: string }[];
   }[],
 ): string {
-  const header = 'key,maxActivations,currentActivations,isBlocked,createdAt';
-  const rows = keys.map((key) =>
+  const header = 'key,maxActivations,currentActivations,isBlocked,createdAt,emails';
+  const rows = keys.map((k) =>
     [
-      key.key,
-      key.maxActivations,
-      key.currentActivations,
-      key.isBlocked,
-      key.createdAt.toISOString(),
+      k.key,
+      k.maxActivations,
+      k.currentActivations,
+      k.isBlocked,
+      k.createdAt.toISOString(),
+      `"${k.users.map((u) => u.email).join(';')}"`,
     ].join(','),
   );
 

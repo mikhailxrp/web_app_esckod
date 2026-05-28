@@ -43,6 +43,12 @@ export type SortValue =
   | 'activations_desc';
 export type StatusFilter = 'all' | 'active' | 'blocked';
 export type ActivationsFilterValue = 'eq0' | 'eq1' | 'eq2' | 'eq3' | 'eq4' | 'eq5' | 'gt5';
+export type ActivationsExportFilter =
+  | 'all'
+  | 'none'
+  | 'mid'
+  | 'near_limit'
+  | 'at_limit';
 
 export interface ImportResult {
   created: number;

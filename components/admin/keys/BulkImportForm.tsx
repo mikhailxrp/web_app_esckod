@@ -12,6 +12,41 @@ interface PreviewRow {
   maxActivations: string;
 }
 
+function parseCsvLine(line: string): string[] {
+  const cols: string[] = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        current += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ',') {
+        cols.push(current.trim());
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+  }
+
+  cols.push(current.trim());
+  return cols;
+}
+
 function parsePreview(text: string): PreviewRow[] {
   const lines = text.trim().split('\n');
   const header = lines[0]?.toLowerCase() ?? '';
@@ -27,7 +62,7 @@ function parsePreview(text: string): PreviewRow[] {
     .filter((l) => l.trim())
     .slice(0, MAX_PREVIEW_ROWS)
     .map((line) => {
-      const cols = line.split(',').map((c) => c.trim());
+      const cols = parseCsvLine(line);
       return {
         key: cols[0] ?? '',
         maxActivations: hasMax && cols[1] ? cols[1] : '5',

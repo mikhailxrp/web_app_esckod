@@ -1,6 +1,9 @@
 import type { Prisma } from '@prisma/client';
 import type { ExportQuery, ListKeysQuery } from '@/lib/validations/admin-keys';
-import type { ActivationsFilterValue } from '@/types/admin-keys';
+import type {
+  ActivationsExportFilter,
+  ActivationsFilterValue,
+} from '@/types/admin-keys';
 
 const DEFAULT_MAX_ACTIVATIONS = 5;
 
@@ -52,8 +55,33 @@ export function buildAccessKeysWhere(
 
 export function buildWhereFromExportQuery(
   status: ExportQuery['status'],
-  activations: ExportQuery['activations'],
+  activations: ActivationsFilterValue[],
   limitChanged: ExportQuery['limitChanged'],
 ): Prisma.AccessKeyWhereInput {
   return buildAccessKeysWhere({ status, activations, limitChanged });
+}
+
+type KeyForActivationsFilter = {
+  currentActivations: number;
+  maxActivations: number;
+};
+
+export function filterByActivationsExport<T extends KeyForActivationsFilter>(
+  keys: T[],
+  filter: ActivationsExportFilter,
+): T[] {
+  if (filter === 'all') return keys;
+
+  return keys.filter((k) => {
+    switch (filter) {
+      case 'none':
+        return k.currentActivations === 0;
+      case 'mid':
+        return k.currentActivations >= 1 && k.currentActivations < k.maxActivations;
+      case 'near_limit':
+        return k.currentActivations === k.maxActivations - 1;
+      case 'at_limit':
+        return k.currentActivations >= k.maxActivations;
+    }
+  });
 }

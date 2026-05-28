@@ -15,7 +15,7 @@ export const listKeysQuerySchema = z.object({
 });
 
 export const createKeySchema = z.object({
-  key: z.string().min(1).max(100),
+  key: z.string().min(8, 'Минимум 8 символов').max(100, 'Максимум 100 символов'),
   maxActivations: z.number().int().min(1).max(100).default(5),
 });
 
@@ -30,13 +30,15 @@ export const updateKeySchema = z
   });
 
 export const importCsvRowSchema = z.object({
-  key: z.string().min(1),
+  key: z.string().min(8, 'Минимум 8 символов'),
   maxActivations: z.coerce.number().int().min(1).default(5),
 });
 
+const activationsExportEnum = z.enum(['all', 'none', 'mid', 'near_limit', 'at_limit']);
+
 export const exportQuerySchema = z.object({
   status: z.enum(['all', 'active', 'blocked']).default('all'),
-  activations: z.array(activationsValueEnum).default([]),
+  activationsExport: activationsExportEnum.default('all'),
   limitChanged: z.coerce.boolean().optional(),
 });
 

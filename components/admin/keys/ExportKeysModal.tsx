@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import type { ActivationsExportFilter } from '@/types/admin-keys';
 
 type StatusExport = 'all' | 'active' | 'blocked';
-type ActivationsExport = 'all' | 'lt5' | 'eq5' | 'gt5';
 
 const STATUS_OPTIONS: { value: StatusExport; label: string }[] = [
   { value: 'all', label: 'Все' },
@@ -12,11 +12,18 @@ const STATUS_OPTIONS: { value: StatusExport; label: string }[] = [
   { value: 'blocked', label: 'Заблокированные' },
 ];
 
-const ACTIVATIONS_OPTIONS: { value: ActivationsExport; label: string }[] = [
+const ACTIVATIONS_EXPORT_OPTIONS: {
+  value: ActivationsExportFilter;
+  label: string;
+}[] = [
   { value: 'all', label: 'Все' },
-  { value: 'lt5', label: 'Менее 5' },
-  { value: 'eq5', label: '5 активаций' },
-  { value: 'gt5', label: 'Более 5' },
+  { value: 'none', label: 'Нет активаций' },
+  {
+    value: 'mid',
+    label: 'В процессе (есть активации, лимит не достигнут)',
+  },
+  { value: 'near_limit', label: 'Близко к лимиту (осталась 1 активация)' },
+  { value: 'at_limit', label: 'Лимит исчерпан' },
 ];
 
 interface ExportKeysModalProps {
@@ -29,12 +36,13 @@ export function ExportKeysModal({
   const [filterByStatus, setFilterByStatus] = useState(false);
   const [filterByActivations, setFilterByActivations] = useState(false);
   const [status, setStatus] = useState<StatusExport>('all');
-  const [activations, setActivations] = useState<ActivationsExport>('all');
+  const [activationsExport, setActivationsExport] =
+    useState<ActivationsExportFilter>('all');
 
   const handleExport = (): void => {
     const params = new URLSearchParams();
     if (filterByStatus) params.set('status', status);
-    if (filterByActivations) params.set('activations', activations);
+    if (filterByActivations) params.set('activationsExport', activationsExport);
     window.location.href = `/api/admin/keys/export?${params.toString()}`;
     onClose();
   };
@@ -102,17 +110,17 @@ export function ExportKeysModal({
               htmlFor="exportActivations"
               className="text-sm text-admin-label flex-1 cursor-pointer"
             >
-              Выгрузка по количеству активаций
+              Выгрузка по лимиту активаций
             </label>
             <select
-              value={activations}
+              value={activationsExport}
               onChange={(e) =>
-                setActivations(e.target.value as ActivationsExport)
+                setActivationsExport(e.target.value as ActivationsExportFilter)
               }
               disabled={!filterByActivations}
               className="rounded-lg bg-admin-input-bg text-admin-input-text text-sm px-3 py-1.5 border border-transparent focus:outline-none focus:border-admin-accent disabled:opacity-40 w-36 cursor-pointer disabled:cursor-default transition-colors"
             >
-              {ACTIVATIONS_OPTIONS.map((opt) => (
+              {ACTIVATIONS_EXPORT_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>

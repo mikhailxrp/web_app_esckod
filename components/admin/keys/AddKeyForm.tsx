@@ -8,7 +8,13 @@ import { z } from 'zod';
 import { createKeySchema } from '@/lib/validations/admin-keys';
 
 const formSchema = createKeySchema.extend({
-  key: z.string().min(1, 'Ключ обязателен').max(100, 'Максимум 100 символов'),
+  key: z
+    .string()
+    .min(8, 'Минимум 8 символов')
+    .max(100, 'Максимум 100 символов')
+    .regex(/[a-zA-Z]/, 'Ключ должен содержать хотя бы одну букву')
+    .regex(/[0-9]/, 'Ключ должен содержать хотя бы одну цифру')
+    .regex(/[^a-zA-Z0-9]/, 'Ключ должен содержать хотя бы один спецсимвол'),
   maxActivations: z
     .number({ invalid_type_error: 'Введите число' })
     .int()
