@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 export default async function KeysPage(): Promise<React.ReactElement> {
-  const where = buildAccessKeysWhere({ status: 'all', activations: 'all' });
+  const where = buildAccessKeysWhere({ status: 'all', activations: [], limitChanged: undefined });
 
   const [keys, total] = await prisma.$transaction([
     prisma.accessKey.findMany({

@@ -5,7 +5,7 @@ import { Search, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react'
 import type {
   AccessKeyDetail,
   AccessKeyListItem,
-  ActivationsFilter,
+  ActivationsFilterValue,
   SortValue,
   StatusFilter,
 } from '@/types/admin-keys';
@@ -86,7 +86,8 @@ export function KeysTable({
   const [activeQuery, setActiveQuery] = useState('');
   const [sort, setSort] = useState<SortValue>('createdAt_desc');
   const [status, setStatus] = useState<StatusFilter>('all');
-  const [activations, setActivations] = useState<ActivationsFilter>('all');
+  const [activations, setActivations] = useState<ActivationsFilterValue[]>([]);
+  const [limitChanged, setLimitChanged] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +106,8 @@ export function KeysTable({
       q: string,
       s: SortValue,
       st: StatusFilter,
-      ac: ActivationsFilter,
+      ac: ActivationsFilterValue[],
+      lc: boolean,
     ): Promise<void> => {
       setLoading(true);
       setError(null);
@@ -115,9 +117,10 @@ export function KeysTable({
           limit: String(LIMIT),
           sort: s,
           status: st,
-          activations: ac,
         });
         if (q) params.set('q', q);
+        ac.forEach((v) => params.append('activations', v));
+        if (lc) params.set('limitChanged', 'true');
 
         const res = await fetch(`/api/admin/keys?${params.toString()}`);
         if (!res.ok) throw new Error('Ошибка запроса');
@@ -141,32 +144,38 @@ export function KeysTable({
     debounceRef.current = setTimeout(() => {
       setActiveQuery(value);
       setPage(1);
-      doFetch(1, value, sort, status, activations);
+      doFetch(1, value, sort, status, activations, limitChanged);
     }, 300);
   };
 
   const handleSortChange = (newSort: SortValue): void => {
     setSort(newSort);
     setPage(1);
-    doFetch(1, activeQuery, newSort, status, activations);
+    doFetch(1, activeQuery, newSort, status, activations, limitChanged);
   };
 
   const handleStatusChange = (newStatus: StatusFilter): void => {
     setStatus(newStatus);
     setPage(1);
-    doFetch(1, activeQuery, sort, newStatus, activations);
+    doFetch(1, activeQuery, sort, newStatus, activations, limitChanged);
   };
 
-  const handleActivationsChange = (newActivations: ActivationsFilter): void => {
+  const handleActivationsChange = (newActivations: ActivationsFilterValue[]): void => {
     setActivations(newActivations);
     setPage(1);
-    doFetch(1, activeQuery, sort, status, newActivations);
+    doFetch(1, activeQuery, sort, status, newActivations, limitChanged);
+  };
+
+  const handleLimitChangedChange = (newLimitChanged: boolean): void => {
+    setLimitChanged(newLimitChanged);
+    setPage(1);
+    doFetch(1, activeQuery, sort, status, activations, newLimitChanged);
   };
 
   const handlePageChange = (newPage: number): void => {
     setPage(newPage);
     setExpandedId(null);
-    doFetch(newPage, activeQuery, sort, status, activations);
+    doFetch(newPage, activeQuery, sort, status, activations, limitChanged);
   };
 
   const fetchDetail = async (id: string): Promise<void> => {
@@ -211,7 +220,10 @@ export function KeysTable({
     });
   };
 
-  const handleSaveLimit = async (id: string, maxActivations: number): Promise<void> => {
+  const handleSaveLimit = async (
+    id: string,
+    maxActivations: number,
+  ): Promise<{ success: boolean; error?: string }> => {
     const res = await fetch(`/api/admin/keys/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -219,14 +231,16 @@ export function KeysTable({
     });
     if (!res.ok) {
       const data = await res.json();
-      if (data.error === 'MAX_BELOW_CURRENT') {
-        alert('Лимит не может быть меньше текущего числа активаций');
-      }
-      return;
+      const error =
+        data.error === 'MAX_BELOW_CURRENT'
+          ? 'Лимит не может быть меньше текущего числа активаций'
+          : 'Не удалось сохранить. Попробуйте ещё раз';
+      return { success: false, error };
     }
     const updated = await res.json();
     updateKeyInList(id, { maxActivations: updated.maxActivations });
     updateDetailCache(id, { maxActivations: updated.maxActivations });
+    return { success: true };
   };
 
   const handleBlock = async (id: string, reason: string): Promise<void> => {
@@ -283,7 +297,8 @@ export function KeysTable({
   const hasActiveFilters =
     sort !== 'createdAt_desc' ||
     status !== 'all' ||
-    activations !== 'all';
+    activations.length > 0 ||
+    limitChanged;
 
   return (
     <div>
@@ -338,9 +353,11 @@ export function KeysTable({
           sort={sort}
           status={status}
           activations={activations}
+          limitChanged={limitChanged}
           onSortChange={handleSortChange}
           onStatusChange={handleStatusChange}
           onActivationsChange={handleActivationsChange}
+          onLimitChangedChange={handleLimitChangedChange}
         />
       )}
 

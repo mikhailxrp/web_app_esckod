@@ -31,20 +31,31 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return forbiddenResponse();
   }
 
-  const parsedQuery = listKeysQuerySchema.safeParse(
-    Object.fromEntries(request.nextUrl.searchParams.entries()),
-  );
+  const sp = request.nextUrl.searchParams;
+  const parsedQuery = listKeysQuerySchema.safeParse({
+    page: sp.get('page') ?? undefined,
+    limit: sp.get('limit') ?? undefined,
+    q: sp.get('q') ?? undefined,
+    status: sp.get('status') ?? undefined,
+    sort: sp.get('sort') ?? undefined,
+    activations: sp.getAll('activations'),
+    limitChanged: sp.get('limitChanged') ?? undefined,
+  });
 
   if (!parsedQuery.success) {
     return validationErrorResponse();
   }
 
-  const { page, limit, q, status, sort, activations } = parsedQuery.data;
-  const where = buildAccessKeysWhere({ q, status, activations });
-  const orderBy =
-    sort === 'createdAt_asc'
-      ? { createdAt: 'asc' as const }
-      : { createdAt: 'desc' as const };
+  const { page, limit, q, status, sort, activations, limitChanged } = parsedQuery.data;
+  const where = buildAccessKeysWhere({ q, status, activations, limitChanged });
+
+  const ORDER_BY_MAP = {
+    createdAt_asc: { createdAt: 'asc' as const },
+    createdAt_desc: { createdAt: 'desc' as const },
+    activations_asc: { currentActivations: 'asc' as const },
+    activations_desc: { currentActivations: 'desc' as const },
+  };
+  const orderBy = ORDER_BY_MAP[sort];
 
   const [keys, total] = await prisma.$transaction([
     prisma.accessKey.findMany({

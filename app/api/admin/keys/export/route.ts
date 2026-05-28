@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { buildWhereFromExportQuery } from '@/lib/admin/accessKeyFilters';
+import {
+  buildWhereFromExportQuery,
+  filterByActivationsExport,
+} from '@/lib/admin/accessKeyFilters';
 import { generateKeysCsv } from '@/lib/admin/csvExport';
 import { prisma } from '@/lib/prisma';
 import { exportQuerySchema } from '@/lib/validations/admin-keys';
@@ -20,18 +23,21 @@ export async function GET(request: NextRequest): Promise<Response> {
     return forbiddenResponse();
   }
 
-  const parsedQuery = exportQuerySchema.safeParse(
-    Object.fromEntries(request.nextUrl.searchParams.entries()),
-  );
+  const sp = request.nextUrl.searchParams;
+  const parsedQuery = exportQuerySchema.safeParse({
+    status: sp.get('status') ?? undefined,
+    activationsExport: sp.get('activationsExport') ?? undefined,
+    limitChanged: sp.get('limitChanged') ?? undefined,
+  });
 
   if (!parsedQuery.success) {
     return validationErrorResponse();
   }
 
-  const { status, activations } = parsedQuery.data;
-  const where = buildWhereFromExportQuery(status, activations);
+  const { status, activationsExport, limitChanged } = parsedQuery.data;
+  const where = buildWhereFromExportQuery(status, [], limitChanged);
 
-  const keys = await prisma.accessKey.findMany({
+  const allKeys = await prisma.accessKey.findMany({
     where,
     orderBy: { createdAt: 'desc' },
     select: {
@@ -40,9 +46,14 @@ export async function GET(request: NextRequest): Promise<Response> {
       currentActivations: true,
       isBlocked: true,
       createdAt: true,
+      users: {
+        select: { email: true },
+        orderBy: { createdAt: 'asc' },
+      },
     },
   });
 
+  const keys = filterByActivationsExport(allKeys, activationsExport);
   const csv = generateKeysCsv(keys);
 
   return new Response(csv, {
