@@ -16,9 +16,17 @@ export interface AccessKeyUser {
   isBlocked: boolean;
 }
 
+export interface KeyAuditEntry {
+  type: string;
+  message: string;
+  createdAt: string;
+  blockReason?: string | null;
+}
+
 export interface AccessKeyDetail extends AccessKeyListItem {
   blockReason: string | null;
   users: AccessKeyUser[];
+  auditLogs: KeyAuditEntry[];
 }
 
 export interface KeysListResponse {

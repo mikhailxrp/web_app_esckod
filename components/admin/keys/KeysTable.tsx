@@ -220,7 +220,10 @@ export function KeysTable({
     });
   };
 
-  const handleSaveLimit = async (id: string, maxActivations: number): Promise<void> => {
+  const handleSaveLimit = async (
+    id: string,
+    maxActivations: number,
+  ): Promise<{ success: boolean; error?: string }> => {
     const res = await fetch(`/api/admin/keys/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -228,14 +231,16 @@ export function KeysTable({
     });
     if (!res.ok) {
       const data = await res.json();
-      if (data.error === 'MAX_BELOW_CURRENT') {
-        alert('Лимит не может быть меньше текущего числа активаций');
-      }
-      return;
+      const error =
+        data.error === 'MAX_BELOW_CURRENT'
+          ? 'Лимит не может быть меньше текущего числа активаций'
+          : 'Не удалось сохранить. Попробуйте ещё раз';
+      return { success: false, error };
     }
     const updated = await res.json();
     updateKeyInList(id, { maxActivations: updated.maxActivations });
     updateDetailCache(id, { maxActivations: updated.maxActivations });
+    return { success: true };
   };
 
   const handleBlock = async (id: string, reason: string): Promise<void> => {

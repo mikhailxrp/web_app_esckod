@@ -30,26 +30,48 @@ export async function GET(
 
   const { id } = await context.params;
 
-  const key = await prisma.accessKey.findUnique({
-    where: { id },
-    include: {
-      users: {
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          createdAt: true,
-          isBlocked: true,
+  const [key, auditLogs] = await Promise.all([
+    prisma.accessKey.findUnique({
+      where: { id },
+      include: {
+        users: {
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            createdAt: true,
+            isBlocked: true,
+          },
+          orderBy: { createdAt: 'asc' },
         },
       },
-    },
-  });
+    }),
+    prisma.adminAuditLog.findMany({
+      where: {
+        type: { in: ['key_blocked', 'key_unblocked'] },
+        metadata: { path: ['keyId'], equals: id },
+      },
+      select: { type: true, message: true, createdAt: true, metadata: true },
+      orderBy: { createdAt: 'asc' },
+    }),
+  ]);
 
   if (!key) {
     return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
   }
 
-  return NextResponse.json(key);
+  return NextResponse.json({
+    ...key,
+    auditLogs: auditLogs.map((l) => {
+      const meta = l.metadata as Record<string, unknown> | null;
+      return {
+        type: l.type,
+        message: l.message,
+        createdAt: l.createdAt.toISOString(),
+        blockReason: typeof meta?.blockReason === 'string' ? meta.blockReason : null,
+      };
+    }),
+  });
 }
 
 export async function PATCH(
