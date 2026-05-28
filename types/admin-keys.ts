@@ -28,9 +28,13 @@ export interface KeysListResponse {
   totalPages: number;
 }
 
-export type SortValue = 'createdAt_asc' | 'createdAt_desc';
+export type SortValue =
+  | 'createdAt_asc'
+  | 'createdAt_desc'
+  | 'activations_asc'
+  | 'activations_desc';
 export type StatusFilter = 'all' | 'active' | 'blocked';
-export type ActivationsFilter = 'all' | 'lt5' | 'eq5' | 'gt5';
+export type ActivationsFilterValue = 'eq0' | 'eq1' | 'eq2' | 'eq3' | 'eq4' | 'eq5' | 'gt5';
 
 export interface ImportResult {
   created: number;

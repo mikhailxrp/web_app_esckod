@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2 } from 'lucide-react';
 import type { AccessKeyDetail } from '@/types/admin-keys';
@@ -28,6 +28,12 @@ export function KeyRowDetails({
     detail ? String(detail.maxActivations) : '',
   );
   const [savingLimit, setSavingLimit] = useState(false);
+
+  useEffect(() => {
+    if (detail) {
+      setLimitInput(String(detail.maxActivations));
+    }
+  }, [detail?.id, detail?.maxActivations]);
   const [activating, setActivating] = useState(false);
   const [showBlockDialog, setShowBlockDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);

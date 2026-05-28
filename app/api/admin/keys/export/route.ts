@@ -20,16 +20,19 @@ export async function GET(request: NextRequest): Promise<Response> {
     return forbiddenResponse();
   }
 
-  const parsedQuery = exportQuerySchema.safeParse(
-    Object.fromEntries(request.nextUrl.searchParams.entries()),
-  );
+  const sp = request.nextUrl.searchParams;
+  const parsedQuery = exportQuerySchema.safeParse({
+    status: sp.get('status') ?? undefined,
+    activations: sp.getAll('activations'),
+    limitChanged: sp.get('limitChanged') ?? undefined,
+  });
 
   if (!parsedQuery.success) {
     return validationErrorResponse();
   }
 
-  const { status, activations } = parsedQuery.data;
-  const where = buildWhereFromExportQuery(status, activations);
+  const { status, activations, limitChanged } = parsedQuery.data;
+  const where = buildWhereFromExportQuery(status, activations, limitChanged);
 
   const keys = await prisma.accessKey.findMany({
     where,
