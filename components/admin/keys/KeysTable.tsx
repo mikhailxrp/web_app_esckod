@@ -440,7 +440,7 @@ export function KeysTable({
                         <span className="text-sm text-admin-placeholder mr-1">
                           {rowNumber}.
                         </span>
-                        <span className="font-mono text-sm text-admin-input-text">
+                        <span className="text-sm text-admin-input-text">
                           {keyItem.key}
                         </span>
                       </td>

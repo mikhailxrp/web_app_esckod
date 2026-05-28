@@ -37,6 +37,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  input, select, textarea, button {
+    font-family: inherit;
+  }
+
   body {
     @apply min-h-screen;
     background: radial-gradient(ellipse 70% 70% at 50% 5%, #0d3540 0%, #000000 60%);
