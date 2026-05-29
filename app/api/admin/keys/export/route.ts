@@ -45,6 +45,7 @@ export async function GET(request: NextRequest): Promise<Response> {
       maxActivations: true,
       currentActivations: true,
       isBlocked: true,
+      blockReason: true,
       createdAt: true,
       users: {
         select: { email: true },
@@ -56,7 +57,9 @@ export async function GET(request: NextRequest): Promise<Response> {
   const keys = filterByActivationsExport(allKeys, activationsExport);
   const csv = generateKeysCsv(keys);
 
-  return new Response(csv, {
+  const BOM = '\uFEFF';
+
+  return new Response(BOM + csv, {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
       'Content-Disposition': 'attachment; filename="keys.csv"',
