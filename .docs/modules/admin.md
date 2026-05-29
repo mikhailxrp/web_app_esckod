@@ -295,8 +295,8 @@ Server Component с таблицей всех ключей. Колонки:
 | GET | `/api/admin/users/[id]/state` | Полный игровой state (для отладки) |
 | PATCH | `/api/admin/users/[id]` | Изменить (isBlocked) |
 | DELETE | `/api/admin/users/[id]` | Удалить аккаунт |
-| POST | `/api/admin/users/[id]/reset-mission` | Сбросить конкретную миссию |
-| POST | `/api/admin/users/[id]/complete-mission` | Принудительно отметить миссию пройденной |
+| POST | `/api/admin/users/[id]/reset-mission` | Сбросить конкретную миссию ⚠️ Отложено до Фазы 10+ — заглушка в `app/api/admin/users/[id]/reset-mission/route.ts` |
+| POST | `/api/admin/users/[id]/complete-mission` | Принудительно отметить миссию пройденной ⚠️ Отложено до Фазы 10+ — заглушка в `app/api/admin/users/[id]/complete-mission/route.ts` |
 
 ### `GET /api/admin/users/[id]/state` — полный snapshot
 
