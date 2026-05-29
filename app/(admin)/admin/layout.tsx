@@ -23,12 +23,14 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className={`${roboto.className} flex min-h-screen bg-admin-sidebar-bg`}>
+    <div className={`${roboto.variable} admin-zone flex min-h-screen bg-admin-sidebar-bg`}>
       <AdminNav />
       <main className="flex-1 p-8 bg-white">
         <AdminBanners />
         {children}
       </main>
+      {/* Portal-контейнер для модальных окон — внутри admin-zone, чтобы CSS-переменные и шрифт наследовались */}
+      <div id="admin-portal-root" />
     </div>
   );
 }

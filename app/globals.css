@@ -423,3 +423,25 @@
     display: flex;
   }
 }
+
+/* -----------------------------------------------------------
+   [ADMIN] — Шрифт Roboto для всей admin-зоны
+   ВАЖНО: правила намеренно вне @layer.
+   Tailwind помещает .font-mono/.font-base/.font-accent в @layer utilities,
+   который каскадно выше @layer base — и любой оверрайд внутри base
+   проигрывает. Plain CSS (без @layer) имеет наивысший приоритет
+   над всеми Tailwind-слоями при равной специфичности.
+   .admin-zone задаётся на корневом div обоих admin-layout'ов
+   (app/(admin) и app/(auth-admin)); CSS-переменная --font-roboto
+   устанавливается там же через roboto.variable (next/font/google).
+   ----------------------------------------------------------- */
+
+.admin-zone {
+  font-family: var(--font-roboto), 'Roboto', sans-serif;
+}
+
+.admin-zone .font-base,
+.admin-zone .font-mono,
+.admin-zone .font-accent {
+  font-family: var(--font-roboto), 'Roboto', sans-serif;
+}

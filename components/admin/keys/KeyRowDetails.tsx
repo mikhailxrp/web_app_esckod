@@ -284,7 +284,7 @@ export function KeyRowDetails({
           onClose={() => setShowBlockDialog(false)}
           onConfirm={handleBlock}
         />,
-        document.body,
+        document.getElementById('admin-portal-root') ?? document.body,
       )}
 
       {showDeleteDialog && createPortal(
@@ -293,7 +293,7 @@ export function KeyRowDetails({
           onClose={() => setShowDeleteDialog(false)}
           onConfirm={handleDelete}
         />,
-        document.body,
+        document.getElementById('admin-portal-root') ?? document.body,
       )}
     </>
   );
