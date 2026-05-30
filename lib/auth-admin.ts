@@ -5,6 +5,11 @@ import { comparePassword } from '@/lib/password';
 
 const SESSION_MAX_AGE_SECONDS = 24 * 60 * 60;
 
+const ADMIN_COOKIE_NAME =
+  process.env.NODE_ENV === 'production'
+    ? '__Secure-admin.session-token'
+    : 'admin.session-token';
+
 type CredentialKey = 'email' | 'password';
 
 function getCredentialValue(
@@ -20,15 +25,32 @@ function getCredentialValue(
   return key === 'email' ? value.toLowerCase().trim() : value;
 }
 
-export const { handlers, signIn, signOut, auth } = NextAuth({
+export const {
+  handlers: adminHandlers,
+  auth: adminAuth,
+  signIn: adminSignIn,
+  signOut: adminSignOut,
+} = NextAuth({
+  basePath: '/api/auth-admin',
   session: {
     strategy: 'jwt',
     maxAge: SESSION_MAX_AGE_SECONDS,
   },
+  cookies: {
+    sessionToken: {
+      name: ADMIN_COOKIE_NAME,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax' as const,
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
   providers: [
     Credentials({
-      id: 'player',
-      name: 'Player',
+      id: 'admin',
+      name: 'Admin',
       credentials: {
         email: { type: 'email' },
         password: { type: 'password' },
@@ -41,34 +63,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
-        const user = await prisma.user.findUnique({
+        const admin = await prisma.adminUser.findUnique({
           where: { email },
-          include: { accessKey: true },
         });
 
-        if (!user) {
+        if (!admin) {
           return null;
         }
 
-        if (user.isBlocked) {
-          throw new Error('USER_BLOCKED');
-        }
-
-        if (user.accessKey.isBlocked) {
-          throw new Error('KEY_BLOCKED');
-        }
-
-        const valid = await comparePassword(password, user.passwordHash);
+        const valid = await comparePassword(password, admin.passwordHash);
 
         if (!valid) {
           return null;
         }
 
+        await prisma.adminUser.update({
+          where: { id: admin.id },
+          data: { lastLoginAt: new Date() },
+        });
+
         return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          type: 'PLAYER' as const,
+          id: admin.id,
+          email: admin.email,
+          name: 'Admin',
+          type: 'ADMIN' as const,
         };
       },
     }),
@@ -86,7 +104,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (
         session.user &&
         typeof token.id === 'string' &&
-        token.type === 'PLAYER'
+        token.type === 'ADMIN'
       ) {
         session.user.id = token.id;
         session.user.type = token.type;

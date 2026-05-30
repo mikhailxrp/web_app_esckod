@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { auth } from '@/lib/auth';
+import { adminAuth as auth } from '@/lib/auth-admin';
 import { buildAccessKeysWhere } from '@/lib/admin/accessKeyFilters';
 import { prisma } from '@/lib/prisma';
 import {
