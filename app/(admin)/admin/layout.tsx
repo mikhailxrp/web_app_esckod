@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { adminAuth } from '@/lib/auth-admin';
 import { AdminNav } from '@/components/admin/layout/AdminNav';
 import { AdminBanners } from '@/components/admin/layout/AdminBanners';
+import { AdminLogoutButton } from '@/components/admin/layout/AdminLogoutButton';
 
 const roboto = Roboto({
   subsets: ['latin', 'cyrillic'],
@@ -25,9 +26,14 @@ export default async function AdminLayout({
   return (
     <div className={`${roboto.variable} admin-zone flex min-h-screen bg-admin-sidebar-bg`}>
       <AdminNav />
-      <main className="flex-1 p-8 bg-white">
-        <AdminBanners />
-        {children}
+      <main className="flex-1 flex flex-col bg-white">
+        <div className="flex justify-end px-6 py-3 border-b border-gray-100">
+          <AdminLogoutButton />
+        </div>
+        <div className="flex-1 p-8">
+          <AdminBanners />
+          {children}
+        </div>
       </main>
       {/* Portal-контейнер для модальных окон — внутри admin-zone, чтобы CSS-переменные и шрифт наследовались */}
       <div id="admin-portal-root" />
