@@ -12,6 +12,9 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Код доступа: корпорация',
   description: 'Детективная игра',
+  icons: {
+    icon: '/assets/img/admin/small-logo.png',
+  },
 };
 
 export default async function RootLayout({
