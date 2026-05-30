@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { buildUsersWhere } from '@/lib/admin/userFilters';
-import { auth } from '@/lib/auth';
+import { adminAuth as auth } from '@/lib/auth-admin';
 import { prisma } from '@/lib/prisma';
 import { listUsersQuerySchema } from '@/lib/validations/admin-users';
 

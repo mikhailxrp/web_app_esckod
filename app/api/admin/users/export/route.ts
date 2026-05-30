@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateUsersEmailCsv } from '@/lib/admin/csvExport';
 import { buildUsersWhereFromExportQuery } from '@/lib/admin/userFilters';
-import { auth } from '@/lib/auth';
+import { adminAuth as auth } from '@/lib/auth-admin';
 import { prisma } from '@/lib/prisma';
 import { exportUsersQuerySchema } from '@/lib/validations/admin-users';
 

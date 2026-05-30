@@ -1,6 +1,6 @@
 import { Roboto } from 'next/font/google';
 import { redirect } from 'next/navigation';
-import { auth } from '@/lib/auth';
+import { adminAuth } from '@/lib/auth-admin';
 import { AdminNav } from '@/components/admin/layout/AdminNav';
 import { AdminBanners } from '@/components/admin/layout/AdminBanners';
 
@@ -16,7 +16,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }): Promise<React.ReactElement> {
-  const session = await auth();
+  const session = await adminAuth();
 
   if (!session || session.user.type !== 'ADMIN') {
     redirect('/admin-login');

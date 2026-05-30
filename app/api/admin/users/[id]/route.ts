@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { writeAuditLog } from '@/lib/admin/auditLog';
-import { auth } from '@/lib/auth';
+import { adminAuth as auth } from '@/lib/auth-admin';
 import { prisma } from '@/lib/prisma';
 import { updateUserSchema } from '@/lib/validations/admin-users';
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { adminAuth as auth } from '@/lib/auth-admin';
 
 interface RouteContext {
   params: Promise<{ id: string }>;

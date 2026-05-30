@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
-import { auth } from '@/lib/auth';
+import { adminAuth as auth } from '@/lib/auth-admin';
 import { parseKeysCsv } from '@/lib/admin/csvImport';
 import { prisma } from '@/lib/prisma';
 
