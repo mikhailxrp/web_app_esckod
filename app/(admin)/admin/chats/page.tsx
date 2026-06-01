@@ -14,6 +14,7 @@ export default async function ChatsPage(): Promise<React.ReactElement> {
     select: {
       id: true,
       chatType: true,
+      author: true,
       code: true,
       text: true,
       audioUrl: true,

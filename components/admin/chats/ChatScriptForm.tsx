@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Trash2, X } from 'lucide-react';
 import { createScriptSchema, updateScriptSchema } from '@/lib/validations/admin-chats';
 import type { CreateScriptInput, UpdateScriptInput } from '@/lib/validations/admin-chats';
-import type { ChatScriptListItem, ChatType } from '@/types/admin-chats';
+import type { ChatAuthor, ChatScriptListItem, ChatType } from '@/types/admin-chats';
 
 interface CreateProps {
   mode: 'create';
@@ -30,6 +30,13 @@ type ChatScriptFormProps = CreateProps | EditProps;
 const CHAT_TYPE_OPTIONS: { value: ChatType; label: string }[] = [
   { value: 'DETECTIVE', label: 'Детектив' },
   { value: 'MARINA', label: 'Марина' },
+];
+
+const CHAT_AUTHOR_OPTIONS: { value: ChatAuthor; label: string }[] = [
+  { value: 'DETECTIVE', label: 'Детектив' },
+  { value: 'PLAYER', label: 'Игрок' },
+  { value: 'MARINA', label: 'Марина' },
+  { value: 'ANONYMOUS', label: 'Аноним' },
 ];
 
 export function ChatScriptForm(props: ChatScriptFormProps): React.ReactElement {
@@ -54,6 +61,7 @@ function CreateForm({ onClose, onSaved }: CreateProps): React.ReactElement {
     resolver: zodResolver(createScriptSchema),
     defaultValues: {
       chatType: 'DETECTIVE',
+      author: 'DETECTIVE' as ChatAuthor,
       code: '',
       text: '',
       hasChoices: false,
@@ -115,15 +123,28 @@ function CreateForm({ onClose, onSaved }: CreateProps): React.ReactElement {
           </select>
         </Field>
 
-        <Field label="Код (машинное имя)" error={errors.code?.message}>
-          <input
-            {...register('code')}
-            type="text"
-            placeholder="detective_greeting"
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-          />
+        <Field label="Автор" error={errors.author?.message}>
+          <select
+            {...register('author')}
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          >
+            {CHAT_AUTHOR_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </Field>
       </div>
+
+      <Field label="Код (машинное имя)" error={errors.code?.message}>
+        <input
+          {...register('code')}
+          type="text"
+          placeholder="detective_greeting"
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+        />
+      </Field>
 
       <Field label="Текст реплики" error={errors.text?.message}>
         <textarea
@@ -169,6 +190,7 @@ function EditForm({ script, onClose, onSaved }: EditProps): React.ReactElement {
   } = useForm<UpdateScriptInput>({
     resolver: zodResolver(updateScriptSchema),
     defaultValues: {
+      author: script.author,
       text: script.text,
       hasChoices: script.hasChoices,
       isStart: script.isStart,
@@ -182,6 +204,7 @@ function EditForm({ script, onClose, onSaved }: EditProps): React.ReactElement {
 
   useEffect(() => {
     reset({
+      author: script.author,
       text: script.text,
       hasChoices: script.hasChoices,
       isStart: script.isStart,
@@ -229,14 +252,27 @@ function EditForm({ script, onClose, onSaved }: EditProps): React.ReactElement {
           />
         </Field>
 
-        <Field label="Код (машинное имя)">
-          <input
-            value={script.code}
-            disabled
-            className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 font-mono text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400"
-          />
+        <Field label="Автор" error={errors.author?.message}>
+          <select
+            {...register('author')}
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          >
+            {CHAT_AUTHOR_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </Field>
       </div>
+
+      <Field label="Код (машинное имя)">
+        <input
+          value={script.code}
+          disabled
+          className="w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 font-mono text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400"
+        />
+      </Field>
 
       <Field label="Текст реплики" error={errors.text?.message}>
         <textarea

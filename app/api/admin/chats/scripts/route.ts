@@ -29,6 +29,7 @@ function isPrismaUniqueError(error: unknown): boolean {
 const SCRIPT_SELECT = {
   id: true,
   chatType: true,
+  author: true,
   code: true,
   text: true,
   audioUrl: true,
@@ -43,6 +44,7 @@ const SCRIPT_SELECT = {
 function serializeScript(script: {
   id: string;
   chatType: string;
+  author: string;
   code: string;
   text: string;
   audioUrl: string | null;
@@ -109,7 +111,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return validationErrorResponse(parsed.error.errors[0]?.message);
   }
 
-  const { chatType, code, text, hasChoices, isStart, isEnd, choices } = parsed.data;
+  const { chatType, author, code, text, hasChoices, isStart, isEnd, choices } = parsed.data;
   const normalizedChoices = hasChoices && choices && choices.length > 0
     ? (choices as Prisma.InputJsonValue)
     : Prisma.JsonNull;
@@ -118,6 +120,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const script = await prisma.chatScript.create({
       data: {
         chatType,
+        author,
         code,
         text,
         hasChoices,

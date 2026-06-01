@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Pencil, Trash2, Music, Filter } from 'lucide-react';
-import type { ChatScriptListItem, ChatType } from '@/types/admin-chats';
+import type { ChatAuthor, ChatScriptListItem, ChatType } from '@/types/admin-chats';
 import { ChatScriptForm } from './ChatScriptForm';
 import { DeleteScriptDialog } from './DeleteScriptDialog';
 
@@ -14,6 +14,20 @@ interface ChatScriptsTableProps {
 const CHAT_TYPE_LABELS: Record<ChatType, string> = {
   DETECTIVE: 'Детектив',
   MARINA: 'Марина',
+};
+
+const CHAT_AUTHOR_LABELS: Record<ChatAuthor, string> = {
+  DETECTIVE: 'Детектив',
+  PLAYER: 'Игрок',
+  MARINA: 'Марина',
+  ANONYMOUS: 'Аноним',
+};
+
+const CHAT_AUTHOR_COLORS: Record<ChatAuthor, string> = {
+  DETECTIVE: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300',
+  PLAYER: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  MARINA: 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300',
+  ANONYMOUS: 'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300',
 };
 
 const TABS = ['Реплики', 'Переходы'] as const;
@@ -258,15 +272,16 @@ function ScriptRow({ script, onEdit, onDelete }: ScriptRowProps): React.ReactEle
         <span className="font-mono text-xs text-gray-700 dark:text-gray-300">{script.code}</span>
       </td>
       <td className="px-4 py-3">
-        <span
-          className={`inline-block rounded-md px-2 py-0.5 text-xs font-medium ${
-            script.chatType === 'DETECTIVE'
-              ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
-              : 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300'
-          }`}
-        >
-          {CHAT_TYPE_LABELS[script.chatType]}
-        </span>
+        <div className="flex flex-col gap-1">
+          <span
+            className={`inline-block rounded-md px-2 py-0.5 text-xs font-medium ${CHAT_AUTHOR_COLORS[script.author]}`}
+          >
+            {CHAT_AUTHOR_LABELS[script.author]}
+          </span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">
+            {CHAT_TYPE_LABELS[script.chatType]}
+          </span>
+        </div>
       </td>
       <td className="max-w-xs px-4 py-3 text-gray-600 dark:text-gray-300">
         {truncate(script.text)}

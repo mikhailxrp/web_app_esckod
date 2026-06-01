@@ -29,6 +29,7 @@ function isPrismaNotFoundError(error: unknown): boolean {
 const SCRIPT_SELECT = {
   id: true,
   chatType: true,
+  author: true,
   code: true,
   text: true,
   audioUrl: true,
@@ -43,6 +44,7 @@ const SCRIPT_SELECT = {
 function serializeScript(script: {
   id: string;
   chatType: string;
+  author: string;
   code: string;
   text: string;
   audioUrl: string | null;
@@ -124,10 +126,11 @@ export async function PATCH(
     return validationErrorResponse(parsed.error.errors[0]?.message);
   }
 
-  const { text, hasChoices, isStart, isEnd, choices } = parsed.data;
+  const { author, text, hasChoices, isStart, isEnd, choices } = parsed.data;
 
   const updateData: Prisma.ChatScriptUpdateInput = {};
 
+  if (author !== undefined) updateData.author = author;
   if (text !== undefined) updateData.text = text;
   if (hasChoices !== undefined) updateData.hasChoices = hasChoices;
   if (isStart !== undefined) updateData.isStart = isStart;

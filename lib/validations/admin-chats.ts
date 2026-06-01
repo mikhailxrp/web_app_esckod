@@ -19,9 +19,12 @@ export function parseChoices(raw: unknown): ChatChoice[] | null {
   return result.data;
 }
 
+const chatAuthorSchema = z.enum(['DETECTIVE', 'PLAYER', 'MARINA', 'ANONYMOUS']);
+
 export const createScriptSchema = z
   .object({
     chatType: z.enum(['DETECTIVE', 'MARINA']),
+    author: chatAuthorSchema.default('DETECTIVE'),
     code: z.string().min(1, 'Код обязателен'),
     text: z.string().min(1, 'Текст обязателен'),
     hasChoices: z.boolean().default(false),
@@ -37,6 +40,7 @@ export const createScriptSchema = z
 
 export const updateScriptSchema = z
   .object({
+    author: chatAuthorSchema.optional(),
     text: z.string().min(1, 'Текст обязателен').optional(),
     hasChoices: z.boolean().optional(),
     isStart: z.boolean().optional(),

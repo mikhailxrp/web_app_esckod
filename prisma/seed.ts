@@ -1,4 +1,5 @@
 import {
+  ChatAuthor,
   ChatType,
   ConditionType,
   Prisma,
@@ -27,6 +28,7 @@ const CHAT_SCRIPTS: Prisma.ChatScriptCreateManyInput[] = [
   {
     code: 'detective_greeting',
     chatType: ChatType.DETECTIVE,
+    author: ChatAuthor.DETECTIVE,
     text: 'Здравствуйте, детектив. Начнём.',
     isStart: true,
     isEnd: false,
@@ -35,6 +37,7 @@ const CHAT_SCRIPTS: Prisma.ChatScriptCreateManyInput[] = [
   {
     code: 'detective_end',
     chatType: ChatType.DETECTIVE,
+    author: ChatAuthor.DETECTIVE,
     text: 'Дело завершено.',
     isStart: false,
     isEnd: true,
@@ -43,6 +46,7 @@ const CHAT_SCRIPTS: Prisma.ChatScriptCreateManyInput[] = [
   {
     code: 'marina_greeting',
     chatType: ChatType.MARINA,
+    author: ChatAuthor.MARINA,
     text: 'Я Марина. Я расскажу свою историю.',
     isStart: true,
     isEnd: false,
@@ -51,6 +55,7 @@ const CHAT_SCRIPTS: Prisma.ChatScriptCreateManyInput[] = [
   {
     code: 'marina_final_choice',
     chatType: ChatType.MARINA,
+    author: ChatAuthor.MARINA,
     text: 'Что вы решите?',
     isStart: false,
     isEnd: false,
@@ -63,6 +68,7 @@ const CHAT_SCRIPTS: Prisma.ChatScriptCreateManyInput[] = [
   {
     code: 'marina_end_protect',
     chatType: ChatType.MARINA,
+    author: ChatAuthor.MARINA,
     text: 'Спасибо. (заглушка финала: защитить)',
     isStart: false,
     isEnd: true,
@@ -71,6 +77,7 @@ const CHAT_SCRIPTS: Prisma.ChatScriptCreateManyInput[] = [
   {
     code: 'marina_end_accuse',
     chatType: ChatType.MARINA,
+    author: ChatAuthor.MARINA,
     text: 'Понимаю. (заглушка финала: обвинить)',
     isStart: false,
     isEnd: true,
