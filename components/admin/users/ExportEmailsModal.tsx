@@ -27,6 +27,7 @@ export function ExportEmailsModal({
     setLoading(true);
     try {
       const params = new URLSearchParams();
+      if (exportWithConsent) params.set('consent', 'true');
       if (filterByStatus) params.set('status', status);
 
       const res = await fetch(`/api/admin/users/export?${params.toString()}`);

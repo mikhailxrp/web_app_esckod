@@ -19,6 +19,7 @@ export function BanUserDialog({
 }: BanUserDialogProps): React.ReactElement {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [blockReason, setBlockReason] = useState('');
 
   const newIsBlocked = !currentIsBlocked;
   const title = currentIsBlocked ? 'Разблокировать пользователя' : 'Заблокировать пользователя';
@@ -27,10 +28,13 @@ export function BanUserDialog({
     setLoading(true);
     setError(null);
     try {
+      const body: { isBlocked: boolean; blockReason?: string } = { isBlocked: newIsBlocked };
+      if (newIsBlocked && blockReason.trim()) body.blockReason = blockReason.trim();
+
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isBlocked: newIsBlocked }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error('Ошибка запроса');
       onSuccess(newIsBlocked);
@@ -61,6 +65,27 @@ export function BanUserDialog({
           <p className="text-sm text-amber-600 bg-amber-50 rounded-lg px-3 py-2 mb-4">
             Игрок не будет разлогинен мгновенно — доступ прекратится при следующей сессии.
           </p>
+        )}
+
+        {!currentIsBlocked && (
+          <div className="mb-4">
+            <label
+              htmlFor="blockReason"
+              className="block text-sm text-admin-label mb-1"
+            >
+              Причина блокировки{' '}
+              <span className="text-admin-placeholder">(опционально)</span>
+            </label>
+            <textarea
+              id="blockReason"
+              className="w-full rounded-lg bg-admin-input-bg text-admin-input-text text-sm px-3 py-2 resize-none border border-transparent focus:outline-none focus:border-admin-accent transition-colors"
+              rows={3}
+              placeholder="Введите причину..."
+              maxLength={500}
+              value={blockReason}
+              onChange={(e) => setBlockReason(e.target.value)}
+            />
+          </div>
         )}
 
         <p className="text-sm text-admin-placeholder mb-6">

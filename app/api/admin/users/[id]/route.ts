@@ -99,14 +99,14 @@ export async function PATCH(
     return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
   }
 
-  const { isBlocked } = data;
+  const { isBlocked, blockReason } = data;
 
   if (isBlocked) {
     await writeAuditLog('user_blocked', {
       adminId: session.user.id,
       userId: id,
-      message: `Пользователь "${existingUser.email}" заблокирован`,
-      metadata: { userId: id },
+      message: `Пользователь "${existingUser.email}" заблокирован${blockReason ? `: ${blockReason}` : ''}`,
+      metadata: { userId: id, blockReason },
     });
   } else {
     await writeAuditLog('user_unblocked', {
