@@ -1,7 +1,129 @@
-import { PrismaClient } from '@prisma/client';
+import {
+  ChatType,
+  ConditionType,
+  Prisma,
+  PrismaClient,
+} from '@prisma/client';
 import { hashPassword } from '../lib/password';
 
 const prisma = new PrismaClient();
+
+// value в choices Марины === FinalReportContent.finalChoiceValue
+const FINAL_CHOICE = {
+  PROTECT: 'PROTECT',
+  ACCUSE: 'ACCUSE',
+} as const;
+
+const CHAT_SCRIPT_CODES = [
+  'detective_greeting',
+  'detective_end',
+  'marina_greeting',
+  'marina_final_choice',
+  'marina_end_protect',
+  'marina_end_accuse',
+] as const;
+
+const CHAT_SCRIPTS: Prisma.ChatScriptCreateManyInput[] = [
+  {
+    code: 'detective_greeting',
+    chatType: ChatType.DETECTIVE,
+    text: 'Здравствуйте, детектив. Начнём.',
+    isStart: true,
+    isEnd: false,
+    hasChoices: false,
+  },
+  {
+    code: 'detective_end',
+    chatType: ChatType.DETECTIVE,
+    text: 'Дело завершено.',
+    isStart: false,
+    isEnd: true,
+    hasChoices: false,
+  },
+  {
+    code: 'marina_greeting',
+    chatType: ChatType.MARINA,
+    text: 'Я Марина. Я расскажу свою историю.',
+    isStart: true,
+    isEnd: false,
+    hasChoices: false,
+  },
+  {
+    code: 'marina_final_choice',
+    chatType: ChatType.MARINA,
+    text: 'Что вы решите?',
+    isStart: false,
+    isEnd: false,
+    hasChoices: true,
+    choices: [
+      { label: 'Защитить', value: FINAL_CHOICE.PROTECT },
+      { label: 'Обвинить', value: FINAL_CHOICE.ACCUSE },
+    ],
+  },
+  {
+    code: 'marina_end_protect',
+    chatType: ChatType.MARINA,
+    text: 'Спасибо. (заглушка финала: защитить)',
+    isStart: false,
+    isEnd: true,
+    hasChoices: false,
+  },
+  {
+    code: 'marina_end_accuse',
+    chatType: ChatType.MARINA,
+    text: 'Понимаю. (заглушка финала: обвинить)',
+    isStart: false,
+    isEnd: true,
+    hasChoices: false,
+  },
+];
+
+type ChatTransitionSeed = {
+  fromCode: (typeof CHAT_SCRIPT_CODES)[number];
+  toCode: (typeof CHAT_SCRIPT_CODES)[number];
+  conditionType: ConditionType;
+  conditionValue: string | null;
+};
+
+const CHAT_TRANSITIONS: ChatTransitionSeed[] = [
+  {
+    fromCode: 'detective_greeting',
+    toCode: 'detective_end',
+    conditionType: ConditionType.ALWAYS,
+    conditionValue: null,
+  },
+  {
+    fromCode: 'marina_greeting',
+    toCode: 'marina_final_choice',
+    conditionType: ConditionType.ALWAYS,
+    conditionValue: null,
+  },
+  {
+    fromCode: 'marina_final_choice',
+    toCode: 'marina_end_protect',
+    conditionType: ConditionType.CHOICE,
+    conditionValue: FINAL_CHOICE.PROTECT,
+  },
+  {
+    fromCode: 'marina_final_choice',
+    toCode: 'marina_end_accuse',
+    conditionType: ConditionType.CHOICE,
+    conditionValue: FINAL_CHOICE.ACCUSE,
+  },
+];
+
+const FINAL_REPORT_CONTENT: Prisma.FinalReportContentCreateManyInput[] = [
+  {
+    finalChoiceValue: FINAL_CHOICE.PROTECT,
+    title: 'Защита',
+    bodyText: 'Заглушка финала: защитить Марину',
+  },
+  {
+    finalChoiceValue: FINAL_CHOICE.ACCUSE,
+    title: 'Обвинение',
+    bodyText: 'Заглушка финала: обвинить Марину',
+  },
+];
 
 const DEFAULT_APP_SETTINGS = {
   defaultMarketingConsent: false,
@@ -145,10 +267,68 @@ async function seedMissionSlots(): Promise<void> {
   console.log('Created 6 MissionSlots (2 CRACK, 2 DECIPHER, 2 RDP)');
 }
 
+async function seedChatGraph(): Promise<void> {
+  const scriptCount = await prisma.chatScript.count();
+
+  if (scriptCount > 0) {
+    console.log('ChatScript already exists, skipping');
+    return;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.chatScript.createMany({ data: CHAT_SCRIPTS });
+
+    const scripts = await tx.chatScript.findMany({
+      where: { code: { in: [...CHAT_SCRIPT_CODES] } },
+      select: { id: true, code: true },
+    });
+
+    const codeToId = new Map(scripts.map((s) => [s.code, s.id]));
+
+    const transitions: Prisma.ChatTransitionCreateManyInput[] =
+      CHAT_TRANSITIONS.map((transition) => {
+        const fromMessageId = codeToId.get(transition.fromCode);
+        const toMessageId = codeToId.get(transition.toCode);
+
+        if (!fromMessageId || !toMessageId) {
+          throw new Error(
+            `Chat transition references missing script: ${transition.fromCode} → ${transition.toCode}`,
+          );
+        }
+
+        return {
+          fromMessageId,
+          toMessageId,
+          conditionType: transition.conditionType,
+          conditionValue: transition.conditionValue,
+        };
+      });
+
+    await tx.chatTransition.createMany({ data: transitions });
+  });
+
+  console.log('Created 6 ChatScripts + 4 ChatTransitions');
+}
+
+async function seedFinalReportContent(): Promise<void> {
+  const contentCount = await prisma.finalReportContent.count();
+
+  if (contentCount > 0) {
+    console.log('FinalReportContent already exists, skipping');
+    return;
+  }
+
+  await prisma.finalReportContent.createMany({ data: FINAL_REPORT_CONTENT });
+
+  console.log('Created 2 FinalReportContent stubs');
+}
+
 async function main(): Promise<void> {
   await seedAdminUser();
   await seedAppSettings();
   await seedMissionSlots();
+  await seedChatGraph();
+  await seedFinalReportContent();
 }
 
 main()
