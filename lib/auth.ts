@@ -72,48 +72,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         };
       },
     }),
-    Credentials({
-      id: 'admin',
-      name: 'Admin',
-      credentials: {
-        email: { type: 'email' },
-        password: { type: 'password' },
-      },
-      async authorize(credentials) {
-        const email = getCredentialValue(credentials ?? {}, 'email');
-        const password = getCredentialValue(credentials ?? {}, 'password');
-
-        if (!email || !password) {
-          return null;
-        }
-
-        const admin = await prisma.adminUser.findUnique({
-          where: { email },
-        });
-
-        if (!admin) {
-          return null;
-        }
-
-        const valid = await comparePassword(password, admin.passwordHash);
-
-        if (!valid) {
-          return null;
-        }
-
-        await prisma.adminUser.update({
-          where: { id: admin.id },
-          data: { lastLoginAt: new Date() },
-        });
-
-        return {
-          id: admin.id,
-          email: admin.email,
-          name: 'Admin',
-          type: 'ADMIN' as const,
-        };
-      },
-    }),
   ],
   callbacks: {
     async jwt({ token, user }) {
@@ -128,7 +86,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (
         session.user &&
         typeof token.id === 'string' &&
-        (token.type === 'PLAYER' || token.type === 'ADMIN')
+        token.type === 'PLAYER'
       ) {
         session.user.id = token.id;
         session.user.type = token.type;

@@ -37,6 +37,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  input, select, textarea, button {
+    font-family: inherit;
+  }
+
   body {
     @apply min-h-screen;
     background: radial-gradient(ellipse 70% 70% at 50% 5%, #0d3540 0%, #000000 60%);
@@ -399,4 +403,45 @@
 
   /* [DASHBOARD] — добавить утилиты для dashboard-компонентов */
 
+}
+
+/* -----------------------------------------------------------
+   [MOBILE-BLOCK] — CSS-страховка от FOUC на планшетах
+   Скрывает контент до гидрации MobileGuard при узком viewport
+   ----------------------------------------------------------- */
+
+.mobile-block-fallback {
+  display: none;
+}
+
+@media (max-width: 1023px), (max-height: 699px) {
+  html[data-device='tablet'] body > :not(.mobile-block-fallback) {
+    display: none;
+  }
+
+  html[data-device='tablet'] .mobile-block-fallback {
+    display: flex;
+  }
+}
+
+/* -----------------------------------------------------------
+   [ADMIN] — Шрифт Roboto для всей admin-зоны
+   ВАЖНО: правила намеренно вне @layer.
+   Tailwind помещает .font-mono/.font-base/.font-accent в @layer utilities,
+   который каскадно выше @layer base — и любой оверрайд внутри base
+   проигрывает. Plain CSS (без @layer) имеет наивысший приоритет
+   над всеми Tailwind-слоями при равной специфичности.
+   .admin-zone задаётся на корневом div обоих admin-layout'ов
+   (app/(admin) и app/(auth-admin)); CSS-переменная --font-roboto
+   устанавливается там же через roboto.variable (next/font/google).
+   ----------------------------------------------------------- */
+
+.admin-zone {
+  font-family: var(--font-roboto), 'Roboto', sans-serif;
+}
+
+.admin-zone .font-base,
+.admin-zone .font-mono,
+.admin-zone .font-accent {
+  font-family: var(--font-roboto), 'Roboto', sans-serif;
 }
