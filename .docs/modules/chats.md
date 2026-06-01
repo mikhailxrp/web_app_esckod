@@ -116,6 +116,7 @@ ChatScript A ──ALWAYS──→ ChatScript B ──CHOICE("yes")──→ Cha
 См. `database.md` → `ChatScript`. Ключевые поля для логики:
 
 - `chatType: 'DETECTIVE' | 'MARINA'` — к какому чату относится реплика
+- `author: 'DETECTIVE' | 'PLAYER' | 'MARINA' | 'ANONYMOUS'` — от чьего лица показывается реплика (enum `ChatAuthor`, `@default(DETECTIVE)`). Независим от `chatType`: внутри одного чата могут чередоваться авторы. Влияет **только на рендеринг** (выравнивание/стиль «пузыря», подпись отправителя), на логику переходов — нет.
 - `code` (UNIQUE) — машинное имя для отладки и сидера
 - `text` — текст реплики
 - `audioUrl` — опциональная ссылка на аудио

@@ -182,6 +182,19 @@ async function seedAppSettings(): Promise<void> {
   console.log('Created AppSettings singleton');
 }
 
+// FIXME(Phase 10, Task 1): данные ниже — заглушка из Phase 0 и расходятся со
+// спецификацией сидера в `.docs/database.md` §3 по 8 пунктам. Перед релизом миссий
+// ОБЯЗАТЕЛЬНО пересидить строго по таблицам database.md §3:
+//   1) slotKey: CRACK_P2 / CRACK_VUZ / DECIPHER_SHANTAZH / DECIPHER_MARKOVA / RDP_VICTOR / RDP_MARINA
+//   2) orderIndex: 10..60, чередуя по сюжету (CRACK_P2 → RDP_VICTOR → DECIPHER_SHANTAZH → CRACK_VUZ → DECIPHER_MARKOVA → RDP_MARINA)
+//   3) crackMaxAttempts: 5 (сейчас 6)
+//   4) rdpPuzzleGridSize: 6 (сценарий 1) и 7 (сценарий 2) — сейчас 4, нарушает инвариант «6 или 7»
+//   5) timerSeconds: null (сценарий 1), 120 (сценарий 2) — сейчас 300 у обоих
+//   6) nextRdpSlotKey: "RDP_MARINA" у RDP_VICTOR — сейчас не задан
+//   7) unlocksRdpFolder = ИМЯ папки ("Шантаж"/"Маркова", = RdpFile.folder), unlocksRdpSlotKey = "RDP_VICTOR" у ОБОИХ
+//      decipher-слотов — сейчас путь '/rdp/session-N' и раздельные rdp-1/rdp-2 (сломает unlock-folder: сверка строгим равенством)
+//   8) logSubjectName: "Виктор" и "Неизвестно" — сейчас "Виктор Пак" и "Марина"
+// Полный чек-лист и обоснование — `.docs/phases/_status.md` → Phase 10.
 async function seedMissionSlots(): Promise<void> {
   const slotCount = await prisma.missionSlot.count();
 
