@@ -32,13 +32,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return validationErrorResponse();
   }
 
-  const { page, limit, search, status } = parsedQuery.data;
+  const { page, limit, search, status, sort } = parsedQuery.data;
   const where = buildUsersWhere({ search, status });
+  const orderBy = { createdAt: sort === 'createdAt_asc' ? 'asc' : 'desc' } as const;
 
   const [users, total] = await prisma.$transaction([
     prisma.user.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy,
       skip: (page - 1) * limit,
       take: limit,
       select: {

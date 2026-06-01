@@ -24,6 +24,7 @@ export async function GET(request: NextRequest): Promise<Response> {
   const parsedQuery = exportUsersQuerySchema.safeParse({
     search: sp.get('search') ?? undefined,
     status: sp.get('status') ?? undefined,
+    consent: sp.get('consent') ?? undefined,
   });
 
   if (!parsedQuery.success) {

@@ -109,7 +109,7 @@ export function UsersTable({
           page: String(p),
           limit: String(LIMIT),
           status: st,
-          sort: so === 'createdAt_asc' ? 'createdAt' : 'createdAt',
+          sort: so,
         });
         if (q) params.set('search', q);
 
