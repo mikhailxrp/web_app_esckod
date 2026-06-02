@@ -360,7 +360,7 @@ function TransitionFields({
           {fromScript?.hasChoices && fromScript.choices?.length ? (
             <select
               {...register('conditionValue')}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-900 focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             >
               <option value="">— выберите value —</option>
               {fromScript.choices.map((c) => (
@@ -382,7 +382,7 @@ function TransitionFields({
         <Field label="Событие (conditionValue)" error={errors.conditionValue?.message}>
           <select
             {...register('conditionValue')}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-xs focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-xs text-gray-900 focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           >
             <option value="">— выберите триггер —</option>
             {triggerValues.map((v) => (
