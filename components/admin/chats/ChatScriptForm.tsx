@@ -113,7 +113,7 @@ function CreateForm({ onClose, onSaved }: CreateProps): React.ReactElement {
         <Field label="Тип чата" error={errors.chatType?.message}>
           <select
             {...register('chatType')}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           >
             {CHAT_TYPE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -126,7 +126,7 @@ function CreateForm({ onClose, onSaved }: CreateProps): React.ReactElement {
         <Field label="Автор" error={errors.author?.message}>
           <select
             {...register('author')}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           >
             {CHAT_AUTHOR_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -142,7 +142,7 @@ function CreateForm({ onClose, onSaved }: CreateProps): React.ReactElement {
           {...register('code')}
           type="text"
           placeholder="detective_greeting"
-          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 font-mono text-sm text-gray-900 focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         />
       </Field>
 
@@ -151,7 +151,7 @@ function CreateForm({ onClose, onSaved }: CreateProps): React.ReactElement {
           {...register('text')}
           rows={4}
           placeholder="Текст сообщения персонажа..."
-          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         />
       </Field>
 
@@ -255,7 +255,7 @@ function EditForm({ script, onClose, onSaved }: EditProps): React.ReactElement {
         <Field label="Автор" error={errors.author?.message}>
           <select
             {...register('author')}
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
           >
             {CHAT_AUTHOR_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -278,7 +278,7 @@ function EditForm({ script, onClose, onSaved }: EditProps): React.ReactElement {
         <textarea
           {...register('text')}
           rows={4}
-          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+          className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         />
       </Field>
 
@@ -450,12 +450,12 @@ function ChoicesEditor({
             <input
               {...registerChoice(index, 'label')}
               placeholder="Метка (для отображения)"
-              className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-900 focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
             <input
               {...registerChoice(index, 'value')}
               placeholder="Значение (машинное)"
-              className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-mono text-sm focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 font-mono text-sm text-gray-900 focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
           </div>
           <button

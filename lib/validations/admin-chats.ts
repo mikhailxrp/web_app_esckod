@@ -66,3 +66,43 @@ export type UpdateScriptOutput = z.infer<typeof updateScriptSchema>;
 export const listScriptsQuerySchema = z.object({
   chatType: z.enum(['DETECTIVE', 'MARINA']).optional(),
 });
+
+const transitionBaseSchema = z.object({
+  fromMessageId: z.string().min(1),
+  toMessageId: z.string().min(1),
+  priority: z.number().int().default(0),
+});
+
+const alwaysTransitionSchema = transitionBaseSchema.extend({
+  conditionType: z.literal('ALWAYS'),
+  conditionValue: z.null().optional(),
+});
+
+const choiceTransitionSchema = transitionBaseSchema.extend({
+  conditionType: z.literal('CHOICE'),
+  conditionValue: z.string().min(1, 'Значение условия обязательно'),
+});
+
+const triggerTransitionSchema = transitionBaseSchema.extend({
+  conditionType: z.literal('TRIGGER'),
+  conditionValue: z.string().min(1, 'Значение условия обязательно'),
+});
+
+export const createTransitionSchema = z.discriminatedUnion('conditionType', [
+  alwaysTransitionSchema,
+  choiceTransitionSchema,
+  triggerTransitionSchema,
+]);
+
+export const updateTransitionSchema = z.object({
+  fromMessageId: z.string().min(1).optional(),
+  toMessageId: z.string().min(1).optional(),
+  conditionType: z.enum(['ALWAYS', 'CHOICE', 'TRIGGER']).optional(),
+  conditionValue: z.union([z.string(), z.null()]).optional(),
+  priority: z.number().int().optional(),
+});
+
+export type CreateTransitionInput = z.input<typeof createTransitionSchema>;
+export type CreateTransitionOutput = z.infer<typeof createTransitionSchema>;
+export type UpdateTransitionInput = z.input<typeof updateTransitionSchema>;
+export type UpdateTransitionOutput = z.infer<typeof updateTransitionSchema>;

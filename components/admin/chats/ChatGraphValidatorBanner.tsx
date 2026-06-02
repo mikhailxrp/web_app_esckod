@@ -9,7 +9,13 @@ const CHAT_TYPE_LABELS = {
   MARINA: 'Марина',
 } as const;
 
-export function ChatGraphValidatorBanner(): React.ReactElement {
+interface ChatGraphValidatorBannerProps {
+  reloadKey?: number;
+}
+
+export function ChatGraphValidatorBanner({
+  reloadKey = 0,
+}: ChatGraphValidatorBannerProps): React.ReactElement {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ChatGraphValidationResult | null>(null);
@@ -50,7 +56,7 @@ export function ChatGraphValidatorBanner(): React.ReactElement {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey]);
 
   if (loading) {
     return (

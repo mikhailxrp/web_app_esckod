@@ -21,3 +21,26 @@ export interface ChatScriptListItem {
   createdAt: string;
   updatedAt: string;
 }
+
+export type ConditionType = 'ALWAYS' | 'CHOICE' | 'TRIGGER';
+
+export interface ChatTransitionScriptRef {
+  id: string;
+  code: string;
+  chatType: ChatType;
+}
+
+export interface ChatTransitionListItem {
+  id: string;
+  fromMessageId: string;
+  toMessageId: string;
+  conditionType: ConditionType;
+  conditionValue: string | null;
+  priority: number;
+  from: ChatTransitionScriptRef;
+  to: ChatTransitionScriptRef;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type TriggerValueOption = string;

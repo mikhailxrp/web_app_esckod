@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Plus, Pencil, Trash2, Music, Filter } from 'lucide-react';
 import type { ChatAuthor, ChatScriptListItem, ChatType } from '@/types/admin-chats';
 import { ChatScriptForm } from './ChatScriptForm';
 import { DeleteScriptDialog } from './DeleteScriptDialog';
 
 interface ChatScriptsTableProps {
-  initialScripts: ChatScriptListItem[];
+  scripts: ChatScriptListItem[];
+  onScriptsMutated: () => void;
 }
 
 const CHAT_TYPE_LABELS: Record<ChatType, string> = {
@@ -30,9 +30,6 @@ const CHAT_AUTHOR_COLORS: Record<ChatAuthor, string> = {
   ANONYMOUS: 'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300',
 };
 
-const TABS = ['Реплики', 'Переходы'] as const;
-type Tab = (typeof TABS)[number];
-
 type FilterValue = 'ALL' | ChatType;
 
 const FILTER_OPTIONS: { value: FilterValue; label: string }[] = [
@@ -45,82 +42,120 @@ function truncate(text: string, max = 60): string {
   return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
-export function ChatScriptsTable({ initialScripts }: ChatScriptsTableProps): React.ReactElement {
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState<Tab>('Реплики');
+export function ChatScriptsTable({
+  scripts,
+  onScriptsMutated,
+}: ChatScriptsTableProps): React.ReactElement {
   const [filter, setFilter] = useState<FilterValue>('ALL');
-  const [scripts, setScripts] = useState<ChatScriptListItem[]>(initialScripts);
-
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<ChatScriptListItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ChatScriptListItem | null>(null);
-
-  const refresh = useCallback(async (): Promise<void> => {
-    try {
-      const res = await fetch('/api/admin/chats/scripts');
-
-      if (res.ok) {
-        const data = (await res.json()) as ChatScriptListItem[];
-        setScripts(data);
-      }
-    } catch {
-      // silent — router.refresh() сбросит кэш страницы
-    } finally {
-      router.refresh();
-    }
-  }, [router]);
-
-  const handleSaved = useCallback(async (): Promise<void> => {
-    setCreateOpen(false);
-    setEditTarget(null);
-    await refresh();
-  }, [refresh]);
-
-  const handleDeleted = useCallback(async (): Promise<void> => {
-    setDeleteTarget(null);
-    await refresh();
-  }, [refresh]);
 
   const filtered =
     filter === 'ALL' ? scripts : scripts.filter((s) => s.chatType === filter);
 
   return (
     <>
-      {/* Tabs */}
-      <div className="mb-4 flex gap-1 border-b border-gray-200 dark:border-gray-700">
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === tab
-                ? 'border-b-2 border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+      <div className="rounded-xl border border-admin-card-border bg-white dark:bg-gray-900">
+        <div className="flex items-center justify-between border-b border-admin-card-border px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Filter size={14} className="text-gray-400" aria-hidden="true" />
+            <span className="text-xs text-gray-500 dark:text-gray-400">Фильтр:</span>
+            <div className="flex gap-1">
+              {FILTER_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setFilter(opt.value)}
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                    filter === opt.value
+                      ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
+                      : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      {activeTab === 'Переходы' ? (
-        <PlaceholderTransitions />
-      ) : (
-        <ScriptsTabContent
-          scripts={filtered}
-          filter={filter}
-          onFilterChange={setFilter}
-          onCreateClick={() => setCreateOpen(true)}
-          onEditClick={setEditTarget}
-          onDeleteClick={setDeleteTarget}
-        />
-      )}
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+          >
+            <Plus size={14} aria-hidden="true" />
+            Создать реплику
+          </button>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-admin-card-border bg-gray-50 dark:bg-gray-800/50">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Код
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Автор
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Текст
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Старт
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Конец
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Выбор
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Аудио
+                </th>
+                <th className="px-4 py-3" aria-label="Действия" />
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className="px-4 py-8 text-center text-sm text-gray-400 dark:text-gray-500"
+                  >
+                    Реплики не найдены
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((script) => (
+                  <ScriptRow
+                    key={script.id}
+                    script={script}
+                    onEdit={() => setEditTarget(script)}
+                    onDelete={() => setDeleteTarget(script)}
+                  />
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {filtered.length > 0 && (
+          <div className="border-t border-admin-card-border px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
+            Всего: {filtered.length}
+          </div>
+        )}
+      </div>
 
       {createOpen && (
         <ChatScriptForm
           mode="create"
           onClose={() => setCreateOpen(false)}
-          onSaved={() => void handleSaved()}
+          onSaved={() => {
+            setCreateOpen(false);
+            onScriptsMutated();
+          }}
         />
       )}
 
@@ -129,7 +164,10 @@ export function ChatScriptsTable({ initialScripts }: ChatScriptsTableProps): Rea
           mode="edit"
           script={editTarget}
           onClose={() => setEditTarget(null)}
-          onSaved={() => void handleSaved()}
+          onSaved={() => {
+            setEditTarget(null);
+            onScriptsMutated();
+          }}
         />
       )}
 
@@ -138,124 +176,13 @@ export function ChatScriptsTable({ initialScripts }: ChatScriptsTableProps): Rea
           scriptId={deleteTarget.id}
           scriptCode={deleteTarget.code}
           onClose={() => setDeleteTarget(null)}
-          onDeleted={() => void handleDeleted()}
+          onDeleted={() => {
+            setDeleteTarget(null);
+            onScriptsMutated();
+          }}
         />
       )}
     </>
-  );
-}
-
-// ── Scripts tab ──────────────────────────────────────────────────────────────
-
-interface ScriptsTabContentProps {
-  scripts: ChatScriptListItem[];
-  filter: FilterValue;
-  onFilterChange: (v: FilterValue) => void;
-  onCreateClick: () => void;
-  onEditClick: (s: ChatScriptListItem) => void;
-  onDeleteClick: (s: ChatScriptListItem) => void;
-}
-
-function ScriptsTabContent({
-  scripts,
-  filter,
-  onFilterChange,
-  onCreateClick,
-  onEditClick,
-  onDeleteClick,
-}: ScriptsTabContentProps): React.ReactElement {
-  return (
-    <div className="rounded-xl border border-admin-card-border bg-white dark:bg-gray-900">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between border-b border-admin-card-border px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Filter size={14} className="text-gray-400" aria-hidden="true" />
-          <span className="text-xs text-gray-500 dark:text-gray-400">Фильтр:</span>
-          <div className="flex gap-1">
-            {FILTER_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => onFilterChange(opt.value)}
-                className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                  filter === opt.value
-                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
-                    : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <button
-          onClick={onCreateClick}
-          className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
-        >
-          <Plus size={14} aria-hidden="true" />
-          Создать реплику
-        </button>
-      </div>
-
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-admin-card-border bg-gray-50 dark:bg-gray-800/50">
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                Код
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                Автор
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400">
-                Текст
-              </th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
-                Старт
-              </th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
-                Конец
-              </th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
-                Выбор
-              </th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400">
-                Аудио
-              </th>
-              <th className="px-4 py-3" aria-label="Действия" />
-            </tr>
-          </thead>
-          <tbody>
-            {scripts.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={8}
-                  className="px-4 py-8 text-center text-sm text-gray-400 dark:text-gray-500"
-                >
-                  Реплики не найдены
-                </td>
-              </tr>
-            ) : (
-              scripts.map((script) => (
-                <ScriptRow
-                  key={script.id}
-                  script={script}
-                  onEdit={() => onEditClick(script)}
-                  onDelete={() => onDeleteClick(script)}
-                />
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {scripts.length > 0 && (
-        <div className="border-t border-admin-card-border px-4 py-2 text-xs text-gray-400 dark:text-gray-500">
-          Всего: {scripts.length}
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -305,6 +232,7 @@ function ScriptRow({ script, onEdit, onDelete }: ScriptRowProps): React.ReactEle
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-2">
           <button
+            type="button"
             onClick={onEdit}
             className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200"
             aria-label={`Редактировать ${script.code}`}
@@ -312,6 +240,7 @@ function ScriptRow({ script, onEdit, onDelete }: ScriptRowProps): React.ReactEle
             <Pencil size={14} />
           </button>
           <button
+            type="button"
             onClick={onDelete}
             className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40 dark:hover:text-red-400"
             aria-label={`Удалить ${script.code}`}
@@ -331,15 +260,5 @@ function BoolBadge({ value }: { value: boolean }): React.ReactElement {
     </span>
   ) : (
     <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
-  );
-}
-
-function PlaceholderTransitions(): React.ReactElement {
-  return (
-    <div className="flex min-h-48 items-center justify-center rounded-xl border border-dashed border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900">
-      <p className="text-sm text-gray-400 dark:text-gray-500">
-        Управление переходами доступно в следующем обновлении
-      </p>
-    </div>
   );
 }

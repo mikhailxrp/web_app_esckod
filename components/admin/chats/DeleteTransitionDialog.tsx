@@ -1,64 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 
-interface DeleteScriptDialogProps {
-  scriptCode: string;
-  scriptId: string;
+interface DeleteTransitionDialogProps {
+  transitionLabel: string;
+  transitionId: string;
   onClose: () => void;
   onDeleted: () => void;
 }
 
-export function DeleteScriptDialog({
-  scriptCode,
-  scriptId,
+export function DeleteTransitionDialog({
+  transitionLabel,
+  transitionId,
   onClose,
   onDeleted,
-}: DeleteScriptDialogProps): React.ReactElement {
+}: DeleteTransitionDialogProps): React.ReactElement {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [affectedCount, setAffectedCount] = useState<number | null>(null);
-  const [affectedLoading, setAffectedLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchAffected(): Promise<void> {
-      setAffectedLoading(true);
-
-      try {
-        const response = await fetch(`/api/admin/chats/affected-users/${scriptId}`);
-
-        if (response.ok) {
-          const data = (await response.json()) as { count: number };
-
-          if (!cancelled) {
-            setAffectedCount(data.count);
-          }
-        }
-      } catch {
-        // fallback — generic text below
-      } finally {
-        if (!cancelled) {
-          setAffectedLoading(false);
-        }
-      }
-    }
-
-    void fetchAffected();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [scriptId]);
 
   async function handleDelete(): Promise<void> {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(`/api/admin/chats/scripts/${scriptId}`, {
+      const response = await fetch(`/api/admin/chats/transitions/${transitionId}`, {
         method: 'DELETE',
       });
 
@@ -77,18 +43,12 @@ export function DeleteScriptDialog({
     }
   }
 
-  const affectedMessage = affectedLoading
-    ? 'Проверяем, сколько игроков сейчас на этой реплике…'
-    : affectedCount !== null
-      ? `${affectedCount} ${playersLabel(affectedCount)} сейчас на этой реплике — при удалении вернутся к началу чата.`
-      : 'Игроки, остановившиеся на этой реплике, вернутся к началу чата при следующем обращении.';
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="delete-dialog-title"
+      aria-labelledby="delete-transition-title"
     >
       <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900">
         <button
@@ -107,23 +67,16 @@ export function DeleteScriptDialog({
           </div>
           <div>
             <h2
-              id="delete-dialog-title"
+              id="delete-transition-title"
               className="text-base font-semibold text-gray-900 dark:text-white"
             >
-              Удалить реплику?
+              Удалить переход?
             </h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              <span className="font-mono font-medium text-gray-700 dark:text-gray-300">
-                {scriptCode}
-              </span>
+            <p className="mt-1 font-mono text-sm text-gray-500 dark:text-gray-400">
+              {transitionLabel}
             </p>
           </div>
         </div>
-
-        <p className="mb-2 text-sm text-gray-600 dark:text-gray-300">
-          Реплика и все её переходы будут удалены.
-        </p>
-        <p className="mb-6 text-sm text-gray-600 dark:text-gray-300">{affectedMessage}</p>
 
         {error && (
           <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
@@ -152,23 +105,4 @@ export function DeleteScriptDialog({
       </div>
     </div>
   );
-}
-
-function playersLabel(count: number): string {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-
-  if (mod100 >= 11 && mod100 <= 14) {
-    return 'игроков';
-  }
-
-  if (mod10 === 1) {
-    return 'игрок';
-  }
-
-  if (mod10 >= 2 && mod10 <= 4) {
-    return 'игрока';
-  }
-
-  return 'игроков';
 }
