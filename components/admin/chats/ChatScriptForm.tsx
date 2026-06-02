@@ -11,6 +11,7 @@ import { Plus, Trash2, X } from 'lucide-react';
 import { createScriptSchema, updateScriptSchema } from '@/lib/validations/admin-chats';
 import type { CreateScriptInput, UpdateScriptInput } from '@/lib/validations/admin-chats';
 import type { ChatAuthor, ChatScriptListItem, ChatType } from '@/types/admin-chats';
+import { AudioUploader } from '@/components/admin/chats/AudioUploader';
 
 interface CreateProps {
   mode: 'create';
@@ -299,6 +300,12 @@ function EditForm({ script, onClose, onSaved }: EditProps): React.ReactElement {
           choicesError={errors.choices?.message ?? (errors.choices as { root?: { message?: string } })?.root?.message}
         />
       )}
+
+      <AudioUploader
+        scriptId={script.id}
+        initialAudioUrl={script.audioUrl}
+        onChange={() => void 0}
+      />
     </FormLayout>
   );
 }

@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+export const ALLOWED_AUDIO_MIME = ['audio/mpeg', 'audio/wav', 'audio/mp3'] as const;
+
+export const MAX_AUDIO_SIZE_BYTES = 5 * 1024 * 1024;
+
+export function normalizeFilename(name: string): string {
+  return name.toLowerCase().replace(/\s+/g, '_');
+}
+
 export const choiceItemSchema = z.object({
   label: z.string().min(1, 'Метка не может быть пустой'),
   value: z.string().min(1, 'Значение не может быть пустым'),
