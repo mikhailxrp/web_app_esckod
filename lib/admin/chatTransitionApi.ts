@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { fetchValidTriggerValueSet } from '@/constants/chatTriggerEvents';
+import { prisma } from '@/lib/prisma';
 import type { ChatTransitionListItem, ChatType, ConditionType } from '@/types/admin-chats';
 
 export interface TransitionPayload {
@@ -13,11 +14,31 @@ export interface TransitionPayload {
 export type TransitionValidationError =
   | { code: 'VALIDATION_ERROR'; message: string }
   | { code: 'INVALID_TRIGGER_VALUE' }
-  | { code: 'INVALID_REFERENCE' };
+  | { code: 'INVALID_REFERENCE' }
+  | { code: 'CROSS_CHAT_TRANSITION' };
 
 export async function validateTransitionPayload(
   payload: TransitionPayload,
 ): Promise<TransitionValidationError | null> {
+  const [fromScript, toScript] = await Promise.all([
+    prisma.chatScript.findUnique({
+      where: { id: payload.fromMessageId },
+      select: { chatType: true },
+    }),
+    prisma.chatScript.findUnique({
+      where: { id: payload.toMessageId },
+      select: { chatType: true },
+    }),
+  ]);
+
+  if (!fromScript || !toScript) {
+    return { code: 'INVALID_REFERENCE' };
+  }
+
+  if (fromScript.chatType !== toScript.chatType) {
+    return { code: 'CROSS_CHAT_TRANSITION' };
+  }
+
   if (payload.conditionType === 'ALWAYS') {
     if (payload.conditionValue !== null && payload.conditionValue !== '') {
       return {
