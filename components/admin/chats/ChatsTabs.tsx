@@ -77,9 +77,9 @@ export function ChatsTabs({
   }, [router]);
 
   const handleScriptsMutated = useCallback(async (): Promise<void> => {
-    await refreshScripts();
+    await Promise.all([refreshScripts(), refreshTransitions()]);
     refreshValidator();
-  }, [refreshScripts, refreshValidator]);
+  }, [refreshScripts, refreshTransitions, refreshValidator]);
 
   const handleTransitionsMutated = useCallback(async (): Promise<void> => {
     await refreshTransitions();

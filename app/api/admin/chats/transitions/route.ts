@@ -32,6 +32,10 @@ function transitionErrorResponse(
     return NextResponse.json({ error: 'INVALID_REFERENCE' }, { status: 400 });
   }
 
+  if (err.code === 'CROSS_CHAT_TRANSITION') {
+    return NextResponse.json({ error: 'CROSS_CHAT_TRANSITION' }, { status: 400 });
+  }
+
   return validationErrorResponse(err.message);
 }
 

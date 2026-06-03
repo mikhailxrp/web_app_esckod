@@ -9,6 +9,7 @@ import { parseChoices } from '@/lib/validations/admin-chats';
 
 export type ChatGraphIssueType =
   | 'NO_OUTGOING'
+  | 'NO_INGOING'
   | 'CHOICE_NOT_COVERED'
   | 'END_UNREACHABLE'
   | 'NO_START'
@@ -198,6 +199,26 @@ function validateEndReachability(
   }
 }
 
+function validateNoIngoing(
+  chatType: ChatType,
+  chatScripts: ChatScript[],
+  transitions: ChatTransition[],
+  issues: ChatGraphIssue[],
+): void {
+  const incomingTargets = new Set(transitions.map((t) => t.toMessageId));
+
+  for (const script of chatScripts) {
+    if (!script.isStart && !incomingTargets.has(script.id)) {
+      issues.push({
+        type: 'NO_INGOING',
+        message: `Реплика недостижима — нет входящих переходов и не является стартовой`,
+        chatType,
+        code: script.code,
+      });
+    }
+  }
+}
+
 export async function validateChatGraph(): Promise<ChatGraphValidationResult> {
   const [scripts, transitions] = await Promise.all([
     prisma.chatScript.findMany(),
@@ -228,6 +249,8 @@ export async function validateChatGraph(): Promise<ChatGraphValidationResult> {
       const outgoing = outgoingByFrom.get(script.id) ?? [];
       validateScriptOutcomes(script, outgoing, issues);
     }
+
+    validateNoIngoing(chatType, chatScripts, transitions, issues);
 
     if (startScript) {
       validateEndReachability(
