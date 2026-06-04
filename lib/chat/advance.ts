@@ -111,6 +111,10 @@ function pickTransition(
   return null;
 }
 
+export async function isChatMessageWaiting(messageId: string): Promise<boolean> {
+  return messageIsWaitingOnly(prisma, messageId);
+}
+
 async function messageIsWaitingOnly(
   tx: TransactionClient,
   messageId: string,
