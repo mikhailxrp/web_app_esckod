@@ -33,7 +33,7 @@ function serializeScript(script: {
   chatType: string;
   author: string;
   code: string;
-  text: string;
+  text: string | null;
   audioUrl: string | null;
   hasChoices: boolean;
   choices: Prisma.JsonValue;
