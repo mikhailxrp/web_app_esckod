@@ -37,6 +37,7 @@ Thumbs.db
 .docs/prompts/*
 .docs/dev-log.md
 .docs/dod-global.md
+.docs/backlog.md
 CLAUDE.md
 current-pipeline.md
 TASK.md
