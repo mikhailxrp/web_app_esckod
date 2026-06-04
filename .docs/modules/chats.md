@@ -277,7 +277,7 @@ marina_final_choice (hasChoices: [{label:"Защитить",value:"PROTECT"},{la
 detective_after_p2 (TRIGGER "crack_completed:CRACK_P2") → detective_next
 ```
 
-Игрок дошёл до `detective_after_p2` → видит реплику без кнопок «Далее» (или кнопка задизейблена с подсказкой «Ожидание...»). Идёт проходить миссию `CRACK_P2`. После успешного `POST /api/missions/crack/CRACK_P2/complete` сервер вызывает функцию `advanceTriggerListeners(userId, 'crack_completed:CRACK_P2')`, которая проверяет ChatState всех игроков (точнее — текущего игрока) и для тех, кто ждёт это событие — обновляет `currentMessageId` на `toMessageId` соответствующего TRIGGER-перехода. Клиент получает обновлённое состояние через очередной `GET /api/chat/state`.
+Игрок дошёл до `detective_after_p2` → видит реплику без кнопок «Далее» (или кнопка задизейблена с подсказкой «Ожидание...»). Идёт проходить миссию `CRACK_P2`. После успешного `POST /api/missions/crack/CRACK_P2/complete` сервер вызывает функцию `advanceTriggerListeners(tx, userId, 'crack_completed:CRACK_P2')` (в транзакции эндпоинта), которая проверяет ChatState текущего игрока и, если он ждёт это событие — обновляет `currentMessageId` на `toMessageId` соответствующего TRIGGER-перехода. Клиент получает обновлённое состояние через очередной `GET /api/chat/state`.
 
 См. ниже секцию [Активация триггеров](#активация-триггеров).
 
@@ -291,25 +291,40 @@ detective_after_p2 (TRIGGER "crack_completed:CRACK_P2") → detective_next
 
 Реплика `marina_final_choice` имеет два CHOICE-перехода (PROTECT, ACCUSE). Когда игрок делает выбор:
 
+Фиксация `finalChoice` и срабатывание `final_choice_made` происходят **внутри той же транзакции**, что и сам переход выбора, — это критично для optimistic locking: `advanceTriggerListeners` делает ещё один UPDATE строки `ChatState` (Детектив может реагировать на финал отдельной репликой), поэтому клиенту нужно вернуть **итоговую** `version`. Если разнести на отдельные транзакции/запросы, клиент сохранит устаревшую версию и получит ложный 409 на следующем действии.
+
+Это реализовано внутри `advanceChatState` (`lib/chat/advance.ts`): при `current.code === 'marina_final_choice'` в `updateData` пишется `finalChoice = choiceValue.toUpperCase()`, а сразу после guarded-update в той же транзакции вызывается движок триггеров, и возвращается финальная `version`:
+
 ```typescript
-// app/api/chat/choice/route.ts (фрагмент)
-// Логика обычного advance + спец-обработка для финала Марины:
-const result = await advanceChatState(userId, chatType, { choiceValue });
+// lib/chat/advance.ts (фрагмент, внутри prisma.$transaction)
+const updateData: Prisma.ChatStateUpdateInput = {
+  [field]: next.id,
+  version: { increment: 1 },
+};
 
-// Если current был финальной репликой Марины (по code или специальному флагу),
-// то фиксируем finalChoice + триггерим событие для слушающих реплик
-if (chatType === 'MARINA' && currentMessage.code === 'marina_final_choice') {
-  await prisma.chatState.update({
-    where: { userId },
-    data: { finalChoice: choiceValue }, // UPPERCASE
-  });
-
-  // Триггер для реплик, которые ждут финального выбора
-  // (например, Детектив может среагировать отдельной репликой)
-  await advanceTriggerListeners(userId, 'final_choice_made');
+if (chosen.conditionType === 'CHOICE' && options.choiceValue !== undefined) {
+  playerChoices[current.code] = options.choiceValue;
+  updateData.playerChoices = playerChoices;
 }
 
-return result;
+if (current.code === MARINA_FINAL_CHOICE_CODE && options.choiceValue !== undefined) {
+  updateData.finalChoice = options.choiceValue.toUpperCase(); // UPPERCASE
+}
+
+const updated = await tx.chatState.update({
+  where: { id: state.id, version: options.expectedVersion },
+  data: updateData,
+});
+
+// Триггер для реплик, ждущих финального выбора — в той же транзакции
+let finalVersion = updated.version;
+if (current.code === MARINA_FINAL_CHOICE_CODE && options.choiceValue !== undefined) {
+  await advanceTriggerListeners(tx, userId, CHAT_TRIGGER_EVENTS.FINAL_CHOICE_MADE);
+  const fresh = await tx.chatState.findUniqueOrThrow({ where: { id: state.id } });
+  finalVersion = fresh.version; // отражает и переход выбора, и срабатывание триггера
+}
+
+// ... вернуть currentMessage + finalVersion
 ```
 
 **Альтернатива через флаг на ChatScript** — добавить `isFinalChoice: Boolean` на `ChatScript`, чтобы код не зависел от code строки. Но на старте это overhead — у нас одна финальная точка, проверка по code достаточна. Если в будущем заказчик попросит несколько финальных точек — добавим флаг.
@@ -320,22 +335,33 @@ return result;
 
 ### Кто инициирует
 
-При завершении миссии (`POST /api/missions/<type>/<slotKey>/complete`) или серверном событии (например, `POST /api/missions/rdp/<slotKey>/file-viewed` при автоматической активации триггера сценария 2) — серверный эндпоинт после своих основных действий вызывает:
+При завершении миссии (`POST /api/missions/<type>/<slotKey>/complete`) или серверном событии (например, `POST /api/missions/rdp/<slotKey>/file-viewed` при автоматической активации триггера сценария 2) — серверный эндпоинт **внутри своей транзакции** после основных действий вызывает движок, передавая транзакционный клиент `tx`:
 
 ```typescript
 import { advanceTriggerListeners } from '@/lib/chat/triggers';
 
-await advanceTriggerListeners(userId, 'crack_completed:CRACK_P2');
+await prisma.$transaction(async (tx) => {
+  // ... основные мутации эндпоинта (MissionProgress и т.п.)
+  await advanceTriggerListeners(tx, userId, CHAT_TRIGGER_EVENTS.CRACK_COMPLETED('CRACK_P2'));
+});
 ```
 
 ### Реализация
 
+Функция принимает **транзакционный клиент** `tx`, чтобы выполняться внутри транзакции вызывающего эндпоинта (например, `/choice` для `final_choice_made`) — так клиент получает итоговую `version` без ложного 409. Каждый UPDATE строки `ChatState` инкрементирует `version` (`concurrency.md` правило 2).
+
 ```typescript
 // lib/chat/triggers.ts
-import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 
-export async function advanceTriggerListeners(userId: string, triggerCode: string): Promise<void> {
-  const state = await prisma.chatState.findUnique({ where: { userId } });
+type TransactionClient = Prisma.TransactionClient;
+
+export async function advanceTriggerListeners(
+  tx: TransactionClient,
+  userId: string,
+  triggerCode: string,
+): Promise<void> {
+  const state = await tx.chatState.findUnique({ where: { userId } });
   if (!state) return;
 
   // Проверяем оба чата (DETECTIVE и MARINA) — теоретически оба могут ждать
@@ -346,7 +372,7 @@ export async function advanceTriggerListeners(userId: string, triggerCode: strin
     if (!currentId) continue;
 
     // Найти TRIGGER-переход с подходящим conditionValue из текущей реплики
-    const transition = await prisma.chatTransition.findFirst({
+    const transition = await tx.chatTransition.findFirst({
       where: {
         fromMessageId: currentId,
         conditionType: 'TRIGGER',
@@ -357,14 +383,16 @@ export async function advanceTriggerListeners(userId: string, triggerCode: strin
 
     if (!transition) continue;
 
-    const nextMessage = await prisma.chatScript.findUnique({
+    const nextMessage = await tx.chatScript.findUnique({
       where: { id: transition.toMessageId },
     });
+    if (!nextMessage) continue;
 
-    await prisma.chatState.update({
+    await tx.chatState.update({
       where: { userId },
       data: {
         [chatType === 'DETECTIVE' ? 'currentDetectiveMessageId' : 'currentMarinaMessageId']: nextMessage.id,
+        version: { increment: 1 }, // правило 2 concurrency.md: любой UPDATE ChatState инкрементирует version
         ...(nextMessage.isEnd && {
           [chatType === 'DETECTIVE' ? 'detectiveFinished' : 'marinaFinished']: true,
         }),
@@ -373,6 +401,8 @@ export async function advanceTriggerListeners(userId: string, triggerCode: strin
   }
 }
 ```
+
+> **Идемпотентность:** при повторном вызове с тем же `triggerCode` указатель уже ушёл с «ждущей» реплики, совпадающего TRIGGER-ребра нет — второго перехода не произойдёт. Двойной `/complete` или двойной `/choice` безопасны.
 
 ### Перечень триггеров
 
@@ -846,7 +876,7 @@ store/
 
 2. **`finalChoice` — UPPERCASE.** Конвенция проекта. Валидатор `GET /api/admin/report/validate` проверяет соответствие между choices Марины и `FinalReportContent.finalChoiceValue`.
 
-3. **TRIGGER-переходы НЕ срабатывают через `/advance` или `/choice` напрямую.** Только через `advanceTriggerListeners()` из миссий и других триггер-эндпоинтов. **Исключение:** в `/choice` после фиксации `finalChoice` сервер сам вызывает `advanceTriggerListeners(userId, 'final_choice_made')` — это намеренно, чтобы реплики могли реагировать на финальный выбор Марины.
+3. **TRIGGER-переходы НЕ срабатывают через `/advance` или `/choice` напрямую.** Только через `advanceTriggerListeners()` из миссий и других триггер-эндпоинтов. **Исключение:** в `/choice` после фиксации `finalChoice` сервер сам вызывает `advanceTriggerListeners(tx, userId, 'final_choice_made')` **в той же транзакции** — это намеренно, чтобы реплики могли реагировать на финальный выбор Марины, и чтобы клиент получил итоговую `version`.
 
 4. **`marinaTriggered` пишется ТОЛЬКО в `POST /api/missions/rdp/[slotKey]/file-viewed`** при автоматической активации триггера для слотов с `rdpScenario === 2`. Никаких других точек записи. Это единственный путь активации Марины.
 
@@ -872,7 +902,7 @@ store/
 
 - **`database.md`** — модели `ChatScript`, `ChatTransition`, `ChatState` описаны там; здесь только применение.
 - **`concurrency.md`** — эндпоинты `/advance` и `/choice` используют optimistic locking. Поле `version` на `ChatState` инкрементируется при UPDATE.
-- **`missions-crack.md`** — после `POST /complete` вызывает `advanceTriggerListeners(userId, 'crack_completed:<slotKey>')`.
+- **`missions-crack.md`** — после `POST /complete` вызывает `advanceTriggerListeners(tx, userId, 'crack_completed:<slotKey>')` в транзакции эндпоинта.
 - **`missions-decipher.md`** — то же с `decipher_completed:<slotKey>`.
 - **`missions-rdp.md`** — после `POST /complete` вызывает `rdp_completed:<slotKey>`. Дополнительно: `POST /file-viewed` при автоматической активации триггера для слотов `rdpScenario === 2` устанавливает `marinaTriggered=true` и вызывает `rdp_marina_triggered`.
 - **`final-report.md`** — использует `ChatState.finalChoice` для выбора `FinalReportContent` через `finalChoiceValue`.

@@ -1,10 +1,14 @@
 'use client';
 
 import type { ChatAuthor } from '@prisma/client';
+import { AudioPlayer } from '@/components/ui/AudioPlayer';
+import { TranscriptToggle } from './TranscriptToggle';
 
 interface ChatMessageProps {
+  id: string;
   author: ChatAuthor;
   text: string | null;
+  audioUrl: string | null;
 }
 
 const AUTHOR_LABEL: Record<ChatAuthor, string> = {
@@ -23,8 +27,13 @@ const IS_RIGHT: Record<ChatAuthor, boolean> = {
   PLAYER: true,
 };
 
-export function ChatMessage({ author, text }: ChatMessageProps): React.ReactElement | null {
-  if (!text) return null;
+export function ChatMessage({
+  id,
+  author,
+  text,
+  audioUrl,
+}: ChatMessageProps): React.ReactElement | null {
+  if (!text && !audioUrl) return null;
 
   const isRight = IS_RIGHT[author];
 
@@ -34,17 +43,30 @@ export function ChatMessage({ author, text }: ChatMessageProps): React.ReactElem
         {AUTHOR_LABEL[author]}:
       </span>
 
-      <div
-        className={[
-          'max-w-[85%] rounded-game-md px-4 py-3',
-          'font-mono text-game-sm leading-relaxed whitespace-pre-wrap',
-          isRight
-            ? 'bg-accent text-content-inverse'
-            : 'bg-bg-tertiary text-content-primary',
-        ].join(' ')}
-      >
-        {text}
-      </div>
+      {audioUrl ? (
+        <>
+          <div
+            className={[
+              'max-w-[85%] rounded-game-md px-4 py-3',
+              isRight ? 'bg-accent text-content-inverse' : 'bg-bg-tertiary text-content-primary',
+            ].join(' ')}
+          >
+            <AudioPlayer src={audioUrl} />
+          </div>
+
+          {text && <TranscriptToggle text={text} messageId={id} />}
+        </>
+      ) : (
+        <div
+          className={[
+            'max-w-[85%] rounded-game-md px-4 py-3',
+            'font-mono text-game-sm leading-relaxed whitespace-pre-wrap',
+            isRight ? 'bg-accent text-content-inverse' : 'bg-bg-tertiary text-content-primary',
+          ].join(' ')}
+        >
+          {text}
+        </div>
+      )}
     </div>
   );
 }

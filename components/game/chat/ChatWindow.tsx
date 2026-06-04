@@ -79,8 +79,14 @@ export function ChatWindow({ chatType }: ChatWindowProps): React.ReactElement {
           </p>
         ) : (
           slot.messages.map((msg) =>
-            msg.text ? (
-              <ChatMessage key={msg.id} author={msg.author} text={msg.text} />
+            msg.text || msg.audioUrl ? (
+              <ChatMessage
+                key={msg.id}
+                id={msg.id}
+                author={msg.author}
+                text={msg.text}
+                audioUrl={msg.audioUrl}
+              />
             ) : null,
           )
         )}
