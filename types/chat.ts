@@ -1,6 +1,6 @@
 import type { ChatAuthor, ChatType } from '@prisma/client';
 
-export type { ChatType };
+export type { ChatType, ChatAuthor };
 
 export interface ChatChoice {
   label: string;
