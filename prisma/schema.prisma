@@ -125,7 +125,7 @@ model ChatScript {
   chatType    ChatType
   author      ChatAuthor  @default(DETECTIVE)
   code        String      @unique
-  text        String
+  text        String?
   audioUrl    String?
   hasChoices  Boolean     @default(false)
   choices     Json?

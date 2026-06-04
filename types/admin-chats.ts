@@ -12,7 +12,7 @@ export interface ChatScriptListItem {
   chatType: ChatType;
   author: ChatAuthor;
   code: string;
-  text: string;
+  text: string | null;
   audioUrl: string | null;
   hasChoices: boolean;
   choices: ChatChoice[] | null;

@@ -6,11 +6,17 @@ import { useChatStore } from '@/store/chatStore';
 import { ChatMessage } from './ChatMessage';
 import { ChatAdvanceButton } from './ChatAdvanceButton';
 import { ChatChoices } from './ChatChoices';
-import type { ChatType } from '@/types/chat';
+import type { ChatAuthor, ChatType } from '@/types/chat';
 
 interface ChatWindowProps {
   chatType: ChatType;
 }
+
+const TYPING_AUTHOR_LABEL: Partial<Record<ChatAuthor, string>> = {
+  DETECTIVE: 'Детектив',
+  MARINA: 'Марина',
+  ANONYMOUS: 'Аноним',
+};
 
 export function ChatWindow({ chatType }: ChatWindowProps): React.ReactElement {
   const slot = useChatStore((s) =>
@@ -18,10 +24,10 @@ export function ChatWindow({ chatType }: ChatWindowProps): React.ReactElement {
   );
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom on new messages
+  // Scroll to bottom when new messages appear or typing indicator shows
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [slot.messages.length]);
+  }, [slot.messages.length, slot.isTyping]);
 
   if (slot.status === 'loading' && slot.messages.length === 0) {
     return (
@@ -46,6 +52,7 @@ export function ChatWindow({ chatType }: ChatWindowProps): React.ReactElement {
 
   const lastMessage = slot.messages.at(-1);
   const showChoices =
+    !slot.isTyping &&
     !slot.isWaiting &&
     !slot.isFinished &&
     lastMessage?.hasChoices === true &&
@@ -53,40 +60,53 @@ export function ChatWindow({ chatType }: ChatWindowProps): React.ReactElement {
     lastMessage.choices.length > 0;
 
   const showAdvance =
-    !slot.isWaiting && !slot.isFinished && !showChoices && slot.messages.length > 0;
+    !slot.isTyping &&
+    !slot.isWaiting &&
+    !slot.isFinished &&
+    !showChoices &&
+    slot.messages.length > 0;
+
+  const typingAuthor = slot.pendingMessage?.author;
+  const typingLabel = typingAuthor ? (TYPING_AUTHOR_LABEL[typingAuthor] ?? null) : null;
 
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-hidden">
       {/* Message feed */}
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto pr-1 scrollbar-thin">
+      <div className="chat-scrollbar flex flex-1 flex-col gap-3 overflow-y-auto pr-1">
         {slot.messages.length === 0 ? (
           <p className="py-4 text-center font-mono text-game-sm text-content-muted" role="status">
             Нет сообщений
           </p>
         ) : (
-          slot.messages.map((msg) => (
-            <ChatMessage key={msg.id} author={msg.author} text={msg.text} />
-          ))
+          slot.messages.map((msg) =>
+            msg.text ? (
+              <ChatMessage key={msg.id} author={msg.author} text={msg.text} />
+            ) : null,
+          )
         )}
 
-        {/* Waiting indicator */}
-        {slot.isWaiting && (
+        {/* Typing indicator */}
+        {slot.isTyping && typingLabel && (
           <div
-            className="flex items-center gap-2 py-1"
+            className="flex flex-col gap-1"
             role="status"
             aria-live="polite"
-            aria-label="Ожидание следующей реплики"
+            aria-label={`${typingLabel} печатает`}
           >
-            <span className="font-mono text-game-xs text-content-muted">Ожидание</span>
-            <span className="flex gap-1" aria-hidden="true">
-              {[0, 1, 2].map((i) => (
-                <span
-                  key={i}
-                  className="size-1.5 rounded-full bg-accent animate-blink"
-                  style={{ animationDelay: `${i * 0.3}s` }}
-                />
-              ))}
+            <span className="font-mono text-game-xs font-bold uppercase tracking-game-wide text-accent">
+              {typingLabel}:
             </span>
+            <div className="flex items-center gap-2 max-w-[85%] rounded-game-md px-4 py-3 bg-bg-tertiary">
+              <span className="flex gap-1" aria-hidden="true">
+                {[0, 1, 2].map((i) => (
+                  <span
+                    key={i}
+                    className="size-2 rounded-full bg-accent animate-blink"
+                    style={{ animationDelay: `${i * 0.3}s` }}
+                  />
+                ))}
+              </span>
+            </div>
           </div>
         )}
 

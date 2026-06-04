@@ -363,14 +363,31 @@
    ----------------------------------------------------------- */
 
 /* -----------------------------------------------------------
-   [GAME] — Добавить сюда при получении игровых экранов
-   Пример секции:
-
-   .hacker-terminal { ... }
-   .cipher-grid { ... }
-   .chat-bubble { ... }
-
+   [GAME] — Игровые экраны
    ----------------------------------------------------------- */
+
+/* Полоса прокрутки в панели чата */
+.chat-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: theme('colors.accent.muted') transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  background: theme('colors.accent.muted');
+  border-radius: 9999px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 204, 0.25);
+}
 
 /* -----------------------------------------------------------
    UTILITIES — Кастомные утилиты

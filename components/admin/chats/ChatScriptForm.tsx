@@ -147,7 +147,7 @@ function CreateForm({ onClose, onSaved }: CreateProps): React.ReactElement {
         />
       </Field>
 
-      <Field label="Текст реплики" error={errors.text?.message}>
+      <Field label="Текст реплики (необязательно)" error={errors.text?.message}>
         <textarea
           {...register('text')}
           rows={4}
@@ -192,7 +192,7 @@ function EditForm({ script, onClose, onSaved }: EditProps): React.ReactElement {
     resolver: zodResolver(updateScriptSchema),
     defaultValues: {
       author: script.author,
-      text: script.text,
+      text: script.text ?? '',
       hasChoices: script.hasChoices,
       isStart: script.isStart,
       isEnd: script.isEnd,
@@ -206,7 +206,7 @@ function EditForm({ script, onClose, onSaved }: EditProps): React.ReactElement {
   useEffect(() => {
     reset({
       author: script.author,
-      text: script.text,
+      text: script.text ?? '',
       hasChoices: script.hasChoices,
       isStart: script.isStart,
       isEnd: script.isEnd,
@@ -275,7 +275,7 @@ function EditForm({ script, onClose, onSaved }: EditProps): React.ReactElement {
         />
       </Field>
 
-      <Field label="Текст реплики" error={errors.text?.message}>
+      <Field label="Текст реплики (необязательно)" error={errors.text?.message}>
         <textarea
           {...register('text')}
           rows={4}

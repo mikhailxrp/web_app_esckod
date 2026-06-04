@@ -10,7 +10,7 @@ export interface ChatChoice {
 export interface ChatMessageView {
   id: string;
   code: string;
-  text: string;
+  text: string | null;
   author: ChatAuthor;
   audioUrl: string | null;
   hasChoices: boolean;
