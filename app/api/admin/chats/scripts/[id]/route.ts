@@ -46,7 +46,7 @@ function serializeScript(script: {
   chatType: string;
   author: string;
   code: string;
-  text: string;
+  text: string | null;
   audioUrl: string | null;
   hasChoices: boolean;
   choices: Prisma.JsonValue;
@@ -131,7 +131,7 @@ export async function PATCH(
   const updateData: Prisma.ChatScriptUpdateInput = {};
 
   if (author !== undefined) updateData.author = author;
-  if (text !== undefined) updateData.text = text;
+  if (text !== undefined) updateData.text = text?.trim() || null;
   if (hasChoices !== undefined) updateData.hasChoices = hasChoices;
   if (isStart !== undefined) updateData.isStart = isStart;
   if (isEnd !== undefined) updateData.isEnd = isEnd;

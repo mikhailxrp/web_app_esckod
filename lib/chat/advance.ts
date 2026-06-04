@@ -10,7 +10,7 @@ const MARINA_FINAL_CHOICE_CODE = 'marina_final_choice';
 export interface ChatMessageView {
   id: string;
   code: string;
-  text: string;
+  text: string | null;
   author: ChatAuthor;
   audioUrl: string | null;
   hasChoices: boolean;

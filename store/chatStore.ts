@@ -7,6 +7,24 @@ import { toast } from '@/components/ui/Toast';
 import type { ChatMessageView, ChatType } from '@/types/chat';
 
 // =============================================================
+// Constants
+// =============================================================
+
+const TYPING_DELAY_MS = 2500;
+
+// Module-level timer storage — outside store state to avoid serialisation issues
+const typingTimers: Partial<Record<ChatType, ReturnType<typeof setTimeout>>> = {};
+
+function clearTypingTimer(chatType: ChatType): void {
+  const existing = typingTimers[chatType];
+
+  if (existing !== undefined) {
+    clearTimeout(existing);
+    delete typingTimers[chatType];
+  }
+}
+
+// =============================================================
 // Types
 // =============================================================
 
@@ -14,6 +32,9 @@ type SlotStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 interface ChatSlotState {
   messages: ChatMessageView[];
+  isTyping: boolean;
+  pendingMessage: ChatMessageView | null;
+  unreadCount: number;
   isWaiting: boolean;
   isFinished: boolean;
   isVisible: boolean;
@@ -29,6 +50,7 @@ interface ChatStore {
   refresh: () => Promise<void>;
   advance: (chatType: ChatType) => Promise<void>;
   choice: (chatType: ChatType, value: string) => Promise<void>;
+  markRead: (chatType: ChatType) => void;
 }
 
 // =============================================================
@@ -66,11 +88,54 @@ interface AdvanceResponse {
 
 const INITIAL_SLOT: ChatSlotState = {
   messages: [],
+  isTyping: false,
+  pendingMessage: null,
+  unreadCount: 0,
   isWaiting: false,
   isFinished: false,
   isVisible: false,
   status: 'idle',
 };
+
+// =============================================================
+// Helpers
+// =============================================================
+
+function slotKey(chatType: ChatType): 'detective' | 'marina' {
+  return chatType === 'DETECTIVE' ? 'detective' : 'marina';
+}
+
+// Commit the pending message to the visible list after typing delay
+function schedulePendingMessage(
+  chatType: ChatType,
+  messageId: string,
+): void {
+  clearTypingTimer(chatType);
+
+  typingTimers[chatType] = setTimeout(() => {
+    delete typingTimers[chatType];
+
+    useChatStore.setState((s) => {
+      const key = slotKey(chatType);
+      const current = s[key];
+
+      // Guard: only commit if the pending message is still the one we scheduled
+      if (!current.pendingMessage || current.pendingMessage.id !== messageId) {
+        return s;
+      }
+
+      return {
+        [key]: {
+          ...current,
+          messages: [...current.messages, current.pendingMessage],
+          isTyping: false,
+          pendingMessage: null,
+          unreadCount: current.unreadCount + 1,
+        },
+      };
+    });
+  }, TYPING_DELAY_MS);
+}
 
 // =============================================================
 // Store
@@ -84,6 +149,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   error: null,
 
   refresh: async () => {
+    // Cancel any pending typing timers before overwriting state
+    clearTypingTimer('DETECTIVE');
+    clearTypingTimer('MARINA');
+
     set((s) => ({
       detective: { ...s.detective, status: 'loading' },
       marina: { ...s.marina, status: 'loading' },
@@ -121,6 +190,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         finalChoice: state.finalChoice,
         detective: {
           messages: detectiveMessages,
+          isTyping: false,
+          pendingMessage: null,
+          unreadCount: 0,
           isWaiting: state.detective.isWaiting,
           isFinished: state.detective.isFinished,
           isVisible: true,
@@ -128,6 +200,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         },
         marina: {
           messages: marinaMessages,
+          isTyping: false,
+          pendingMessage: null,
+          unreadCount: 0,
           isWaiting: state.marina.isWaiting,
           isFinished: state.marina.isFinished,
           isVisible: state.marina.isVisible,
@@ -153,7 +228,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     if (slot.status === 'loading') return;
 
     set((s) => ({
-      [chatType === 'DETECTIVE' ? 'detective' : 'marina']: {
+      [slotKey(chatType)]: {
         ...(chatType === 'DETECTIVE' ? s.detective : s.marina),
         status: 'loading',
       },
@@ -167,7 +242,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
       if (response.status === 409) {
         set((s) => ({
-          [chatType === 'DETECTIVE' ? 'detective' : 'marina']: {
+          [slotKey(chatType)]: {
             ...(chatType === 'DETECTIVE' ? s.detective : s.marina),
             status: 'ready',
           },
@@ -185,17 +260,50 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       const data = (await response.json()) as AdvanceResponse;
 
       set((s) => {
-        const current = chatType === 'DETECTIVE' ? s.detective : s.marina;
+        const current = s[slotKey(chatType)];
         const lastId = current.messages.at(-1)?.id;
         const shouldAppend = data.currentMessage.id !== lastId;
 
+        if (!shouldAppend) {
+          return {
+            version: data.version,
+            [slotKey(chatType)]: {
+              ...current,
+              isWaiting: data.isWaiting,
+              isFinished: data.isFinished,
+              status: 'ready',
+            },
+          };
+        }
+
+        // Skip typing delay: first message or choices prompt (no text to "type")
+        const skipTyping =
+          current.messages.length === 0 || data.currentMessage.hasChoices;
+
+        if (skipTyping) {
+          const isFirstMessage = current.messages.length === 0;
+          return {
+            version: data.version,
+            [slotKey(chatType)]: {
+              ...current,
+              messages: [...current.messages, data.currentMessage],
+              unreadCount: isFirstMessage ? current.unreadCount : current.unreadCount + 1,
+              isWaiting: data.isWaiting,
+              isFinished: data.isFinished,
+              status: 'ready',
+            },
+          };
+        }
+
+        // Show typing indicator, commit message after delay
+        schedulePendingMessage(chatType, data.currentMessage.id);
+
         return {
           version: data.version,
-          [chatType === 'DETECTIVE' ? 'detective' : 'marina']: {
+          [slotKey(chatType)]: {
             ...current,
-            messages: shouldAppend
-              ? [...current.messages, data.currentMessage]
-              : current.messages,
+            isTyping: true,
+            pendingMessage: data.currentMessage,
             isWaiting: data.isWaiting,
             isFinished: data.isFinished,
             status: 'ready',
@@ -216,7 +324,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     if (slot.status === 'loading') return;
 
     set((s) => ({
-      [chatType === 'DETECTIVE' ? 'detective' : 'marina']: {
+      [slotKey(chatType)]: {
         ...(chatType === 'DETECTIVE' ? s.detective : s.marina),
         status: 'loading',
       },
@@ -230,7 +338,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
       if (response.status === 409) {
         set((s) => ({
-          [chatType === 'DETECTIVE' ? 'detective' : 'marina']: {
+          [slotKey(chatType)]: {
             ...(chatType === 'DETECTIVE' ? s.detective : s.marina),
             status: 'ready',
           },
@@ -248,18 +356,66 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       const data = (await response.json()) as AdvanceResponse;
 
       set((s) => {
-        const current = chatType === 'DETECTIVE' ? s.detective : s.marina;
-        const lastId = current.messages.at(-1)?.id;
+        const current = s[slotKey(chatType)];
+        const lastMessage = current.messages.at(-1);
+
+        const chosenLabel =
+          lastMessage?.choices?.find((c) => c.value === value)?.label ?? value;
+
+        const playerMessage: ChatMessageView = {
+          id: `${lastMessage?.id ?? 'unknown'}_player`,
+          code: `${lastMessage?.code ?? 'unknown'}_player`,
+          text: chosenLabel,
+          author: 'PLAYER',
+          audioUrl: null,
+          hasChoices: false,
+          choices: null,
+          isEnd: false,
+        };
+
+        const lastId = lastMessage?.id;
         const shouldAppend = data.currentMessage.id !== lastId;
+
+        if (!shouldAppend) {
+          return {
+            version: data.version,
+            [slotKey(chatType)]: {
+              ...current,
+              messages: [...current.messages, playerMessage],
+              isWaiting: data.isWaiting,
+              isFinished: data.isFinished,
+              status: 'ready',
+            },
+          };
+        }
+
+        // Skip typing delay for choices prompt (no text to "type")
+        if (data.currentMessage.hasChoices) {
+          return {
+            version: data.version,
+            finalChoice: chatType === 'MARINA' ? (s.finalChoice ?? null) : s.finalChoice,
+            [slotKey(chatType)]: {
+              ...current,
+              messages: [...current.messages, playerMessage, data.currentMessage],
+              unreadCount: current.unreadCount + 1,
+              isWaiting: data.isWaiting,
+              isFinished: data.isFinished,
+              status: 'ready',
+            },
+          };
+        }
+
+        // Player reply → immediate; NPC text response → typing delay
+        schedulePendingMessage(chatType, data.currentMessage.id);
 
         return {
           version: data.version,
           finalChoice: chatType === 'MARINA' ? (s.finalChoice ?? null) : s.finalChoice,
-          [chatType === 'DETECTIVE' ? 'detective' : 'marina']: {
+          [slotKey(chatType)]: {
             ...current,
-            messages: shouldAppend
-              ? [...current.messages, data.currentMessage]
-              : current.messages,
+            messages: [...current.messages, playerMessage],
+            isTyping: true,
+            pendingMessage: data.currentMessage,
             isWaiting: data.isWaiting,
             isFinished: data.isFinished,
             status: 'ready',
@@ -271,5 +427,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       toast.error('Ошибка соединения');
       await refresh();
     }
+  },
+
+  markRead: (chatType) => {
+    set((s) => ({
+      [slotKey(chatType)]: {
+        ...s[slotKey(chatType)],
+        unreadCount: 0,
+      },
+    }));
   },
 }));

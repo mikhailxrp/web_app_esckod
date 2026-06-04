@@ -38,7 +38,8 @@ const FILTER_OPTIONS: { value: FilterValue; label: string }[] = [
   { value: 'MARINA', label: 'Марина' },
 ];
 
-function truncate(text: string, max = 60): string {
+function truncate(text: string | null, max = 60): string {
+  if (!text) return '—';
   return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 

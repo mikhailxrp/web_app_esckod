@@ -4,7 +4,7 @@ import type { ChatAuthor } from '@prisma/client';
 
 interface ChatMessageProps {
   author: ChatAuthor;
-  text: string;
+  text: string | null;
 }
 
 const AUTHOR_LABEL: Record<ChatAuthor, string> = {
@@ -23,7 +23,9 @@ const IS_RIGHT: Record<ChatAuthor, boolean> = {
   PLAYER: true,
 };
 
-export function ChatMessage({ author, text }: ChatMessageProps): React.ReactElement {
+export function ChatMessage({ author, text }: ChatMessageProps): React.ReactElement | null {
+  if (!text) return null;
+
   const isRight = IS_RIGHT[author];
 
   return (
@@ -35,7 +37,7 @@ export function ChatMessage({ author, text }: ChatMessageProps): React.ReactElem
       <div
         className={[
           'max-w-[85%] rounded-game-md px-4 py-3',
-          'font-mono text-game-sm leading-relaxed',
+          'font-mono text-game-sm leading-relaxed whitespace-pre-wrap',
           isRight
             ? 'bg-accent text-content-inverse'
             : 'bg-bg-tertiary text-content-primary',

@@ -34,7 +34,7 @@ export const createScriptSchema = z
     chatType: z.enum(['DETECTIVE', 'MARINA']),
     author: chatAuthorSchema.default('DETECTIVE'),
     code: z.string().min(1, 'Код обязателен'),
-    text: z.string().min(1, 'Текст обязателен'),
+    text: z.string().optional(),
     hasChoices: z.boolean().default(false),
     isStart: z.boolean().default(false),
     isEnd: z.boolean().default(false),
@@ -49,7 +49,7 @@ export const createScriptSchema = z
 export const updateScriptSchema = z
   .object({
     author: chatAuthorSchema.optional(),
-    text: z.string().min(1, 'Текст обязателен').optional(),
+    text: z.string().optional(),
     hasChoices: z.boolean().optional(),
     isStart: z.boolean().optional(),
     isEnd: z.boolean().optional(),

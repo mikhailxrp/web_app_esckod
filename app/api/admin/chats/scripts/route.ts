@@ -46,7 +46,7 @@ function serializeScript(script: {
   chatType: string;
   author: string;
   code: string;
-  text: string;
+  text: string | null;
   audioUrl: string | null;
   hasChoices: boolean;
   choices: Prisma.JsonValue;
@@ -122,7 +122,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         chatType,
         author,
         code,
-        text,
+        text: text?.trim() || null,
         hasChoices,
         isStart,
         isEnd,

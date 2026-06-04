@@ -5,6 +5,30 @@ import { ChatScript, ChatType } from '@prisma/client';
 import { toChatMessageView, type ChatMessageView } from '@/lib/chat/advance';
 import { prisma } from '@/lib/prisma';
 
+function makePlayerChoiceMessage(
+  messageView: ChatMessageView,
+  playerChoices: Record<string, string>,
+): ChatMessageView | null {
+  if (!messageView.hasChoices || !messageView.choices) return null;
+
+  const chosenValue = playerChoices[messageView.code];
+  if (chosenValue === undefined) return null;
+
+  const chosenLabel = messageView.choices.find((c) => c.value === chosenValue)?.label;
+  if (!chosenLabel) return null;
+
+  return {
+    id: `${messageView.id}_player`,
+    code: `${messageView.code}_player`,
+    text: chosenLabel,
+    author: 'PLAYER',
+    audioUrl: null,
+    hasChoices: false,
+    choices: null,
+    isEnd: false,
+  };
+}
+
 const MAX_HISTORY_WALK_ITERATIONS = 500;
 
 function parsePlayerChoices(raw: unknown): Record<string, string> {
@@ -91,7 +115,13 @@ export async function getChatHistory(
     }
 
     const playerChoices = parsePlayerChoices(state.playerChoices);
-    const history: ChatMessageView[] = [toChatMessageView(start)];
+
+    const startView = toChatMessageView(start);
+    const history: ChatMessageView[] = [startView];
+
+    const startPlayerMessage = makePlayerChoiceMessage(startView, playerChoices);
+    if (startPlayerMessage) history.push(startPlayerMessage);
+
     const visited = new Set<string>([start.id]);
 
     let current: ChatScript = start;
@@ -107,7 +137,12 @@ export async function getChatHistory(
       }
 
       visited.add(next.id);
-      history.push(toChatMessageView(next));
+      const nextView = toChatMessageView(next);
+      history.push(nextView);
+
+      const playerMessage = makePlayerChoiceMessage(nextView, playerChoices);
+      if (playerMessage) history.push(playerMessage);
+
       current = next;
     }
 
