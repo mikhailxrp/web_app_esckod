@@ -16,6 +16,9 @@ out/
 dist/
 build/
 
+# TypeScript
+tsconfig.tsbuildinfo
+
 # Debug logs
 npm-debug.log*
 yarn-debug.log*
@@ -43,5 +46,5 @@ current-pipeline.md
 TASK.md
 TASK-example.md
 .cursor/
-fsmall-fix.md
+example-sql.md
 
