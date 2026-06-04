@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { ChatScript, ChatState, ChatTransition, ChatType, Prisma } from '@prisma/client';
+import { ChatAuthor, ChatScript, ChatState, ChatTransition, ChatType, Prisma } from '@prisma/client';
 
 import { prisma } from '@/lib/prisma';
 import { parseChoices, type ChatChoice } from '@/lib/validations/admin-chats';
@@ -11,6 +11,7 @@ export interface ChatMessageView {
   id: string;
   code: string;
   text: string;
+  author: ChatAuthor;
   audioUrl: string | null;
   hasChoices: boolean;
   choices: ChatChoice[] | null;
@@ -83,6 +84,7 @@ export function toChatMessageView(script: ChatScript): ChatMessageView {
     id: script.id,
     code: script.code,
     text: script.text,
+    author: script.author,
     audioUrl: script.audioUrl,
     hasChoices: script.hasChoices,
     choices: script.hasChoices ? parseChoices(script.choices) : null,
