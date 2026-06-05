@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import type { ChatAuthor } from '@prisma/client';
 import { AudioPlayer } from '@/components/ui/AudioPlayer';
 import { TranscriptToggle } from './TranscriptToggle';
@@ -26,6 +27,30 @@ const IS_RIGHT: Record<ChatAuthor, boolean> = {
   ANONYMOUS: false,
   PLAYER: true,
 };
+
+const URL_PATTERN = /(https?:\/\/[^\s]+)/g;
+
+function renderTextWithLinks(text: string): ReactNode[] {
+  const parts = text.split(URL_PATTERN);
+
+  return parts.map((part, index) => {
+    if (/^https?:\/\/[^\s]+$/.test(part)) {
+      return (
+        <a
+          key={index}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline text-accent hover:opacity-80 break-all"
+        >
+          {part}
+        </a>
+      );
+    }
+
+    return part;
+  });
+}
 
 export function ChatMessage({
   id,
@@ -64,7 +89,7 @@ export function ChatMessage({
             isRight ? 'bg-accent text-content-inverse' : 'bg-bg-tertiary text-content-primary',
           ].join(' ')}
         >
-          {text}
+          {text ? renderTextWithLinks(text) : null}
         </div>
       )}
     </div>

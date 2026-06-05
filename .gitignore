@@ -46,5 +46,9 @@ current-pipeline.md
 TASK.md
 TASK-example.md
 .cursor/
-example-sql.md
+
+# debug module
+app/api/debug/
+components/game/chat/DebugTriggerPanel.tsx
+debug-module.md
 

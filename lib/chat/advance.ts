@@ -2,6 +2,8 @@ import 'server-only';
 
 import { ChatAuthor, ChatScript, ChatState, ChatTransition, ChatType, Prisma } from '@prisma/client';
 
+import { CHAT_TRIGGER_EVENTS } from '@/constants/chatTriggerEvents';
+import { advanceTriggerListeners } from '@/lib/chat/triggers';
 import { prisma } from '@/lib/prisma';
 import { parseChoices, type ChatChoice } from '@/lib/validations/admin-chats';
 
@@ -339,7 +341,6 @@ export async function advanceChatState(
 
       if (current.code === MARINA_FINAL_CHOICE_CODE && options.choiceValue !== undefined) {
         updateData.finalChoice = options.choiceValue.toUpperCase();
-        // TODO Phase 7: advanceTriggerListeners(userId, CHAT_TRIGGER_EVENTS.FINAL_CHOICE_MADE)
       }
 
       if (next.isEnd) {
@@ -358,12 +359,20 @@ export async function advanceChatState(
 
         const isWaiting = next.isEnd ? false : await messageIsWaitingOnly(tx, next.id);
 
+        let finalVersion = updated.version;
+
+        if (current.code === MARINA_FINAL_CHOICE_CODE && options.choiceValue !== undefined) {
+          await advanceTriggerListeners(tx, userId, CHAT_TRIGGER_EVENTS.FINAL_CHOICE_MADE);
+          const fresh = await tx.chatState.findUniqueOrThrow({ where: { id: state.id } });
+          finalVersion = fresh.version;
+        }
+
         return {
           status: 'ok',
           currentMessage: toChatMessageView(next),
           isWaiting,
           isFinished: next.isEnd,
-          version: updated.version,
+          version: finalVersion,
         };
       } catch (error) {
         if (isPrismaRecordNotFound(error)) {

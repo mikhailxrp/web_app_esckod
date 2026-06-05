@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/lib/auth';
 import { getChatHistory } from '@/lib/chat/history';
+import { applyTemplateToView } from '@/lib/chat/template';
+import { prisma } from '@/lib/prisma';
 import { messagesQuerySchema } from '@/lib/validations/chat';
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
@@ -22,7 +24,15 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
   try {
     const messages = await getChatHistory(session.user.id, parsed.data.chatType);
-    return NextResponse.json({ messages });
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id: session.user.id },
+      select: { email: true },
+    });
+    const vars = { email: user.email };
+
+    return NextResponse.json({
+      messages: messages.map((message) => applyTemplateToView(message, vars)),
+    });
   } catch (error) {
     console.error('[GET /api/chat/messages]', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

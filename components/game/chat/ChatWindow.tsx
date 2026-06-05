@@ -14,7 +14,7 @@ interface ChatWindowProps {
 
 const TYPING_AUTHOR_LABEL: Partial<Record<ChatAuthor, string>> = {
   DETECTIVE: 'Детектив',
-  MARINA: 'Марина',
+  MARINA: 'Аноним',
   ANONYMOUS: 'Аноним',
 };
 

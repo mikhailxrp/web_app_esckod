@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { auth } from '@/lib/auth';
 import { advanceChatState, type AdvanceResult } from '@/lib/chat/advance';
+import { applyTemplateToAdvanceResult } from '@/lib/chat/template';
+import { prisma } from '@/lib/prisma';
 import { advanceSchema } from '@/lib/validations/chat';
 
 function mapAdvanceResult(result: AdvanceResult): NextResponse {
@@ -63,8 +65,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const result = await advanceChatState(session.user.id, parsed.data.chatType, {
       expectedVersion: parsed.data.expectedVersion,
     });
+    const user = await prisma.user.findUniqueOrThrow({
+      where: { id: session.user.id },
+      select: { email: true },
+    });
 
-    return mapAdvanceResult(result);
+    return mapAdvanceResult(applyTemplateToAdvanceResult(result, { email: user.email }));
   } catch (error) {
     console.error('[POST /api/chat/advance]', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

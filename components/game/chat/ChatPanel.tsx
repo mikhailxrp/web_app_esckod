@@ -13,11 +13,11 @@ interface ChatPanelProps {
 
 const CHAT_LABEL: Record<ChatType, string> = {
   DETECTIVE: 'Детектив',
-  MARINA: 'Марина',
+  MARINA: 'Аноним',
 };
 
 export function ChatPanel({ chatType }: ChatPanelProps): React.ReactElement {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(chatType !== 'MARINA');
 
   const unreadCount = useChatStore((s) =>
     chatType === 'DETECTIVE' ? s.detective.unreadCount : s.marina.unreadCount,
@@ -34,7 +34,12 @@ export function ChatPanel({ chatType }: ChatPanelProps): React.ReactElement {
   const hasUnread = !isOpen && unreadCount > 0;
 
   return (
-    <div className="flex flex-col rounded-game-md border border-border bg-bg-secondary overflow-hidden">
+    <div
+      className={[
+        'flex flex-col rounded-game-md border bg-bg-secondary overflow-hidden',
+        hasUnread ? 'border-border animate-chat-notify' : 'border-border',
+      ].join(' ')}
+    >
       {/* Header / toggle bar */}
       <button
         type="button"
