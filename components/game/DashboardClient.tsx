@@ -6,6 +6,7 @@ import { StatusBar } from "@/components/game/StatusBar";
 import { MissionCard } from "@/components/game/MissionCard";
 import { OperationHistory } from "@/components/game/operation-log/OperationHistory";
 import { ChatPanel } from "@/components/game/chat/ChatPanel";
+import { LogoutButton } from "@/components/auth/LogoutButton";
 import { useChatStore } from "@/store/chatStore";
 import { GAME_TARGET_NAME } from "@/constants/gameConfig";
 
@@ -31,19 +32,22 @@ export function DashboardClient({
 
   return (
     <div className="flex min-h-screen flex-col gap-6 px-11 py-6">
-      {/* Top bar: status + hint */}
+      {/* Top bar: status + hint + logout */}
       <div className="flex items-start justify-between gap-4">
         <StatusBar targetName={GAME_TARGET_NAME} />
 
-        {/* Подсказка — Phase 9 placeholder */}
-        <button
-          type="button"
-          disabled
-          aria-label="Подсказка (недоступно)"
-          className="rounded-game-md border border-border px-6 py-2.5 font-mono text-game-sm uppercase tracking-game-wide text-content-primary opacity-70 cursor-not-allowed"
-        >
-          Подсказка
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Подсказка — Phase 9 placeholder */}
+          <button
+            type="button"
+            disabled
+            aria-label="Подсказка (недоступно)"
+            className="rounded-game-md border border-border px-6 py-2.5 font-mono text-game-sm uppercase tracking-game-wide text-content-primary opacity-70 cursor-not-allowed"
+          >
+            Подсказка
+          </button>
+          <LogoutButton />
+        </div>
       </div>
 
       {/* Main grid: left column + right sidebar */}

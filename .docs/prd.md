@@ -367,7 +367,7 @@ Singleton-таблица. Хранит: `defaultMarketingConsent` (дефолт 
 
 - HTML5 audio в сообщениях
 - Кнопка «Показать расшифровку» под каждым аудио (accessibility для слабослышащих) — см. `.docs/modules/chats.md` → раздел «Расшифровка аудио (accessibility)»
-- TRIGGER-переходы (ожидание `mission_completed:CRACK_P2` и т.д.)
+- TRIGGER-переходы (ожидание `crack_completed:CRACK_P2`, `decipher_completed:*`, `rdp_completed:*` и т.д.)
 - Активация чата Марины через `GameProgress.marinaTriggered`
 
 ### Фаза 8 — Админка: подсказки Детектива

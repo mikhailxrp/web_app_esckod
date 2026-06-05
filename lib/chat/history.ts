@@ -56,6 +56,8 @@ async function findNextHistoryMessage(
     orderBy: { priority: 'desc' },
   });
 
+  let firstTriggerToMessageId: string | null = null;
+
   for (const transition of transitions) {
     if (transition.conditionType === 'ALWAYS') {
       return prisma.chatScript.findUnique({
@@ -72,6 +74,17 @@ async function findNextHistoryMessage(
         });
       }
     }
+
+    if (transition.conditionType === 'TRIGGER' && firstTriggerToMessageId === null) {
+      firstTriggerToMessageId = transition.toMessageId;
+    }
+  }
+
+  // TRIGGER-переходы в истории: если узел не имеет ALWAYS/CHOICE,
+  // но имеет TRIGGER — значит триггер уже сработал (мы строим историю
+  // до точки ПОСЛЕ этого узла). Следуем первому TRIGGER-переходу.
+  if (firstTriggerToMessageId !== null) {
+    return prisma.chatScript.findUnique({ where: { id: firstTriggerToMessageId } });
   }
 
   return null;
