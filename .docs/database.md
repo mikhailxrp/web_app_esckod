@@ -39,6 +39,13 @@ enum ChatType {
   MARINA
 }
 
+enum ChatAuthor {
+  DETECTIVE   // реплика от лица Детектива
+  PLAYER      // реплика/выбор от лица игрока
+  MARINA      // реплика от лица Марины
+  ANONYMOUS   // реплика от неизвестного отправителя
+}
+
 enum ConditionType {
   ALWAYS    // безусловный переход (линейный диалог)
   CHOICE    // переход после выбора игрока (conditionValue = value из choices)
@@ -58,6 +65,8 @@ enum CipherType {
 ```
 
 **Почему `CipherType` — настоящий enum, а не строка:** в проектной документации это исторически было `String?` с комментарием «PLAYFAIR VIGENERE». Это ловушка: админ может через UI сохранить строчные `playfair` или с опечаткой — и весь Decipher-флоу для этого слота сломается на сервере. Enum в БД блокирует невалидные значения на уровне записи.
+
+**Зачем `ChatAuthor` отдельно от `ChatType`:** `chatType` определяет, к какому чату относится реплика (ветка Детектива или Марины), а `author` — от чьего лица она показывается в UI этого чата. Это разные оси: внутри чата Марины могут встречаться реплики игрока (`PLAYER`) или анонимного отправителя (`ANONYMOUS`), а не только самой Марины. Игровой рендеринг (Phase 6–7) использует `author` для выравнивания/стилизации «пузырей» сообщений (свои/чужие) и подписи отправителя. Значение по умолчанию — `DETECTIVE`.
 
 ---
 
@@ -235,17 +244,18 @@ model OperationLog {
 
 ```prisma
 model ChatScript {
-  id          String    @id @default(cuid())
+  id          String      @id @default(cuid())
   chatType    ChatType
-  code        String    @unique  // машинное имя: "detective_greeting", "marina_intro", "ending_protect"
-  text        String    // текст реплики
-  audioUrl    String?   // ссылка на файл в Beget Cloud Storage
-  hasChoices  Boolean   @default(false)  // есть ли варианты ответов игрока
-  choices     Json?     // [{ "label": "Юристы", "value": "lawyers" }, ...]
-  isStart     Boolean   @default(false)  // entry point чата (одна на chatType)
-  isEnd       Boolean   @default(false)  // финальная реплика (после неё чат завершён)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  author      ChatAuthor  @default(DETECTIVE)  // от чьего лица показывается реплика (для рендеринга UI чата)
+  code        String      @unique  // машинное имя: "detective_greeting", "marina_intro", "ending_protect"
+  text        String      // текст реплики
+  audioUrl    String?     // ссылка на файл в Beget Cloud Storage
+  hasChoices  Boolean     @default(false)  // есть ли варианты ответов игрока
+  choices     Json?       // [{ "label": "Юристы", "value": "lawyers" }, ...]
+  isStart     Boolean     @default(false)  // entry point чата (одна на chatType)
+  isEnd       Boolean     @default(false)  // финальная реплика (после неё чат завершён)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   outgoingTransitions    ChatTransition[] @relation("FromMessage")
   incomingTransitions    ChatTransition[] @relation("ToMessage")
@@ -261,6 +271,7 @@ model ChatScript {
 
 **Ключевые поля:**
 
+- `author` — от чьего лица показывается реплика (`DETECTIVE` / `PLAYER` / `MARINA` / `ANONYMOUS`). Независим от `chatType`: внутри одного чата могут чередоваться реплики разных авторов. Используется только для рендеринга UI чата (выравнивание и стиль «пузыря», подпись отправителя), на логику переходов не влияет. Default — `DETECTIVE`.
 - `code` (UNIQUE) — машинное имя для API, логов, отладки. Пример: `"detective_after_p2_crack"` понятнее, чем CUID.
 - `choices` — структура `{label, value}`. `label` для UI (видит игрок), `value` для логики переходов (используется в `ChatTransition.conditionValue`). Это позволяет переименовать кнопку без поломки условий переходов.
 - `isStart` — точка входа в чат. Сервер при первом обращении к чату ищет реплику с `isStart=true` для нужного `chatType`.
@@ -956,6 +967,10 @@ AdminAuditLog            (аудит — без каскада, пережива
 ---
 
 ### 7. `DetectiveHint` — минимум одна заглушка
+
+> **Статус: ⏳ ещё не в `prisma/seed.ts`.** Функция `seedDetectiveHint()` добавляется в **Phase 8 / Task 1** (вместе с CRUD подсказок). До этого момента таблица `DetectiveHint` пуста — это ожидаемо и ничего не ломает: модель не используется в фазах 0–7. Не путать с уже реализованными сидерами (`seedAdminUser`, `seedAppSettings`, `seedMissionSlots`, `seedChatGraph`, `seedFinalReportContent`).
+
+Целевой вид сидера (реализовать в Phase 8 / Task 1):
 
 ```typescript
 await prisma.detectiveHint.upsert({

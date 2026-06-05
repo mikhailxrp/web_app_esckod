@@ -22,6 +22,7 @@ jobs:
             git pull origin dev
             npm install
             ./node_modules/.bin/prisma migrate deploy
+            ./node_modules/.bin/prisma generate
             npm run build
             pm2 restart esckod-dev || pm2 start /root/.nvm/versions/node/v20.20.2/bin/node --name "esckod-dev" -- /apps/esckod-dev/node_modules/.bin/next start -p 3001
             pm2 save

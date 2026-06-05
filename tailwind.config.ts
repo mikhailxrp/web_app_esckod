@@ -240,6 +240,11 @@ const config: Config = {
           "0%": { opacity: "0", transform: "scale(0.95) translateY(-10px)" },
           "100%": { opacity: "1", transform: "scale(1) translateY(0)" },
         },
+
+        "chat-notify": {
+          "0%, 100%": { borderColor: "rgba(255,255,255,0.1)" },
+          "50%": { borderColor: "#00E5CC" },
+        },
       },
 
       animation: {
@@ -250,6 +255,7 @@ const config: Config = {
         "modal-backdrop": "modal-backdrop 0.2s ease forwards",
         "modal-panel":
           "modal-panel 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "chat-notify": "chat-notify 1.2s ease-in-out infinite",
         // [DASHBOARD] — добавить glitch, scanline
       },
 

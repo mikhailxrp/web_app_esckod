@@ -20,6 +20,13 @@ enum ChatType {
   MARINA
 }
 
+enum ChatAuthor {
+  DETECTIVE
+  PLAYER
+  MARINA
+  ANONYMOUS
+}
+
 enum ConditionType {
   ALWAYS
   CHOICE
@@ -114,17 +121,18 @@ model OperationLog {
 // ==================== CHATS ====================
 
 model ChatScript {
-  id          String    @id @default(cuid())
+  id          String      @id @default(cuid())
   chatType    ChatType
-  code        String    @unique
-  text        String
+  author      ChatAuthor  @default(DETECTIVE)
+  code        String      @unique
+  text        String?
   audioUrl    String?
-  hasChoices  Boolean   @default(false)
+  hasChoices  Boolean     @default(false)
   choices     Json?
-  isStart     Boolean   @default(false)
-  isEnd       Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  isStart     Boolean     @default(false)
+  isEnd       Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   outgoingTransitions    ChatTransition[] @relation("FromMessage")
   incomingTransitions    ChatTransition[] @relation("ToMessage")
