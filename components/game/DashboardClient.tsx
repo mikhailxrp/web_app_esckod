@@ -7,6 +7,7 @@ import { MissionCard } from "@/components/game/MissionCard";
 import { OperationHistory } from "@/components/game/operation-log/OperationHistory";
 import { ChatPanel } from "@/components/game/chat/ChatPanel";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { DetectiveHintsButton } from "@/components/game/hints/DetectiveHintsButton";
 import { useChatStore } from "@/store/chatStore";
 import { GAME_TARGET_NAME } from "@/constants/gameConfig";
 
@@ -37,15 +38,7 @@ export function DashboardClient({
         <StatusBar targetName={GAME_TARGET_NAME} />
 
         <div className="flex items-center gap-3">
-          {/* Подсказка — Phase 9 placeholder */}
-          <button
-            type="button"
-            disabled
-            aria-label="Подсказка (недоступно)"
-            className="rounded-game-md border border-border px-6 py-2.5 font-mono text-game-sm uppercase tracking-game-wide text-content-primary opacity-70 cursor-not-allowed"
-          >
-            Подсказка
-          </button>
+          <DetectiveHintsButton />
           <LogoutButton />
         </div>
       </div>
