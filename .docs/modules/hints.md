@@ -439,7 +439,7 @@ lib/
     └── service.ts                             # getCurrentHint(userId), advanceHint(userId)
 
 # Изменения в существующих файлах:
-components/game/dashboard/DashboardClient.tsx  # добавление <DetectiveHintsButton />
+components/game/DashboardClient.tsx            # замена disabled-заглушки кнопки на <DetectiveHintsButton />
 ```
 
 **Серверный rate limiter** — используется существующий из `lib/rateLimit.ts` (создаётся в auth-модуле). Для нового лимита просто добавляется вызов:
@@ -457,8 +457,6 @@ if (!allowed) return Response.json({ error: 'RATE_LIMIT_EXCEEDED' }, { status: 4
 ## Серверные правила
 
 1. **`orderIndex` в админке начинается с 1** (не с 0) — валидация: `z.number().int().min(1)`. Это гарантирует, что `lastSeenHintIndex=0` (начальное значение) корректно найдёт первую подсказку с `orderIndex >= 0` (то есть любую, включая `orderIndex=1`).
-
-2. **`lastSeenHintIndex` пишется только сервером** через `/api/hints/advance` или сидером (default 0). Нет публичного API на запись этого поля.
 
 2. **`lastSeenHintIndex` пишется только сервером** через `/api/hints/advance` или сидером (default 0). Нет публичного API на запись этого поля.
 
