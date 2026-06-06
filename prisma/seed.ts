@@ -343,12 +343,27 @@ async function seedFinalReportContent(): Promise<void> {
   console.log('Created 2 FinalReportContent stubs');
 }
 
+async function seedDetectiveHint(): Promise<void> {
+  await prisma.detectiveHint.upsert({
+    where: { orderIndex: 1 },
+    create: {
+      orderIndex: 1,
+      text: 'Заглушка подсказки. Финальный текст предоставит заказчик.',
+      isActive: true,
+    },
+    update: {},
+  });
+
+  console.log('Ensured DetectiveHint stub (orderIndex: 1)');
+}
+
 async function main(): Promise<void> {
   await seedAdminUser();
   await seedAppSettings();
   await seedMissionSlots();
   await seedChatGraph();
   await seedFinalReportContent();
+  await seedDetectiveHint();
 }
 
 main()
