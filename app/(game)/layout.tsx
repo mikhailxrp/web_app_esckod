@@ -1,10 +1,18 @@
+import { redirect } from 'next/navigation';
+import { auth } from '@/lib/auth';
 import { ToastContainer } from '@/components/ui/Toast';
 
-export default function GameLayout({
+export default async function GameLayout({
   children,
 }: {
   children: React.ReactNode;
-}): React.ReactElement {
+}): Promise<React.ReactElement> {
+  const session = await auth();
+
+  if (!session || session.user.type !== 'PLAYER') {
+    redirect('/login');
+  }
+
   return (
     <div className="relative min-h-screen">
       {children}
