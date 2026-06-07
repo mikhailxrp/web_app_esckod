@@ -16,8 +16,8 @@ const ipAddressSchema = z
 const targetWordSchema = z
   .string()
   .trim()
-  .transform((value) => value.toUpperCase())
-  .pipe(z.string().regex(/^[A-Z]{5}$/, 'Слово должно содержать ровно 5 латинских букв'));
+  .transform((value) => value.toUpperCase().replace(/Ё/g, 'Е'))
+  .pipe(z.string().regex(/^[А-Я]{5}$/, 'Слово должно содержать ровно 5 русских букв'));
 
 export const commonSlotFieldsSchema = z.object({
   displayName: z.string().trim().min(1, 'Название обязательно'),

@@ -117,7 +117,17 @@ export async function GET(
       return notFoundResponse();
     }
 
-    return NextResponse.json(await attachCompletionsCount(slot));
+    let targetWord: string | null = null;
+    if (slot.missionType === MissionType.CRACK) {
+      const withWord = await prisma.missionSlot.findUnique({
+        where: { id },
+        select: { targetWord: true },
+      });
+      targetWord = withWord?.targetWord ?? null;
+    }
+
+    const base = await attachCompletionsCount(slot);
+    return NextResponse.json({ ...base, targetWord });
   } catch (error) {
     console.error('[mission-slots/[id]/route] GET error:', error);
 
