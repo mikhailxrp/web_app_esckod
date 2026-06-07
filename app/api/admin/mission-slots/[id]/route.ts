@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { type MissionSlot, MissionType } from '@prisma/client';
+import { writeAuditLog } from '@/lib/admin/auditLog';
 import { getMissionSlotWarnings } from '@/lib/admin/missionSlotWarnings';
 import { adminAuth as auth } from '@/lib/auth-admin';
 import { prisma } from '@/lib/prisma';
@@ -51,6 +52,17 @@ function notFoundResponse(): NextResponse {
 function validationErrorResponse(message?: string): NextResponse {
   return NextResponse.json(
     { error: 'VALIDATION_ERROR', message: message ?? 'Неверные параметры запроса' },
+    { status: 400 },
+  );
+}
+
+function lastActiveSlotOfTypeResponse(missionType: MissionType): NextResponse {
+  return NextResponse.json(
+    {
+      error: 'LAST_ACTIVE_SLOT_OF_TYPE',
+      missionType,
+      message: `Нельзя деактивировать последний активный слот типа ${missionType}. Сначала активируйте другой слот этого типа.`,
+    },
     { status: 400 },
   );
 }
@@ -174,14 +186,7 @@ export async function PATCH(
       });
 
       if (otherActive === 0) {
-        return NextResponse.json(
-          {
-            error: 'LAST_ACTIVE_SLOT_OF_TYPE',
-            missionType: existing.missionType,
-            message: `Нельзя деактивировать последний активный слот типа ${existing.missionType}. Сначала активируйте другой слот этого типа.`,
-          },
-          { status: 400 },
-        );
+        return lastActiveSlotOfTypeResponse(existing.missionType);
       }
     }
 
@@ -202,6 +207,78 @@ export async function PATCH(
 
     return NextResponse.json(
       { error: 'INTERNAL_ERROR', message: 'Не удалось обновить слот' },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: RouteParams,
+): Promise<NextResponse> {
+  const session = await auth();
+
+  if (!session || session.user.type !== 'ADMIN') {
+    return forbiddenResponse();
+  }
+
+  const { id } = await params;
+
+  try {
+    const slot = await prisma.missionSlot.findUnique({
+      where: { id },
+      select: { id: true, slotKey: true, displayName: true, missionType: true, isActive: true },
+    });
+
+    if (!slot) {
+      return notFoundResponse();
+    }
+
+    const activeSessionsCount = await prisma.crackSession.count({
+      where: { slotId: id },
+    });
+
+    if (activeSessionsCount > 0) {
+      return NextResponse.json(
+        {
+          error: 'SLOT_HAS_ACTIVE_SESSIONS',
+          message:
+            'Нельзя удалить слот с активными сессиями Crack. Сначала дождитесь завершения игроков или деактивируйте слот.',
+        },
+        { status: 400 },
+      );
+    }
+
+    // Проверяем только когда слот активен — удаление неактивного слота
+    // не сокращает количество активных слотов типа.
+    if (slot.isActive) {
+      const otherActive = await prisma.missionSlot.count({
+        where: {
+          missionType: slot.missionType,
+          isActive: true,
+          id: { not: id },
+        },
+      });
+
+      if (otherActive === 0) {
+        return lastActiveSlotOfTypeResponse(slot.missionType);
+      }
+    }
+
+    await prisma.missionSlot.delete({ where: { id } });
+
+    await writeAuditLog('mission_slot_deleted', {
+      adminId: session.user.id,
+      message: `Слот "${slot.displayName}" (${slot.slotKey}) удалён`,
+      metadata: { slotKey: slot.slotKey, displayName: slot.displayName },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[mission-slots/[id]/route] DELETE error:', error);
+
+    return NextResponse.json(
+      { error: 'INTERNAL_ERROR', message: 'Не удалось удалить слот' },
       { status: 500 },
     );
   }

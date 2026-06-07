@@ -119,5 +119,10 @@ export const updateMissionSlotSchema = z.union([
   updateRdpMissionSlotSchema,
 ]);
 
+export const toggleActiveMissionSlotSchema = z.object({
+  isActive: z.boolean(),
+});
+
 export type CreateMissionSlotInput = z.infer<typeof createMissionSlotSchema>;
 export type UpdateMissionSlotInput = z.infer<typeof updateMissionSlotSchema>;
+export type ToggleActiveMissionSlotInput = z.infer<typeof toggleActiveMissionSlotSchema>;
