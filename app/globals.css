@@ -462,3 +462,15 @@
 .admin-zone .font-accent {
   font-family: var(--font-roboto), 'Roboto', sans-serif;
 }
+
+/* -----------------------------------------------------------
+   [ADMIN] — Переиспользуемые классы для полей форм миссий
+   ----------------------------------------------------------- */
+
+.input-field {
+  @apply w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-400 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white;
+}
+
+.input-field-readonly {
+  @apply w-full rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400;
+}

@@ -182,109 +182,110 @@ async function seedAppSettings(): Promise<void> {
   console.log('Created AppSettings singleton');
 }
 
-// FIXME(Phase 10, Task 1): данные ниже — заглушка из Phase 0 и расходятся со
-// спецификацией сидера в `.docs/database.md` §3 по 8 пунктам. Перед релизом миссий
-// ОБЯЗАТЕЛЬНО пересидить строго по таблицам database.md §3:
-//   1) slotKey: CRACK_P2 / CRACK_VUZ / DECIPHER_SHANTAZH / DECIPHER_MARKOVA / RDP_VICTOR / RDP_MARINA
-//   2) orderIndex: 10..60, чередуя по сюжету (CRACK_P2 → RDP_VICTOR → DECIPHER_SHANTAZH → CRACK_VUZ → DECIPHER_MARKOVA → RDP_MARINA)
-//   3) crackMaxAttempts: 5 (сейчас 6)
-//   4) rdpPuzzleGridSize: 6 (сценарий 1) и 7 (сценарий 2) — сейчас 4, нарушает инвариант «6 или 7»
-//   5) timerSeconds: null (сценарий 1), 120 (сценарий 2) — сейчас 300 у обоих
-//   6) nextRdpSlotKey: "RDP_MARINA" у RDP_VICTOR — сейчас не задан
-//   7) unlocksRdpFolder = ИМЯ папки ("Шантаж"/"Маркова", = RdpFile.folder), unlocksRdpSlotKey = "RDP_VICTOR" у ОБОИХ
-//      decipher-слотов — сейчас путь '/rdp/session-N' и раздельные rdp-1/rdp-2 (сломает unlock-folder: сверка строгим равенством)
-//   8) logSubjectName: "Виктор" и "Неизвестно" — сейчас "Виктор Пак" и "Марина"
-// Полный чек-лист и обоснование — `.docs/phases/_status.md` → Phase 10.
-async function seedMissionSlots(): Promise<void> {
-  const slotCount = await prisma.missionSlot.count();
+type MissionSlotSeedData = Omit<
+  Prisma.MissionSlotUncheckedCreateInput,
+  'id' | 'createdAt' | 'updatedAt'
+>;
 
-  if (slotCount > 0) {
-    console.log('MissionSlots already exist, skipping');
-    return;
+const MISSION_SLOT_SEEDS: MissionSlotSeedData[] = [
+  {
+    slotKey: 'CRACK_P2',
+    missionType: 'CRACK',
+    orderIndex: 10,
+    isActive: true,
+    displayName: 'Взлом сайта P2 Digital',
+    targetWord: 'PROXY',
+    targetUrl: 'https://p2-digital.example.com',
+    targetEmail: 'admin@p2-digital.example.com',
+    resultPassword: 'stub_p2_pass',
+    crackMaxAttempts: 5,
+    hintText: null,
+  },
+  {
+    slotKey: 'RDP_VICTOR',
+    missionType: 'RDP',
+    orderIndex: 20,
+    isActive: true,
+    displayName: 'Удалённый доступ к компьютеру Виктора',
+    correctIp: '192.168.1.10',
+    rdpScenario: 1,
+    logSubjectName: 'Виктор',
+    nextRdpSlotKey: 'RDP_MARINA',
+    timerSeconds: null,
+    rdpPuzzleGridSize: 6,
+    hintText: null,
+  },
+  {
+    slotKey: 'DECIPHER_SHANTAZH',
+    missionType: 'DECIPHER',
+    orderIndex: 30,
+    isActive: true,
+    displayName: 'Расшифровка папки шантажа',
+    cipherType: 'VIGENERE',
+    encryptedWord: 'XQKZM',
+    cipherKey: 'AGENT',
+    folderPassword: 'stub_shantazh_pass',
+    folderPath: 'C:\\Users\\Victor\\Shantazh',
+    unlocksRdpFolder: 'Шантаж',
+    unlocksRdpSlotKey: 'RDP_VICTOR',
+    hintText: null,
+  },
+  {
+    slotKey: 'CRACK_VUZ',
+    missionType: 'CRACK',
+    orderIndex: 40,
+    isActive: true,
+    displayName: 'Взлом сайта ВУЗа',
+    targetWord: 'DELTA',
+    targetUrl: 'https://vuz.example.com',
+    targetEmail: 'portal@vuz.example.com',
+    resultPassword: 'stub_vuz_pass',
+    crackMaxAttempts: 5,
+    hintText: null,
+  },
+  {
+    slotKey: 'DECIPHER_MARKOVA',
+    missionType: 'DECIPHER',
+    orderIndex: 50,
+    isActive: true,
+    displayName: 'Расшифровка папки Маркова',
+    cipherType: 'PLAYFAIR',
+    encryptedWord: 'BVKDP',
+    cipherKey: 'CORPO',
+    folderPassword: 'stub_markova_pass',
+    folderPath: 'C:\\Users\\Victor\\Markova',
+    unlocksRdpFolder: 'Маркова',
+    unlocksRdpSlotKey: 'RDP_VICTOR',
+    hintText: null,
+  },
+  {
+    slotKey: 'RDP_MARINA',
+    missionType: 'RDP',
+    orderIndex: 60,
+    isActive: true,
+    displayName: 'Удалённый доступ к компьютеру Марины',
+    correctIp: '10.0.0.42',
+    rdpScenario: 2,
+    logSubjectName: 'Неизвестно',
+    nextRdpSlotKey: null,
+    timerSeconds: 120,
+    rdpPuzzleGridSize: 7,
+    hintText: null,
+  },
+];
+
+async function seedMissionSlots(): Promise<void> {
+  for (const slot of MISSION_SLOT_SEEDS) {
+    const { slotKey, ...slotData } = slot;
+
+    await prisma.missionSlot.upsert({
+      where: { slotKey },
+      create: slot,
+      update: slotData,
+    });
   }
 
-  await prisma.missionSlot.createMany({
-    data: [
-      {
-        slotKey: 'crack-1',
-        missionType: 'CRACK',
-        orderIndex: 1,
-        isActive: true,
-        displayName: 'Взломщик — Сайт Пака',
-        targetWord: 'PROXY',
-        targetUrl: 'https://pak-corp.example.com',
-        targetEmail: 'v.pak@pak-corp.example.com',
-        resultPassword: 'pr0xy_acc3ss',
-        crackMaxAttempts: 6,
-      },
-      {
-        slotKey: 'crack-2',
-        missionType: 'CRACK',
-        orderIndex: 2,
-        isActive: true,
-        displayName: 'Взломщик — Архив',
-        targetWord: 'DELTA',
-        targetUrl: 'https://archive.pak-corp.example.com',
-        targetEmail: 'archive@pak-corp.example.com',
-        resultPassword: 'd3lta_k3y',
-        crackMaxAttempts: 6,
-      },
-      {
-        slotKey: 'decipher-1',
-        missionType: 'DECIPHER',
-        orderIndex: 3,
-        isActive: true,
-        displayName: 'Дешифратор — Папка A',
-        cipherType: 'VIGENERE',
-        encryptedWord: 'XQKZM',
-        cipherKey: 'AGENT',
-        folderPassword: 'open_sesame',
-        folderPath: '/data/folder-a',
-        unlocksRdpFolder: '/rdp/session-1',
-        unlocksRdpSlotKey: 'rdp-1',
-      },
-      {
-        slotKey: 'decipher-2',
-        missionType: 'DECIPHER',
-        orderIndex: 4,
-        isActive: true,
-        displayName: 'Дешифратор — Папка B',
-        cipherType: 'PLAYFAIR',
-        encryptedWord: 'BVKDP',
-        cipherKey: 'CORPO',
-        folderPassword: 'unlock_now',
-        folderPath: '/data/folder-b',
-        unlocksRdpFolder: '/rdp/session-2',
-        unlocksRdpSlotKey: 'rdp-2',
-      },
-      {
-        slotKey: 'rdp-1',
-        missionType: 'RDP',
-        orderIndex: 5,
-        isActive: true,
-        displayName: 'Удалённый доступ — Сервер 1',
-        correctIp: '192.168.1.10',
-        rdpScenario: 1,
-        logSubjectName: 'Виктор Пак',
-        timerSeconds: 300,
-        rdpPuzzleGridSize: 4,
-      },
-      {
-        slotKey: 'rdp-2',
-        missionType: 'RDP',
-        orderIndex: 6,
-        isActive: true,
-        displayName: 'Удалённый доступ — Сервер 2',
-        correctIp: '10.0.0.42',
-        rdpScenario: 2,
-        logSubjectName: 'Марина',
-        timerSeconds: 300,
-        rdpPuzzleGridSize: 4,
-      },
-    ],
-  });
-
-  console.log('Created 6 MissionSlots (2 CRACK, 2 DECIPHER, 2 RDP)');
+  console.log('Ensured 6 MissionSlots (database.md §3)');
 }
 
 async function seedChatGraph(): Promise<void> {
