@@ -54,6 +54,8 @@ interface CrackGamePanelProps {
 export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): ReactElement {
   const [view, setView] = useState<View>({ phase: 'loading' });
   const [busy, setBusy] = useState(false);
+  const [inputWord, setInputWord] = useState('');
+  const [noiseVisible, setNoiseVisible] = useState(false);
 
   const refreshLogs = useLogStore((s) => s.refreshLogs);
   const refreshChat = useChatStore((s) => s.refresh);
@@ -164,11 +166,12 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
 
         if (!res.ok) {
           const data = (await res.json().catch(() => ({}))) as { error?: string };
-          toast.error(
-            data.error === 'WORD_NOT_IN_FIELD'
-              ? 'Это слово не из текущего поля.'
-              : 'Не удалось сделать попытку.',
-          );
+          if (data.error === 'WORD_NOT_IN_FIELD') {
+            setNoiseVisible(true);
+            setTimeout(() => setNoiseVisible(false), 2000);
+          } else {
+            toast.error('Не удалось сделать попытку.');
+          }
           return;
         }
 
@@ -256,7 +259,7 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
 
   return (
     <article
-      className="relative flex min-h-[480px] flex-col overflow-hidden rounded-game-lg border border-border bg-bg-primary shadow-game-card"
+      className="relative flex flex-col overflow-hidden rounded-game-lg border border-border bg-bg-primary shadow-game-card"
       aria-label="Взломщик"
     >
       {/* Header */}
@@ -281,18 +284,21 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
           </span>
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Закрыть игровое поле"
-          className="flex size-7 items-center justify-center rounded-game-sm border border-border font-mono text-game-xs text-content-secondary transition-colors hover:border-border-strong hover:text-content-primary"
-        >
-          ✕
-        </button>
+        <div className="flex items-center gap-2">
+          {hintText ? <CrackHintButton hintText={hintText} /> : null}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Закрыть игровое поле"
+            className="flex size-7 items-center justify-center rounded-game-sm border border-border font-mono text-game-xs text-content-secondary transition-colors hover:border-border-strong hover:text-content-primary"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       {/* Body */}
-      <div className="flex flex-1">
+      <div className="flex">
         {view.phase === 'loading' && (
           <div className="flex flex-1 items-center justify-center px-6 py-8">
             <p className="font-mono text-game-sm text-content-muted" role="status">
@@ -323,7 +329,15 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
           <>
             {/* Left column: input + attempt history */}
             <div className="flex w-[240px] shrink-0 flex-col gap-5 border-r border-border px-5 py-5">
-              <CrackWordInput onSelect={handleSelectWord} disabled={busy} />
+              <CrackWordInput
+                value={inputWord}
+                onChange={setInputWord}
+                onSelect={(word) => {
+                  void handleSelectWord(word);
+                  setInputWord('');
+                }}
+                disabled={busy}
+              />
 
               <AttemptHistory
                 attempts={view.data.attempts}
@@ -339,17 +353,26 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
             </div>
 
             {/* Right column: cipher text */}
-            <div className="flex flex-1 p-5">
-              <CrackCipherText words={view.data.wordList} />
+            <div className="w-0 flex-1 p-5">
+              <CrackCipherText
+                words={view.data.wordList}
+                onWordClick={setInputWord}
+              />
             </div>
           </>
         )}
       </div>
-
-      {/* Info button — bottom-right corner */}
-      {hintText ? (
-        <div className="absolute bottom-3 right-3">
-          <CrackHintButton hintText={hintText} />
+      {/* Noise modal — centered overlay for WORD_NOT_IN_FIELD */}
+      {noiseVisible ? (
+        <div
+          aria-live="assertive"
+          className="absolute inset-0 flex items-center justify-center"
+        >
+          <div className="rounded-game-sm border border-border bg-bg-primary px-6 py-4 shadow-game-card">
+            <p className="font-mono text-game-sm text-semantic-error">
+              Ложная цель. Шум в системе.
+            </p>
+          </div>
         </div>
       ) : null}
     </article>

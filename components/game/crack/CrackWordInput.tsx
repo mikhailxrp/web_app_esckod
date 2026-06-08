@@ -1,22 +1,25 @@
 'use client';
 
-import { useState } from 'react';
 import type { FormEvent, ReactElement } from 'react';
 
 interface CrackWordInputProps {
+  value: string;
+  onChange: (value: string) => void;
   disabled: boolean;
   onSelect: (word: string) => void;
 }
 
-export function CrackWordInput({ disabled, onSelect }: CrackWordInputProps): ReactElement {
-  const [value, setValue] = useState('');
-
+export function CrackWordInput({
+  value,
+  onChange,
+  disabled,
+  onSelect,
+}: CrackWordInputProps): ReactElement {
   const handleSubmit = (e: FormEvent): void => {
     e.preventDefault();
     const word = value.trim().toUpperCase();
     if (word.length === 0) return;
     onSelect(word);
-    setValue('');
   };
 
   return (
@@ -32,7 +35,7 @@ export function CrackWordInput({ disabled, onSelect }: CrackWordInputProps): Rea
           id="crack-word-input"
           type="text"
           value={value}
-          onChange={(e) => setValue(e.target.value.toUpperCase())}
+          onChange={(e) => onChange(e.target.value.toUpperCase())}
           maxLength={5}
           disabled={disabled}
           autoComplete="off"
