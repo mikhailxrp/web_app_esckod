@@ -188,9 +188,9 @@ return NextResponse.json({
 
 | Эндпоинт | Защищаемая таблица | Что инкрементируется |
 |---|---|---|
-| `POST /api/missions/crack/[slotKey]/attempt` | `CrackSession` (+ `MissionProgress` при провале) | `version` обеих |
-| `POST /api/missions/crack/[slotKey]/complete` | `MissionProgress` | `version` |
-| `POST /api/missions/crack/[slotKey]/skip` | `MissionProgress` | `version` |
+| `POST /api/missions/crack/[slotKey]/attempt` | `CrackSession` (+ `MissionProgress` при провале) | `version` обеих (клиент сверяет `CrackSession.version`) |
+| `POST /api/missions/crack/[slotKey]/complete` | `MissionProgress` | идемпотентен, `expectedVersion` НЕ принимает (см. примечание ниже) |
+| `POST /api/missions/crack/[slotKey]/skip` | `MissionProgress` | идемпотентен, `expectedVersion` НЕ принимает (см. примечание ниже) |
 | `POST /api/missions/decipher/[slotKey]/attempt` | `MissionProgress` | `version` |
 | `POST /api/missions/decipher/[slotKey]/complete` | `MissionProgress` | `version` |
 | `POST /api/missions/decipher/[slotKey]/skip` | `MissionProgress` | `version` |
@@ -208,6 +208,7 @@ return NextResponse.json({
 **Особенности:**
 
 - **Launch-эндпоинты** (`/api/missions/crack/launch`, `/api/missions/decipher/launch`, `/api/missions/rdp/connect`) — НЕ защищены version, потому что не модифицируют состояние, а только ищут слот по полям формы. Создание `CrackSession` при первом launch — атомарно через UPSERT.
+- **Crack `/complete` и `/skip` — идемпотентны и `expectedVersion` НЕ принимают.** Причина: клиент знает только `CrackSession.version` (из GET и `/attempt`), а `MissionProgress` до первого завершения может не существовать (создаётся через `upsert`) — взять `expectedVersion` неоткуда. Защита обеспечивается бизнес-инвариантами: `/complete` требует «последняя попытка `CrackSession.attempts` === `targetWord`», `/skip` требует `failedSessionsCount >= 2`. Повторный вызов уже пройденной миссии возвращает тот же успех. `MissionProgress.version` всё равно инкрементируется при UPDATE (для consistency), но клиентом не сверяется.
 - **Rate limit** не заменяет optimistic locking. Это разные защиты: rate limit — от спама, version — от race condition.
 
 ## Обработка 409 на клиенте

@@ -1115,20 +1115,23 @@ await writeLog(userId, "mission_completed_overview", { displayName });
 
 ---
 
-### 4. Crack — провал на 6-й попытке
+### 4. Crack — провал на последней попытке
 
-Пересоздание сессии: новый `wordList`, обнуление попыток, сохранение `targetWord` и `maxAttempts`. Запись лога.
+Пересоздание сессии: новый `targetWord` (случайный) + новый `wordList`, обнуление попыток. `maxAttempts` сохраняется. Запись лога.
 
 ```typescript
-const newWordList = generateWordList(targetWord);
+// Новое случайное слово и поле при каждом пересоздании (см. missions-crack.md, правило 9).
+const { targetWord: newTargetWord, wordList: newWordList } = generateCrackField();
 
 await prisma.crackSession.update({
-  where: { userId_slotId: { userId, slotId } },
+  where: { id: session.id, version: expectedVersion },
   data: {
+    targetWord: newTargetWord, // новое случайное слово при пересоздании
     wordList: newWordList,
     attemptsUsed: 0,
     attempts: [],
-    // targetWord и maxAttempts НЕ меняются
+    version: { increment: 1 },
+    // maxAttempts НЕ меняется
   },
 });
 

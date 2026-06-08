@@ -633,8 +633,8 @@ async function handleComplete(userId: string, slotKey: string) {
     }),
   ]);
 
-  // Триггер чата (вне транзакции — это side-effect)
-  await advanceTriggerListeners(userId, `crack_completed:${slotKey}`);
+  // Триггер чата — ВНУТРИ транзакции, с передачей tx (см. серверное правило 7)
+  // await advanceTriggerListeners(tx, userId, `crack_completed:${slotKey}`);
 
   return {
     success: true,
@@ -677,7 +677,7 @@ async function handleComplete(userId: string, slotKey: string) {
    - DELETE `CrackSession`
    - INSERT `OperationLog` `crack_access_granted` (те же params, что при успехе)
    - INSERT `OperationLog` `mission_completed_overview`
-5. Вне транзакции: `advanceTriggerListeners(userId, 'crack_completed:<slotKey>')`
+5. Внутри транзакции (с `tx`): `advanceTriggerListeners(tx, userId, 'crack_completed:<slotKey>')`
 6. Возврат: `{ success: true, resultPassword, targetUrl, targetEmail }` (как у `/complete`)
 
 **Response 200:**
@@ -927,7 +927,7 @@ constants/
 
 6. **При успехе пишутся ДВА лога подряд** в одной транзакции: `crack_access_granted` (технический) + `mission_completed_overview` (обзорный).
 
-7. **`advanceTriggerListeners` вызывается ВНЕ транзакции** — это side-effect, не должен откатывать прогресс при ошибке. Если триггер чата упал — миссия всё равно пройдена.
+7. **`advanceTriggerListeners(tx, userId, code)` вызывается ВНУТРИ транзакции** `/complete` и `/skip`, получая транзакционный клиент `tx`. Это соответствует реализации Phase 7 (`lib/chat/triggers.ts`) и гарантирует атомарность: продвижение чат-триггера и фиксация прогресса либо проходят вместе, либо откатываются вместе.
 
 8. **Сессия удаляется при `/complete`.** Хранить пройденные сессии бессмысленно — `MissionProgress.completed=true` достаточно.
 
@@ -941,7 +941,7 @@ constants/
 
 13. **`metadata.failedSessionsCount` инкрементируется при пересоздании сессии (провал).** Не сбрасывается между сессиями. Сохраняется до `/complete` или `/skip`.
 
-14. **Optimistic locking на `CrackSession` и `MissionProgress`.** Все mutate-эндпоинты (`/attempt`, `/complete`, `/skip`) принимают `expectedVersion` в теле, возвращают обновлённую `version` в ответе. При несовпадении версий — HTTP 409. См. `.docs/modules/concurrency.md`.
+14. **Optimistic locking только на `/attempt`** (`CrackSession.version`). `/attempt` принимает `expectedVersion` в теле, возвращает обновлённую `version`; при несовпадении — HTTP 409. `/complete` и `/skip` **идемпотентны** и `expectedVersion` НЕ принимают: повторный вызов уже пройденной миссии возвращает тот же успех (бизнес-защита — «последняя попытка === targetWord» для `/complete` и `failedSessionsCount >= 2` для `/skip`). См. `.docs/modules/concurrency.md`.
 
 ---
 
