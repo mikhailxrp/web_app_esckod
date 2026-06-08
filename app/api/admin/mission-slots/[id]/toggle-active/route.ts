@@ -34,7 +34,7 @@ const MISSION_SLOT_SELECT = {
   updatedAt: true,
 } as const;
 
-type PublicMissionSlot = Omit<MissionSlot, 'targetWord'>;
+type PublicMissionSlot = MissionSlot;
 
 function serializeMissionSlot(slot: PublicMissionSlot) {
   return {

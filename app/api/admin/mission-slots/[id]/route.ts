@@ -39,7 +39,7 @@ const MISSION_SLOT_SELECT = {
   updatedAt: true,
 } as const;
 
-type PublicMissionSlot = Omit<MissionSlot, 'targetWord'>;
+type PublicMissionSlot = MissionSlot;
 
 function forbiddenResponse(): NextResponse {
   return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -117,17 +117,8 @@ export async function GET(
       return notFoundResponse();
     }
 
-    let targetWord: string | null = null;
-    if (slot.missionType === MissionType.CRACK) {
-      const withWord = await prisma.missionSlot.findUnique({
-        where: { id },
-        select: { targetWord: true },
-      });
-      targetWord = withWord?.targetWord ?? null;
-    }
-
     const base = await attachCompletionsCount(slot);
-    return NextResponse.json({ ...base, targetWord });
+    return NextResponse.json(base);
   } catch (error) {
     console.error('[mission-slots/[id]/route] GET error:', error);
 
@@ -206,10 +197,9 @@ export async function PATCH(
     });
 
     const warnings = await getMissionSlotWarnings(slot);
-    const { targetWord: _targetWord, ...publicSlot } = slot;
 
     return NextResponse.json({
-      slot: await attachCompletionsCount(publicSlot),
+      slot: await attachCompletionsCount(slot),
       warnings,
     });
   } catch (error) {

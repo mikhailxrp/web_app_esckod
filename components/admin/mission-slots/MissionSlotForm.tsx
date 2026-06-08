@@ -31,7 +31,6 @@ export interface MissionSlotFormValues {
   missionType: MissionType;
   slotKey: string;
   // CRACK
-  targetWord: string;
   targetUrl: string;
   targetEmail: string;
   resultPassword: string;
@@ -82,7 +81,6 @@ function buildDefaultValues(
       orderIndex: 1,
       isActive: 'true',
       hintText: '',
-      targetWord: '',
       targetUrl: '',
       targetEmail: '',
       resultPassword: '',
@@ -109,7 +107,6 @@ function buildDefaultValues(
     orderIndex: slot.orderIndex,
     isActive: String(slot.isActive),
     hintText: slot.hintText ?? '',
-    targetWord: slot.targetWord ?? '',
     targetUrl: slot.targetUrl ?? '',
     targetEmail: slot.targetEmail ?? '',
     resultPassword: slot.resultPassword ?? '',
@@ -151,7 +148,6 @@ function buildPayload(
 
   if (missionType === 'CRACK') {
     typeFields = {
-      targetWord: values.targetWord,
       targetUrl: values.targetUrl,
       targetEmail: values.targetEmail,
       resultPassword: values.resultPassword,

@@ -13,12 +13,6 @@ const ipAddressSchema = z
   .trim()
   .regex(/^\d{1,3}(\.\d{1,3}){3}$/, 'Введите корректный IP-адрес');
 
-const targetWordSchema = z
-  .string()
-  .trim()
-  .transform((value) => value.toUpperCase().replace(/Ё/g, 'Е'))
-  .pipe(z.string().regex(/^[А-Я]{5}$/, 'Слово должно содержать ровно 5 русских букв'));
-
 export const commonSlotFieldsSchema = z.object({
   displayName: z.string().trim().min(1, 'Название обязательно'),
   orderIndex: z.number().int().min(1, 'Порядковый номер должен быть ≥ 1'),
@@ -27,7 +21,6 @@ export const commonSlotFieldsSchema = z.object({
 });
 
 export const crackSlotSchema = z.object({
-  targetWord: targetWordSchema,
   targetUrl: z.string().trim().url('Введите корректный URL'),
   targetEmail: z.string().trim().email('Введите корректный email'),
   resultPassword: z.string().trim().min(1, 'Пароль результата обязателен'),

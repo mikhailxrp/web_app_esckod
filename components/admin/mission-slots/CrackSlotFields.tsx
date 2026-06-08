@@ -14,24 +14,6 @@ export function CrackSlotFields({ register, errors }: CrackSlotFieldsProps): Rea
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <Field
-        label="Целевое слово"
-        htmlFor="crack-targetWord"
-        hint="5 русских букв (кириллица), будет приведено к верхнему регистру"
-        error={errors.targetWord?.message}
-        required
-      >
-        <input
-          {...register('targetWord')}
-          id="crack-targetWord"
-          type="text"
-          maxLength={5}
-          placeholder="СЛОВО"
-          className="input-field"
-          aria-describedby="crack-targetWord-hint"
-        />
-      </Field>
-
-      <Field
         label="URL сайта"
         htmlFor="crack-targetUrl"
         error={errors.targetUrl?.message}
