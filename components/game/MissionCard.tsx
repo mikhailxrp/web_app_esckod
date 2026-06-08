@@ -13,7 +13,6 @@ import {
   type DecipherLaunchInput,
   type RdpLaunchInput,
 } from "@/lib/validations/missions";
-import { CrackModal } from "@/components/game/crack/CrackModal";
 
 // ─── Static config per mission type ──────────────────────────────────────────
 
@@ -362,18 +361,22 @@ function MissionModal({
 
 interface MissionCardProps {
   missionType: MissionType;
+  /** Called when CRACK game is launched so parent can show CrackGamePanel inline. */
+  onCrackLaunched?: (slotKey: string) => void;
 }
 
 export function MissionCard({
   missionType,
+  onCrackLaunched,
 }: MissionCardProps): React.ReactElement {
   const [isOpen, setIsOpen] = useState(false);
-  const [crackSlotKey, setCrackSlotKey] = useState<string | null>(null);
   const config = MISSION_CONFIG[missionType];
 
   const handleLaunched = (slotKey: string): void => {
     setIsOpen(false);
-    setCrackSlotKey(slotKey);
+    if (onCrackLaunched) {
+      onCrackLaunched(slotKey);
+    }
   };
 
   return (
@@ -415,13 +418,6 @@ export function MissionCard({
           missionType={missionType}
           onClose={() => setIsOpen(false)}
           onLaunched={handleLaunched}
-        />
-      ) : null}
-
-      {crackSlotKey ? (
-        <CrackModal
-          slotKey={crackSlotKey}
-          onClose={() => setCrackSlotKey(null)}
         />
       ) : null}
     </>

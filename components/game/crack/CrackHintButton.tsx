@@ -23,7 +23,7 @@ export function CrackHintButton({ hintText }: CrackHintButtonProps): ReactElemen
         aria-expanded={open}
         className="flex size-7 items-center justify-center rounded-game-sm border border-border font-mono text-game-sm text-content-secondary transition-colors hover:border-accent hover:text-accent"
       >
-        ?
+        ⓘ
       </button>
 
       {open ? (
