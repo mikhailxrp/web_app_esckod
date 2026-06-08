@@ -37,7 +37,7 @@
 - Прохождение пишется в `MissionProgress.completed=true` и триггерит следующую сцену
 
 **Не входит в модуль:**
-- Контент слов (целевых, словник) — заглушки в коде, финальные от заказчика через админку
+- Контент словника — захардкожен в `constants/wordList5letters.ts`, расширяется заказчиком через PR
 - Дизайн поля — верстается на Tailwind по ходу фазы
 - Админка для CRUD слотов — это `admin.md`
 - Список всех 5-буквенных слов для генерации поля — захардкожен в `constants/wordList5letters.ts` (расширяется заказчиком)
@@ -89,7 +89,7 @@
 ### 2. Серверное состояние сессии
 
 `CrackSession` — серверная таблица с:
-- `targetWord` — копия целевого слова (берётся из `MissionSlot.targetWord` на старте сессии)
+- `targetWord` — целевое слово, случайно выбранное из `wordList5letters` при создании сессии
 - `maxAttempts` — копия лимита попыток
 - `wordList` — массив слов на поле
 - `attemptsUsed` — сколько попыток сделал
@@ -100,13 +100,15 @@
 - Состояние мигрирует между устройствами
 - Защита от обхода: даже если игрок что-то модифицирует на клиенте — сервер всё равно проверит
 
-### 3. Копирование параметров на старте сессии
+### 3. Параметры на старте сессии
 
-При создании сессии в неё копируются `targetWord` и `maxAttempts` из `MissionSlot`. Дальше сессия живёт со своими копиями.
+При создании сессии:
+- `targetWord` — выбирается случайно из `wordList5letters` (`randomFrom(wordList5letters)`)
+- `maxAttempts` — копируется из `MissionSlot.crackMaxAttempts`
 
-**Зачем:** если админ изменит `MissionSlot.crackMaxAttempts` посреди игры — у игрока с активной сессией лимит **не меняется**. Иначе у игрока на 4-й попытке могло бы внезапно стать 3 попытки максимум — это плохой UX.
+Дальше сессия живёт со своими значениями. Если админ изменит `crackMaxAttempts` посреди игры — у игрока с активной сессией лимит **не меняется**. Новые значения применяются только к **новым** сессиям.
 
-Новые значения применяются только к **новым** сессиям (которые создаются после провала или впервые открытым слотам).
+**`targetWord` НЕ хранится в `MissionSlot`.** Слово определяется в момент старта каждой сессии — это означает, что разные игроки (и каждая новая сессия после провала) угадывают разное слово. Это сделано намеренно: игрок не может «подсмотреть» слово у другого игрока, а повторная попытка не воспринимается как «тот же пазл».
 
 ### 4. Бесконечные попытки через пересоздание поля
 
@@ -114,7 +116,8 @@
 - Новый `wordList` (другой набор слов)
 - `attemptsUsed = 0`
 - `attempts = []`
-- `targetWord` и `maxAttempts` — НЕ меняются
+- `targetWord` — выбирается новое случайное слово из `wordList5letters`
+- `maxAttempts` — НЕ меняется (берётся из существующей сессии)
 
 Игрок продолжает с новой попыткой. Это даёт «бесконечные попытки», но с опытом «надо начинать заново», что мотивирует пробовать другую тактику.
 
@@ -239,12 +242,13 @@ function compareWords(target: string, attempt: string): LetterStatus[] {
 
 ### Входные данные
 
-- `targetWord` — целевое слово (из `MissionSlot.targetWord`)
 - `wordPool` — список всех 5-буквенных слов (`constants/wordList5letters.ts`)
+
+Функция сама случайно выбирает `targetWord` из `wordPool` и возвращает его вместе со списком слов для поля.
 
 ### Цель
 
-Сгенерировать массив 25-30 слов, который содержит `targetWord` и набор отвлекающих слов с разной степенью «похожести» на target. Идея: чтобы игрок мог использовать предыдущие попытки для сужения круга.
+Сгенерировать `targetWord` (случайно) и массив 25-30 слов, который содержит `targetWord` и набор отвлекающих слов с разной степенью «похожести» на target. Идея: чтобы игрок мог использовать предыдущие попытки для сужения круга.
 
 ### Распределение слов по группам
 
@@ -275,7 +279,9 @@ const DISTRIBUTION = [
   { matches: 0, count: 6 },
 ];
 
-export function generateCrackField(targetWord: string): string[] {
+export function generateCrackField(): { targetWord: string; wordList: string[] } {
+  // Случайно выбираем целевое слово из всего словника
+  const targetWord = wordList5letters[Math.floor(Math.random() * wordList5letters.length)];
   const candidates = wordList5letters.filter(w => w !== targetWord);
 
   // Группируем кандидатов по числу совпадений с target
@@ -301,8 +307,7 @@ export function generateCrackField(targetWord: string): string[] {
     }
   }
 
-  // Перемешиваем для рендера на сетке
-  return shuffleArray(field);
+  return { targetWord, wordList: shuffleArray(field) };
 }
 
 function countPositionalMatches(a: string, b: string): number {
@@ -327,7 +332,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 
 1. **Не хватает слов в группе:** берём что есть, логируем warning. Поле может оказаться меньше 30 слов — это допустимо (игра не сломается).
 
-2. **`targetWord` не из словника:** допускается. Заказчик может задать любое 5-буквенное слово через админку. `wordList5letters` используется только для отвлекающих слов.
+2. **Повторный выбор одного слова:** теоретически возможно, но при словнике 200+ слов вероятность крайне мала. Если нужна гарантия уникальности в рамках одной игровой сессии — можно передавать `excludeWords: string[]` в функцию (например, слова из прошлых сессий игрока). На старте — не реализуем.
 
 3. **Словник слишком мал** (< 30 слов всего): возвращаем что есть. Это аномалия настройки — заказчик должен расширить словник.
 
@@ -434,7 +439,7 @@ async function handleAttempt(userId: string, slotKey: string, word: string) {
   // 1. Найти слот
   const slot = await prisma.missionSlot.findUnique({
     where: { slotKey },
-    select: { id: true, missionType: true, targetWord: true, isActive: true }
+    select: { id: true, missionType: true, isActive: true }
   });
   if (!slot || !slot.isActive || slot.missionType !== 'CRACK') {
     return error(404, 'SLOT_NOT_FOUND');
@@ -472,15 +477,16 @@ async function handleAttempt(userId: string, slotKey: string, word: string) {
 
   if (newAttemptsUsed >= session.maxAttempts) {
     // Провал — пересоздаём сессию, логируем, инкрементируем failedSessionsCount
-    const newWordList = generateCrackField(session.targetWord);
+    const { targetWord: newTargetWord, wordList: newWordList } = generateCrackField();
 
     await prisma.crackSession.update({
       where: { id: session.id },
       data: {
+        targetWord: newTargetWord,  // новое случайное слово при пересоздании
         wordList: newWordList,
         attemptsUsed: 0,
         attempts: [],
-        // targetWord и maxAttempts НЕ меняются
+        // maxAttempts НЕ меняется
       }
     });
 
@@ -760,13 +766,13 @@ async function getCrackState(userId: string, slotKey: string) {
   });
 
   if (!session) {
-    // Создаём новую
-    const wordList = generateCrackField(slot.targetWord);
+    // Создаём новую — targetWord выбирается случайно из wordList5letters
+    const { targetWord, wordList } = generateCrackField();
     session = await prisma.crackSession.create({
       data: {
         userId,
         slotId: slot.id,
-        targetWord: slot.targetWord,
+        targetWord,
         maxAttempts: slot.crackMaxAttempts ?? 6,
         wordList,
         attemptsUsed: 0,
@@ -815,7 +821,7 @@ async function getCrackState(userId: string, slotKey: string) {
 }
 ```
 
-**Что НЕ возвращается:** `targetWord` (никогда). `MissionSlot.targetWord` — серверный секрет.
+**Что НЕ возвращается:** `targetWord` (никогда). Хранится только в `CrackSession` на сервере.
 
 ---
 
@@ -896,7 +902,7 @@ components/
         └── CrackCompletedView.tsx                 # Client Component, показ resultPassword
 
 lib/
-├── crackFieldGenerator.ts                         # generateCrackField(targetWord)
+├── crackFieldGenerator.ts                         # generateCrackField(): { targetWord, wordList }
 └── crack/
     ├── compareWords.ts                            # compareWords(target, attempt) — Wordle-логика
     └── launch.ts                                  # серверная логика поиска слота по URL+login
@@ -909,7 +915,7 @@ constants/
 
 ## Серверные правила
 
-1. **`targetWord` НИКОГДА не возвращается клиенту.** Ни в `/api/missions/crack/[slotKey]` (GET), ни в `/attempt`, ни в `/complete`. Только серверное состояние.
+1. **`targetWord` НИКОГДА не возвращается клиенту.** Ни в `/api/missions/crack/[slotKey]` (GET), ни в `/attempt`, ни в `/complete`. Хранится только в `CrackSession` на сервере. В `MissionSlot` этого поля нет.
 
 2. **`/complete` проверяет последнюю успешную попытку** в `CrackSession.attempts`. Без этой проверки эндпоинт можно вызвать через DevTools.
 
@@ -925,7 +931,7 @@ constants/
 
 8. **Сессия удаляется при `/complete`.** Хранить пройденные сессии бессмысленно — `MissionProgress.completed=true` достаточно.
 
-9. **Генерация поля — детерминирована по `targetWord`?** НЕТ. `generateCrackField` использует `Math.random()` — каждый раз разное поле. Это намеренно: при провале игрок получает новый набор слов, не повторяющий предыдущий.
+9. **`generateCrackField()` случайна по всем параметрам.** И `targetWord`, и набор отвлекающих слов выбираются через `Math.random()`. При каждом создании или пересоздании сессии — другое слово и другое поле. Это намеренно: игрок не может «запомнить» слово между сессиями.
 
 10. **`metadata` для `MissionProgress` Crack** содержит `failedSessionsCount` и `skipped`. Основное состояние сессии — в `CrackSession`.
 

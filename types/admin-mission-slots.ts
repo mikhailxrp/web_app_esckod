@@ -21,7 +21,6 @@ export interface MissionSlotDetail {
   isActive: boolean;
   hintText: string | null;
   // CRACK
-  targetWord: string | null;
   targetUrl: string | null;
   targetEmail: string | null;
   resultPassword: string | null;

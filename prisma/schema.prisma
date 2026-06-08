@@ -188,7 +188,6 @@ model MissionSlot {
   displayName   String
 
   // Crack content
-  targetWord       String?
   targetUrl        String?
   targetEmail      String?
   resultPassword   String?

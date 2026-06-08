@@ -31,6 +31,7 @@ export default async function EditMissionSlotPage({
       targetEmail: true,
       resultPassword: true,
       crackMaxAttempts: true,
+
       cipherType: true,
       encryptedWord: true,
       cipherKey: true,
@@ -58,15 +59,6 @@ export default async function EditMissionSlotPage({
     notFound();
   }
 
-  let targetWord: string | null = null;
-  if (raw.missionType === 'CRACK') {
-    const withWord = await prisma.missionSlot.findUnique({
-      where: { id },
-      select: { targetWord: true },
-    });
-    targetWord = withWord?.targetWord ?? null;
-  }
-
   const slot: MissionSlotDetail = {
     id: raw.id,
     slotKey: raw.slotKey,
@@ -75,7 +67,6 @@ export default async function EditMissionSlotPage({
     orderIndex: raw.orderIndex,
     isActive: raw.isActive,
     hintText: raw.hintText,
-    targetWord,
     targetUrl: raw.targetUrl,
     targetEmail: raw.targetEmail,
     resultPassword: raw.resultPassword,
