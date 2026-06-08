@@ -343,7 +343,11 @@ export function CrackModal({ slotKey, onClose }: CrackModalProps): ReactElement 
               />
 
               <div className="border-t border-border pt-4">
-                <AttemptHistory attempts={view.data.attempts} />
+                <AttemptHistory
+                  attempts={view.data.attempts}
+                  attemptsUsed={view.data.attemptsUsed}
+                  maxAttempts={view.data.maxAttempts}
+                />
               </div>
 
               {view.data.canSkip ? (
