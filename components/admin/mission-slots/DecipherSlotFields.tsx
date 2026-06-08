@@ -107,7 +107,7 @@ export function DecipherSlotFields({
       </Field>
 
       <Field
-        label="Разблокирует RDP-слот"
+        label="Связанный RDP-слот"
         htmlFor="decipher-unlocksRdpSlotKey"
         hint="Слот, который открывает этот дешифратор (необязательно)"
         error={errors.unlocksRdpSlotKey?.message}

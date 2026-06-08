@@ -348,7 +348,7 @@ export function MissionSlotForm({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {/* Номер слота */}
             <Field
-              label="Номер слота"
+              label="Ключ слота"
               htmlFor="slotKey"
               hint={mode === 'create' ? 'Формат: CRACK_НАЗВАНИЕ (латиница + подчёркивание)' : undefined}
               error={errors.slotKey?.message}
@@ -359,7 +359,6 @@ export function MissionSlotForm({
                   {...register('slotKey')}
                   id="slotKey"
                   type="text"
-                  placeholder="Подставляется автоматически"
                   className="input-field"
                   aria-describedby="slotKey-hint"
                 />
