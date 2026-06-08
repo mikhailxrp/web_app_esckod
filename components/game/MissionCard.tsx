@@ -47,67 +47,108 @@ const INPUT_CLASS =
 
 const LABEL_CLASS = "font-mono text-game-base text-content-secondary";
 
-// Кнопка визуально активна (как в референсе), функционально подключается в Phase 11/12/14
+// CRACK-кнопка функциональна; Decipher/RDP подключаются в Phase 12/14
 const SUBMIT_BTN_CLASS =
-  "mt-2 h-input-height w-full rounded-game-full bg-accent font-mono text-game-sm uppercase tracking-game-wide text-content-inverse";
+  "mt-2 h-input-height w-full rounded-game-full bg-accent font-mono text-game-sm uppercase tracking-game-wide text-content-inverse disabled:cursor-not-allowed disabled:opacity-50";
 
 // ─── Form: CRACK ──────────────────────────────────────────────────────────────
 
-function CrackForm(): React.ReactElement {
+interface CrackFormProps {
+  onLaunched: (slotKey: string) => void;
+}
+
+function CrackForm({ onLaunched }: CrackFormProps): React.ReactElement {
   const {
     register,
-    formState: { errors },
+    handleSubmit,
+    formState: { errors, isSubmitting },
   } = useForm<CrackLaunchInput>({
     resolver: zodResolver(crackLaunchSchema),
     mode: "onChange",
   });
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const onSubmit = async (values: CrackLaunchInput): Promise<void> => {
+    setServerError(null);
+
+    try {
+      const res = await fetch("/api/missions/crack/launch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+
+      if (res.status === 429) {
+        setServerError("Слишком много попыток. Подождите минуту.");
+        return;
+      }
+
+      if (!res.ok) {
+        setServerError("Ошибка доступа. Проверьте данные.");
+        return;
+      }
+
+      const data = (await res.json()) as { slotKey: string };
+      onLaunched(data.slotKey);
+    } catch {
+      setServerError("Ошибка соединения. Попробуйте ещё раз.");
+    }
+  };
 
   return (
-    <form className="mx-auto flex w-full max-w-[420px] flex-col gap-5">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="mx-auto flex w-full max-w-[420px] flex-col gap-5"
+    >
       <div className="flex flex-col gap-2">
-        <label htmlFor="crack-url" className={LABEL_CLASS}>
+        <label htmlFor="crack-targetUrl" className={LABEL_CLASS}>
           Ссылка
         </label>
         <input
-          {...register("url")}
-          id="crack-url"
+          {...register("targetUrl")}
+          id="crack-targetUrl"
           type="url"
-          aria-invalid={Boolean(errors.url)}
+          aria-invalid={Boolean(errors.targetUrl)}
           className={INPUT_CLASS}
         />
-        {errors.url ? (
+        {errors.targetUrl ? (
           <p
             className="font-mono text-game-sm text-semantic-error"
             role="alert"
           >
-            {errors.url.message}
+            {errors.targetUrl.message}
           </p>
         ) : null}
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="crack-login" className={LABEL_CLASS}>
-          Почта
+        <label htmlFor="crack-targetEmail" className={LABEL_CLASS}>
+          Логин
         </label>
         <input
-          {...register("login")}
-          id="crack-login"
-          type="email"
-          aria-invalid={Boolean(errors.login)}
+          {...register("targetEmail")}
+          id="crack-targetEmail"
+          type="text"
+          aria-invalid={Boolean(errors.targetEmail)}
           className={INPUT_CLASS}
         />
-        {errors.login ? (
+        {errors.targetEmail ? (
           <p
             className="font-mono text-game-sm text-semantic-error"
             role="alert"
           >
-            {errors.login.message}
+            {errors.targetEmail.message}
           </p>
         ) : null}
       </div>
 
-      {/* Визуально активна — handler подключается в Phase 11 */}
-      <button type="button" className={SUBMIT_BTN_CLASS}>
+      {serverError ? (
+        <p className="font-mono text-game-sm text-semantic-error" role="alert">
+          {serverError}
+        </p>
+      ) : null}
+
+      <button type="submit" disabled={isSubmitting} className={SUBMIT_BTN_CLASS}>
         Начать
       </button>
     </form>
@@ -217,8 +258,11 @@ function RdpForm(): React.ReactElement {
   );
 }
 
-const FORM_BY_TYPE: Record<MissionType, () => React.ReactElement> = {
-  CRACK: CrackForm,
+// Только Decipher/RDP — заглушки. CRACK обрабатывается отдельно (нужен onLaunched).
+const PLACEHOLDER_FORM_BY_TYPE: Record<
+  "DECIPHER" | "RDP",
+  () => React.ReactElement
+> = {
   DECIPHER: DecipherForm,
   RDP: RdpForm,
 };
@@ -228,14 +272,15 @@ const FORM_BY_TYPE: Record<MissionType, () => React.ReactElement> = {
 interface MissionModalProps {
   missionType: MissionType;
   onClose: () => void;
+  onLaunched: (slotKey: string) => void;
 }
 
 function MissionModal({
   missionType,
   onClose,
+  onLaunched,
 }: MissionModalProps): React.ReactElement {
   const config = MISSION_CONFIG[missionType];
-  const FormComponent = FORM_BY_TYPE[missionType];
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -297,7 +342,14 @@ function MissionModal({
 
         {/* Modal body — форма центрирована */}
         <div className="flex flex-1 items-center justify-center px-8 py-6">
-          <FormComponent />
+          {missionType === "CRACK" ? (
+            <CrackForm onLaunched={onLaunched} />
+          ) : (
+            (() => {
+              const FormComponent = PLACEHOLDER_FORM_BY_TYPE[missionType];
+              return <FormComponent />;
+            })()
+          )}
         </div>
 
       </div>
@@ -309,13 +361,23 @@ function MissionModal({
 
 interface MissionCardProps {
   missionType: MissionType;
+  /** Called when CRACK game is launched so parent can show CrackGamePanel inline. */
+  onCrackLaunched?: (slotKey: string) => void;
 }
 
 export function MissionCard({
   missionType,
+  onCrackLaunched,
 }: MissionCardProps): React.ReactElement {
   const [isOpen, setIsOpen] = useState(false);
   const config = MISSION_CONFIG[missionType];
+
+  const handleLaunched = (slotKey: string): void => {
+    setIsOpen(false);
+    if (onCrackLaunched) {
+      onCrackLaunched(slotKey);
+    }
+  };
 
   return (
     <>
@@ -355,6 +417,7 @@ export function MissionCard({
         <MissionModal
           missionType={missionType}
           onClose={() => setIsOpen(false)}
+          onLaunched={handleLaunched}
         />
       ) : null}
     </>

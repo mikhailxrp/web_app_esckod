@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { MissionType } from "@prisma/client";
 import { StatusBar } from "@/components/game/StatusBar";
 import { MissionCard } from "@/components/game/MissionCard";
@@ -8,6 +8,7 @@ import { OperationHistory } from "@/components/game/operation-log/OperationHisto
 import { ChatPanel } from "@/components/game/chat/ChatPanel";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { DetectiveHintsButton } from "@/components/game/hints/DetectiveHintsButton";
+import { CrackGamePanel } from "@/components/game/crack/CrackGamePanel";
 import { useChatStore } from "@/store/chatStore";
 import { GAME_TARGET_NAME } from "@/constants/gameConfig";
 
@@ -22,6 +23,7 @@ export function DashboardClient({
 }: DashboardClientProps): React.ReactElement {
   const refresh = useChatStore((s) => s.refresh);
   const marinaVisible = useChatStore((s) => s.marina.isVisible);
+  const [activeCrackSlotKey, setActiveCrackSlotKey] = useState<string | null>(null);
 
   useEffect(() => {
     void refresh();
@@ -45,24 +47,34 @@ export function DashboardClient({
 
       {/* Main grid: left column + right sidebar */}
       <div className="flex flex-1 gap-6">
-        {/* Left column: mission cards section + operation history */}
+        {/* Left column: missions section + operation history */}
         <div className="flex min-w-0 flex-1 flex-col gap-6">
-          {/* Mission cards section */}
-          <section
-            className="rounded-game-lg border border-border p-4"
-            aria-label="Миссии"
-          >
-            {visibleMissions.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4 2xl:grid-cols-3">
-                {visibleMissions.map((type) => (
-                  <MissionCard key={type} missionType={type} />
-                ))}
-              </div>
+          {/* Missions section — shows game panel when crack is active */}
+          <section aria-label="Миссии">
+            {activeCrackSlotKey ? (
+              <CrackGamePanel
+                slotKey={activeCrackSlotKey}
+                onClose={() => setActiveCrackSlotKey(null)}
+              />
             ) : (
-              <div className="py-10 text-center" role="status">
-                <p className="font-mono text-game-sm text-content-muted">
-                  Нет активных миссий
-                </p>
+              <div className="rounded-game-lg border border-border p-4">
+                {visibleMissions.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-4 2xl:grid-cols-3">
+                    {visibleMissions.map((type) => (
+                      <MissionCard
+                        key={type}
+                        missionType={type}
+                        onCrackLaunched={setActiveCrackSlotKey}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-10 text-center" role="status">
+                    <p className="font-mono text-game-sm text-content-muted">
+                      Нет активных миссий
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </section>

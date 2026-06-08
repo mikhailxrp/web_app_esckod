@@ -376,7 +376,6 @@ model MissionSlot {
   displayName   String       // человекочитаемое имя для админки и логов: "Взлом сайта P2 Digital"
 
   // Crack — контент
-  targetWord       String?
   targetUrl        String?
   targetEmail      String?
   resultPassword   String?
@@ -584,7 +583,7 @@ model CrackSession {
   id            String       @id @default(cuid())
   userId        String
   slotId        String
-  targetWord    String       // загаданное слово (копия из MissionSlot на момент старта сессии)
+  targetWord    String       // загаданное слово — генерируется случайно из wordList5letters при старте сессии, НЕ берётся из MissionSlot
   maxAttempts   Int          @default(6)  // лимит попыток (копия из MissionSlot.crackMaxAttempts на момент старта)
   wordList      Json         // массив 25-30 слов, показываемых игроку
   attemptsUsed  Int          @default(0)  // 0..maxAttempts
@@ -605,9 +604,9 @@ model CrackSession {
 
 **Жизненный цикл:**
 
-1. **Создаётся** при первом обращении игрока к слоту. На момент старта копируются `targetWord` и `maxAttempts` из `MissionSlot` — становятся «слепком» параметров (защита от изменений в админке посреди игры).
+1. **Создаётся** при первом обращении игрока к слоту. `targetWord` генерируется случайно из `wordList5letters`. `maxAttempts` копируется из `MissionSlot.crackMaxAttempts` — становится «слепком» параметра (защита от изменений в админке посреди игры).
 2. **При успехе** (слово угадано → `/complete`) — **удаляется** (миссия пройдена, сессия не нужна).
-3. **При провале** (попытка `#(maxAttempts+1)`) — **пересоздаётся**: новый `wordList`, `attemptsUsed=0`, `attempts=[]`. `targetWord` и `maxAttempts` остаются прежними.
+3. **При провале** (попытка `#(maxAttempts+1)`) — **пересоздаётся**: новый `targetWord` (случайный), новый `wordList`, `attemptsUsed=0`, `attempts=[]`. `maxAttempts` остаётся прежним.
 
 **Инвариант:** даже если админ изменит `MissionSlot.crackMaxAttempts` посреди игры — у игрока с активной сессией лимит остаётся прежним. Игрок доигрывает по правилам, увиденным в начале. Новое значение применится только к новым сессиям.
 
@@ -925,7 +924,7 @@ AdminAuditLog            (аудит — без каскада, пережива
 
 > **Имена папок для сидера** (`Шантаж`, `Маркова`) — заглушки. Реальные имена и распределение по RDP-слотам определит заказчик при наполнении контента через админку.
 
-**Контентные поля** (`targetWord`, `encryptedWord`, `correctIp`, `resultPassword`, `folderPath` и т.д.) заполняются заглушками — реальный контент админ загружает через админку. Шаги `orderIndex` с интервалом 10 — для гибкости вставок.
+**Контентные поля** (`encryptedWord`, `correctIp`, `resultPassword`, `folderPath` и т.д.) заполняются заглушками — реальный контент админ загружает через админку. Шаги `orderIndex` с интервалом 10 — для гибкости вставок.
 
 ---
 
@@ -1115,20 +1114,23 @@ await writeLog(userId, "mission_completed_overview", { displayName });
 
 ---
 
-### 4. Crack — провал на 6-й попытке
+### 4. Crack — провал на последней попытке
 
-Пересоздание сессии: новый `wordList`, обнуление попыток, сохранение `targetWord` и `maxAttempts`. Запись лога.
+Пересоздание сессии: новый `targetWord` (случайный) + новый `wordList`, обнуление попыток. `maxAttempts` сохраняется. Запись лога.
 
 ```typescript
-const newWordList = generateWordList(targetWord);
+// Новое случайное слово и поле при каждом пересоздании (см. missions-crack.md, правило 9).
+const { targetWord: newTargetWord, wordList: newWordList } = generateCrackField();
 
 await prisma.crackSession.update({
-  where: { userId_slotId: { userId, slotId } },
+  where: { id: session.id, version: expectedVersion },
   data: {
+    targetWord: newTargetWord, // новое случайное слово при пересоздании
     wordList: newWordList,
     attemptsUsed: 0,
     attempts: [],
-    // targetWord и maxAttempts НЕ меняются
+    version: { increment: 1 },
+    // maxAttempts НЕ меняется
   },
 });
 

@@ -1,8 +1,15 @@
 import { z } from 'zod';
 
+import { CRACK_WORD_LENGTH } from '@/constants/gameConfig';
+
 export const crackLaunchSchema = z.object({
-  url: z.string().url('Введите корректный URL'),
-  login: z.string().email('Введите корректный email'),
+  targetUrl: z.string().url('Введите корректный URL'),
+  targetEmail: z.string().min(1, 'Введите логин'),
+});
+
+export const crackAttemptSchema = z.object({
+  word: z.string().length(CRACK_WORD_LENGTH, 'Слово должно содержать 5 букв'),
+  expectedVersion: z.number().int().nonnegative(),
 });
 
 export const decipherLaunchSchema = z.object({
@@ -15,5 +22,6 @@ export const rdpLaunchSchema = z.object({
 });
 
 export type CrackLaunchInput = z.infer<typeof crackLaunchSchema>;
+export type CrackAttemptInput = z.infer<typeof crackAttemptSchema>;
 export type DecipherLaunchInput = z.infer<typeof decipherLaunchSchema>;
 export type RdpLaunchInput = z.infer<typeof rdpLaunchSchema>;

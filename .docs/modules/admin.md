@@ -485,7 +485,7 @@ CRUD слотов миссий (CRACK, DECIPHER, RDP). Создание виза
 Шаг 1: тип миссии (CRACK / DECIPHER / RDP)
 Шаг 2: общие поля (`slotKey`, `displayName`, `orderIndex`, `hintText`)
 Шаг 3: специфичные поля (зависят от типа):
-- CRACK: `targetWord`, `targetUrl`, `targetEmail`, `resultPassword`, `crackMaxAttempts`
+- CRACK: `targetUrl`, `targetEmail`, `resultPassword`, `crackMaxAttempts`
 - DECIPHER: `cipherType`, `encryptedWord`, `cipherKey`, `folderPassword`, `folderPath`, `unlocksRdpFolder`, `unlocksRdpSlotKey`
 - RDP: `correctIp`, `rdpScenario`, `timerSeconds`, `rdpPuzzleGridSize`, `logSubjectName`, `nextRdpSlotKey` (для сценария 1: выпадающий список активных RDP-слотов)
 
@@ -513,7 +513,7 @@ CRUD слотов миссий (CRACK, DECIPHER, RDP). Создание виза
 5. **DELETE с активными `MissionProgress` (completed=true)**: разрешено, но с предупреждением «N игроков пройдут эту миссию заново при следующем входе» — на самом деле нет, потому что `MissionProgress` тоже удалится через каскад. Решение: при DELETE слота с прохождениями — спрашивать «Вы уверены? N игроков потеряют прогресс по этой миссии».
 
 6. **Валидация полей при POST/PATCH** — Zod-схема per-`missionType`:
-   - CRACK: `targetWord` ровно 5 символов, `crackMaxAttempts` 3..10
+   - CRACK: `crackMaxAttempts` 3..10
    - DECIPHER: `cipherType` enum, `encryptedWord` непустой, `cipherKey` непустой
    - RDP: `correctIp` валидный IP, `rdpScenario` 1 или 2, `timerSeconds` 30..600, `rdpPuzzleGridSize` 6 или 7
 
