@@ -36,7 +36,7 @@ export function ChatPanel({ chatType }: ChatPanelProps): React.ReactElement {
   return (
     <div
       className={[
-        'flex flex-col rounded-game-md border bg-bg-secondary overflow-hidden',
+        'flex flex-col rounded-game-lg border bg-bg-secondary overflow-hidden',
         hasUnread ? 'border-border animate-chat-notify' : 'border-border',
       ].join(' ')}
     >
@@ -66,7 +66,7 @@ export function ChatPanel({ chatType }: ChatPanelProps): React.ReactElement {
           )}
         </div>
 
-        <span className="font-mono text-game-sm uppercase tracking-game-wide text-content-primary">
+        <span className="font-mono text-game-panel uppercase tracking-game-wide text-accent">
           {CHAT_LABEL[chatType]}
         </span>
 

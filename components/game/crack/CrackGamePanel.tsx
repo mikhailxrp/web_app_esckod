@@ -1,25 +1,25 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { useCallback, useEffect, useState } from 'react';
-import type { ReactElement } from 'react';
+import Image from "next/image";
+import { useCallback, useEffect, useState } from "react";
+import type { ReactElement } from "react";
 
-import { AttemptHistory } from '@/components/game/crack/AttemptHistory';
-import { CrackCipherText } from '@/components/game/crack/CrackCipherText';
-import { CrackCompletedView } from '@/components/game/crack/CrackCompletedView';
-import { CrackHintButton } from '@/components/game/crack/CrackHintButton';
-import { CrackSkipButton } from '@/components/game/crack/CrackSkipButton';
-import { CrackWordInput } from '@/components/game/crack/CrackWordInput';
-import { toast } from '@/components/ui/Toast';
-import { fetchWithVersion } from '@/lib/api/fetchWithVersion';
-import { useChatStore } from '@/store/chatStore';
-import { useLogStore } from '@/store/logStore';
+import { AttemptHistory } from "@/components/game/crack/AttemptHistory";
+import { CrackCipherText } from "@/components/game/crack/CrackCipherText";
+import { CrackCompletedView } from "@/components/game/crack/CrackCompletedView";
+import { CrackHintButton } from "@/components/game/crack/CrackHintButton";
+import { CrackSkipButton } from "@/components/game/crack/CrackSkipButton";
+import { CrackWordInput } from "@/components/game/crack/CrackWordInput";
+import { toast } from "@/components/ui/Toast";
+import { fetchWithVersion } from "@/lib/api/fetchWithVersion";
+import { useChatStore } from "@/store/chatStore";
+import { useLogStore } from "@/store/logStore";
 import type {
   AttemptEntry,
   CrackAttemptResult,
   CrackCompleteResult,
   CrackState,
-} from '@/types/crack';
+} from "@/types/crack";
 
 interface PlayingState {
   wordList: string[];
@@ -48,21 +48,24 @@ interface CompletedState {
 }
 
 type View =
-  | { phase: 'loading' }
-  | { phase: 'error'; message: string }
-  | { phase: 'playing'; data: PlayingState }
-  | { phase: 'failed'; data: FailedState }
-  | { phase: 'completed'; data: CompletedState };
+  | { phase: "loading" }
+  | { phase: "error"; message: string }
+  | { phase: "playing"; data: PlayingState }
+  | { phase: "failed"; data: FailedState }
+  | { phase: "completed"; data: CompletedState };
 
 interface CrackGamePanelProps {
   slotKey: string;
   onClose: () => void;
 }
 
-export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): ReactElement {
-  const [view, setView] = useState<View>({ phase: 'loading' });
+export function CrackGamePanel({
+  slotKey,
+  onClose,
+}: CrackGamePanelProps): ReactElement {
+  const [view, setView] = useState<View>({ phase: "loading" });
   const [busy, setBusy] = useState(false);
-  const [inputWord, setInputWord] = useState('');
+  const [inputWord, setInputWord] = useState("");
   const [noiseVisible, setNoiseVisible] = useState(false);
 
   const refreshLogs = useLogStore((s) => s.refreshLogs);
@@ -73,7 +76,7 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
       const res = await fetch(`/api/missions/crack/${slotKey}`);
 
       if (!res.ok) {
-        setView({ phase: 'error', message: 'Не удалось загрузить миссию.' });
+        setView({ phase: "error", message: "Не удалось загрузить миссию." });
         return;
       }
 
@@ -81,7 +84,7 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
 
       if (data.isCompleted) {
         setView({
-          phase: 'completed',
+          phase: "completed",
           data: {
             resultPassword: data.resultPassword,
             targetUrl: data.targetUrl,
@@ -93,7 +96,7 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
       }
 
       setView({
-        phase: 'playing',
+        phase: "playing",
         data: {
           wordList: data.wordList,
           attempts: data.attempts,
@@ -107,8 +110,8 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
         },
       });
     } catch (error) {
-      console.error('[CrackGamePanel.loadState]', error);
-      setView({ phase: 'error', message: 'Ошибка соединения.' });
+      console.error("[CrackGamePanel.loadState]", error);
+      setView({ phase: "error", message: "Ошибка соединения." });
     }
   }, [slotKey]);
 
@@ -121,11 +124,11 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
     async (playing: PlayingState): Promise<void> => {
       try {
         const res = await fetch(`/api/missions/crack/${slotKey}/complete`, {
-          method: 'POST',
+          method: "POST",
         });
 
         if (!res.ok) {
-          toast.error('Не удалось завершить миссию. Обновляю состояние.');
+          toast.error("Не удалось завершить миссию. Обновляю состояние.");
           await loadState();
           return;
         }
@@ -133,7 +136,7 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
         const data = (await res.json()) as CrackCompleteResult;
 
         setView({
-          phase: 'completed',
+          phase: "completed",
           data: {
             resultPassword: data.resultPassword,
             targetUrl: data.targetUrl,
@@ -144,8 +147,8 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
 
         await Promise.all([refreshLogs(), refreshChat()]);
       } catch (error) {
-        console.error('[CrackGamePanel.completeMission]', error);
-        toast.error('Ошибка соединения.');
+        console.error("[CrackGamePanel.completeMission]", error);
+        toast.error("Ошибка соединения.");
         await loadState();
       }
     },
@@ -154,7 +157,7 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
 
   const handleSelectWord = useCallback(
     async (word: string): Promise<void> => {
-      if (busy || view.phase !== 'playing') return;
+      if (busy || view.phase !== "playing") return;
 
       const playing = view.data;
       setBusy(true);
@@ -173,12 +176,14 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
         }
 
         if (!res.ok) {
-          const data = (await res.json().catch(() => ({}))) as { error?: string };
-          if (data.error === 'WORD_NOT_IN_FIELD') {
+          const data = (await res.json().catch(() => ({}))) as {
+            error?: string;
+          };
+          if (data.error === "WORD_NOT_IN_FIELD") {
             setNoiseVisible(true);
             setTimeout(() => setNoiseVisible(false), 2000);
           } else {
-            toast.error('Не удалось сделать попытку.');
+            toast.error("Не удалось сделать попытку.");
           }
           return;
         }
@@ -192,7 +197,7 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
 
         if (result.isFailed) {
           setView({
-            phase: 'failed',
+            phase: "failed",
             data: {
               newWordList: result.newWordList ?? playing.wordList,
               version: result.version,
@@ -205,17 +210,20 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
         }
 
         setView({
-          phase: 'playing',
+          phase: "playing",
           data: {
             ...playing,
-            attempts: [...playing.attempts, { word, positions: result.positions }],
+            attempts: [
+              ...playing.attempts,
+              { word, positions: result.positions },
+            ],
             attemptsUsed: result.attemptsUsed,
             version: result.version,
           },
         });
       } catch (error) {
-        console.error('[CrackGamePanel.handleSelectWord]', error);
-        toast.error('Ошибка соединения.');
+        console.error("[CrackGamePanel.handleSelectWord]", error);
+        toast.error("Ошибка соединения.");
       } finally {
         setBusy(false);
       }
@@ -224,11 +232,11 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
   );
 
   const handleRestart = useCallback((): void => {
-    if (view.phase !== 'failed') return;
+    if (view.phase !== "failed") return;
     const { data } = view;
-    setInputWord('');
+    setInputWord("");
     setView({
-      phase: 'playing',
+      phase: "playing",
       data: {
         ...data.prevPlaying,
         wordList: data.newWordList,
@@ -242,26 +250,28 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
 
   const handleSkip = useCallback(async (): Promise<boolean> => {
     const playing =
-      view.phase === 'playing' ? view.data
-      : view.phase === 'failed' ? view.data.prevPlaying
-      : null;
+      view.phase === "playing"
+        ? view.data
+        : view.phase === "failed"
+          ? view.data.prevPlaying
+          : null;
 
     if (!playing) return false;
 
     try {
       const res = await fetch(`/api/missions/crack/${slotKey}/skip`, {
-        method: 'POST',
+        method: "POST",
       });
 
       if (!res.ok) {
-        toast.error('Не удалось пропустить миссию.');
+        toast.error("Не удалось пропустить миссию.");
         return false;
       }
 
       const data = (await res.json()) as CrackCompleteResult;
 
       setView({
-        phase: 'completed',
+        phase: "completed",
         data: {
           resultPassword: data.resultPassword,
           targetUrl: data.targetUrl,
@@ -273,21 +283,24 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
       await Promise.all([refreshLogs(), refreshChat()]);
       return true;
     } catch (error) {
-      console.error('[CrackGamePanel.handleSkip]', error);
-      toast.error('Ошибка соединения.');
+      console.error("[CrackGamePanel.handleSkip]", error);
+      toast.error("Ошибка соединения.");
       return false;
     }
   }, [view, slotKey, refreshLogs, refreshChat]);
 
   const hintText =
-    view.phase === 'playing' ? view.data.hintText
-    : view.phase === 'failed' ? view.data.prevPlaying.hintText
-    : view.phase === 'completed' ? view.data.hintText
-    : null;
+    view.phase === "playing"
+      ? view.data.hintText
+      : view.phase === "failed"
+        ? view.data.prevPlaying.hintText
+        : view.phase === "completed"
+          ? view.data.hintText
+          : null;
 
   return (
     <article
-      className="relative flex flex-col overflow-hidden rounded-game-lg border border-border bg-bg-primary shadow-game-card"
+      className="relative flex flex-col overflow-hidden rounded-game-lg border border-border bg-[rgba(255,255,255,0.08)] pb-6 shadow-game-card"
       aria-label="Взломщик"
     >
       {/* Header */}
@@ -295,11 +308,11 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
         <Image
           src="/assets/img/icon/cracker-icon.svg"
           alt=""
-          width={20}
-          height={20}
+          width={30}
+          height={30}
           aria-hidden="true"
         />
-        <span className="font-mono text-game-sm uppercase tracking-game-wide text-accent">
+        <span className="font-mono text-game-panel uppercase tracking-game-wide text-accent">
           Взломщик
         </span>
 
@@ -308,7 +321,9 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
             className="block overflow-hidden whitespace-nowrap font-mono text-game-xs text-border tracking-[-0.05em]"
             aria-hidden="true"
           >
-            {'////////////////////////////////////////////////////////////////////'}
+            {
+              "////////////////////////////////////////////////////////////////////"
+            }
           </span>
         </div>
 
@@ -318,32 +333,44 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
             type="button"
             onClick={onClose}
             aria-label="Закрыть игровое поле"
-            className="flex size-7 items-center justify-center rounded-game-sm border border-border font-mono text-game-xs text-content-secondary transition-colors hover:border-border-strong hover:text-content-primary"
+            className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
           >
-            ✕
+            <Image
+              src="/assets/icons/close.svg"
+              alt=""
+              width={16}
+              height={16}
+              aria-hidden="true"
+            />
           </button>
         </div>
       </div>
 
       {/* Body */}
       <div className="flex">
-        {view.phase === 'loading' && (
+        {view.phase === "loading" && (
           <div className="flex flex-1 items-center justify-center px-6 py-8">
-            <p className="font-mono text-game-sm text-content-muted" role="status">
+            <p
+              className="font-mono text-game-sm text-content-muted"
+              role="status"
+            >
               Загрузка…
             </p>
           </div>
         )}
 
-        {view.phase === 'error' && (
+        {view.phase === "error" && (
           <div className="flex flex-1 items-center justify-center px-6 py-8">
-            <p className="font-mono text-game-sm text-semantic-error" role="alert">
+            <p
+              className="font-mono text-game-sm text-semantic-error"
+              role="alert"
+            >
               {view.message}
             </p>
           </div>
         )}
 
-        {view.phase === 'completed' && (
+        {view.phase === "completed" && (
           <div className="flex flex-1 items-center justify-center px-6 py-8">
             <CrackCompletedView
               resultPassword={view.data.resultPassword}
@@ -353,7 +380,7 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
           </div>
         )}
 
-        {view.phase === 'failed' && (
+        {view.phase === "failed" && (
           <div className="flex flex-1 items-center justify-center px-6 py-8">
             <div
               className="flex w-[220px] flex-col gap-3 rounded-game-sm border border-border bg-bg-card p-4"
@@ -368,9 +395,15 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
                   type="button"
                   onClick={onClose}
                   aria-label="Закрыть игровое поле"
-                  className="flex size-6 shrink-0 items-center justify-center rounded-game-sm border border-border font-mono text-game-xs text-content-secondary transition-colors hover:border-border-strong hover:text-content-primary"
+                  className="flex size-6 shrink-0 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
                 >
-                  ✕
+                  <Image
+                    src="/assets/icons/close.svg"
+                    alt=""
+                    width={14}
+                    height={14}
+                    aria-hidden="true"
+                  />
                 </button>
               </div>
 
@@ -391,7 +424,7 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
           </div>
         )}
 
-        {view.phase === 'playing' && (
+        {view.phase === "playing" && (
           <>
             {/* Left column: input + attempt history */}
             <div className="flex w-[240px] shrink-0 flex-col gap-5 border-r border-border px-5 py-5">
@@ -400,7 +433,7 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
                 onChange={setInputWord}
                 onSelect={(word) => {
                   void handleSelectWord(word);
-                  setInputWord('');
+                  setInputWord("");
                 }}
                 disabled={busy}
               />

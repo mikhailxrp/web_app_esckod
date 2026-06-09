@@ -10,9 +10,27 @@ interface CrackCipherTextProps {
   onWordClick?: (word: string) => void;
 }
 
-type Token = { type: "session" | "filler"; text: string } | { type: "sep"; text: string };
+type Token =
+  | { type: "session" | "filler"; text: string }
+  | { type: "sep"; text: string };
 
-const SEP = "%@//--..)+//&\"*/:";
+const SEPS = [
+  "%@//—→+//&'\"",
+  './/—}+&"*',
+  '%@//—→+//&"*/:',
+  '→+//&"',
+  "%@.//—→+",
+  "//—→+//&'\"*/:.",
+  '.)+//&"',
+  '%@//—}+&"*/:.',
+  "→+//&'\"*",
+  "%@//—",
+  ".//—→+//&",
+  "%@//—→+//",
+  ')+//&"*/',
+  "%@.//—→",
+  "//—→+&'\"",
+];
 const TOTAL_SLOTS = 80;
 
 /** Детерминированный shuffle (LCG) — одни и те же слова дают один и тот же результат. */
@@ -28,7 +46,10 @@ function seededShuffle<T>(arr: T[], seed: number): T[] {
 }
 
 function getSeed(words: string[]): number {
-  return words.join('').split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return words
+    .join("")
+    .split("")
+    .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
 }
 
 function buildTokens(sessionWords: string[]): Token[] {
@@ -50,10 +71,11 @@ function buildTokens(sessionWords: string[]): Token[] {
 
   // build token array: [sep] [word sep] [word sep] ... [final sep]
   const tokens: Token[] = [{ type: "sep", text: "[//:" }];
-  for (const text of shuffled) {
+  for (let i = 0; i < shuffled.length; i++) {
+    const text = shuffled[i];
     const isSession = sessionSet.has(text);
     tokens.push({ type: isSession ? "session" : "filler", text });
-    tokens.push({ type: "sep", text: SEP });
+    tokens.push({ type: "sep", text: SEPS[i % SEPS.length] });
   }
   tokens.push({ type: "sep", text: '&""' });
 
@@ -67,12 +89,15 @@ export function CrackCipherText({
   const tokens = useMemo(() => buildTokens(words), [words]);
 
   return (
-    <div className="max-h-[500px] overflow-auto rounded-game-sm border border-border bg-bg-secondary p-4">
-      <p className="break-all font-mono text-[16px] leading-relaxed">
+    <div className="log-scrollbar h-[350px] w-full overflow-auto rounded-game-sm border border-white bg-[rgba(255,255,255,0.10)] p-4 backdrop-blur-sm">
+      <p className="break-all font-mono text-[14px] leading-relaxed text-[rgba(255,255,255,0.8)]">
         {tokens.map((token, i) => {
           if (token.type === "sep") {
             return (
-              <span key={i} className="select-none text-content-muted">
+              <span
+                key={i}
+                className="select-none text-[rgba(255,255,255,0.8)]"
+              >
                 {token.text}
               </span>
             );
@@ -83,7 +108,7 @@ export function CrackCipherText({
               key={i}
               type="button"
               onClick={() => onWordClick?.(token.text)}
-              className="cursor-pointer text-content-secondary focus-visible:outline-none"
+              className="cursor-pointer text-[rgba(255,255,255,0.8)] focus-visible:outline-none"
             >
               {token.text}
             </button>

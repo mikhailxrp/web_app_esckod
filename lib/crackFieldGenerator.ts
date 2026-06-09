@@ -14,11 +14,11 @@ interface DistributionGroup {
  * Сумма count + 1 (target) ≈ 30 слов. Подробности — missions-crack.md.
  */
 const DISTRIBUTION: readonly DistributionGroup[] = [
-  { matches: 4, count: 1 },
-  { matches: 3, count: 4 },
-  { matches: 2, count: 8 },
-  { matches: 1, count: 10 },
-  { matches: 0, count: 6 },
+  { matches: 4, count: 2 },
+  { matches: 3, count: 8 },
+  { matches: 2, count: 15 },
+  { matches: 1, count: 12 },
+  { matches: 0, count: 3 },
 ];
 
 /**

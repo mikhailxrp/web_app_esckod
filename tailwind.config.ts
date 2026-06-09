@@ -29,18 +29,18 @@ const config: Config = {
         // Базовые фоны — используются на всех экранах
         bg: {
           page: "#000000", // чистый чёрный фон страницы
-          primary: "#0D1117", // основной тёмный фон
-          secondary: "#161B22", // фон карточек и панелей
-          tertiary: "#1C2333", // вложенные блоки, header-зоны
-          input: "#0D1117", // фон инпутов
-          card: "#161B22", // фон auth-карточки
+          primary: "#121212", // основной тёмный фон
+          secondary: "#1C1C1C", // фон карточек и панелей
+          tertiary: "#242424", // вложенные блоки, header-зоны
+          input: "#121212", // фон инпутов
+          card: "#1C1C1C", // фон auth-карточки
         },
 
-        // Акцентный cyan — главный цвет интерактивных элементов
+        // Акцентный teal — главный цвет интерактивных элементов
         accent: {
-          DEFAULT: "#00E5CC",
-          hover: "#0FB8A0",
-          muted: "rgba(0, 229, 204, 0.12)",
+          DEFAULT: "#44DFD7",
+          hover: "#00B3A6",
+          muted: "rgba(68, 223, 215, 0.12)",
         },
 
         // Текст
@@ -48,9 +48,9 @@ const config: Config = {
           primary: "#E6EDF3", // основной текст
           secondary: "#8B949E", // лейблы, метаданные, timestamps
           muted: "#484F58", // placeholder, неактивные элементы
-          inverse: "#0D1117", // текст на accent-кнопке
+          inverse: "#000000", // текст на accent-кнопке
           label: "#8B949E", // лейблы полей формы
-          "card-title": "#00E5CC", // заголовок auth-карточки
+          "card-title": "#44DFD7", // заголовок auth-карточки
         },
 
         // Границы
@@ -59,16 +59,16 @@ const config: Config = {
           light: "#21262D", // тонкая граница
           strong: "#484F58", // акцентная граница
           card: "rgba(255,255,255,0.15)", // граница auth-карточки
-          focus: "#00E5CC", // focus-состояние инпута
-          error: "#CF222E", // error-состояние инпута
+          focus: "#44DFD7", // focus-состояние инпута
+          error: "#CF6679", // error-состояние инпута
         },
 
         // Семантика
         semantic: {
           success: "#3FB950",
           "success-bg": "rgba(63, 185, 80, 0.10)",
-          error: "#CF222E",
-          "error-bg": "rgba(207, 34, 46, 0.10)",
+          error: "#CF6679",
+          "error-bg": "rgba(207, 102, 121, 0.10)",
           warning: "#BF8700",
           "warning-bg": "rgba(191, 135, 0, 0.10)",
           info: "#0550AE",
@@ -120,7 +120,8 @@ const config: Config = {
         "game-sm": ["12px", { lineHeight: "18px" }], // лейблы, placeholder
         "game-base": ["14px", { lineHeight: "22px" }], // основной контент
         "game-md": ["16px", { lineHeight: "24px" }], // заголовки карточек
-        "game-lg": ["18px", { lineHeight: "28px" }], // заголовки панелей
+        "game-lg": ["18px", { lineHeight: "28px" }], // заголовки карточек
+        "game-panel": ["20px", { lineHeight: "28px" }], // заголовки панелей (Взломщик, Детектив, История)
         "game-xl": ["24px", { lineHeight: "32px" }], // заголовки страниц
         "game-2xl": ["32px", { lineHeight: "40px" }], // hero-заголовок
         "game-3xl": ["40px", { lineHeight: "48px" }],
@@ -164,15 +165,15 @@ const config: Config = {
           "0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.15)",
 
         // Cyan свечение — разная интенсивность
-        "game-glow-sm": "0 0 8px rgba(0,229,204,0.15)",
-        "game-glow-md": "0 0 16px rgba(0,229,204,0.20)",
-        "game-glow-lg": "0 0 32px rgba(0,229,204,0.25)",
+        "game-glow-sm": "0 0 8px rgba(68,223,215,0.15)",
+        "game-glow-md": "0 0 16px rgba(68,223,215,0.20)",
+        "game-glow-lg": "0 0 32px rgba(68,223,215,0.25)",
 
         // Focus инпута
-        "game-focus": "0 0 0 1px #00E5CC, 0 0 8px rgba(0,229,204,0.15)",
+        "game-focus": "0 0 0 1px #44DFD7, 0 0 8px rgba(68,223,215,0.15)",
 
         // Error инпута
-        "game-error": "0 0 0 1px #CF222E",
+        "game-error": "0 0 0 1px #CF6679",
 
         // Admin — карточка формы входа
         "admin-card": "0 4px 24px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.06)",
@@ -205,10 +206,10 @@ const config: Config = {
           "50%": { opacity: "0" },
         },
 
-        // Пульсация cyan-свечения
+        // Пульсация teal-свечения
         "glow-pulse": {
-          "0%, 100%": { boxShadow: "0 0 8px rgba(0,229,204,0.15)" },
-          "50%": { boxShadow: "0 0 20px rgba(0,229,204,0.35)" },
+          "0%, 100%": { boxShadow: "0 0 8px rgba(68,223,215,0.15)" },
+          "50%": { boxShadow: "0 0 20px rgba(68,223,215,0.35)" },
         },
 
         // Появление строки (slide-in снизу)

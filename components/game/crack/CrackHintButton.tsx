@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import type { ReactElement } from 'react';
 
 interface CrackHintButtonProps {
@@ -21,9 +22,9 @@ export function CrackHintButton({ hintText }: CrackHintButtonProps): ReactElemen
         onClick={() => setOpen((v) => !v)}
         aria-label="Правила миссии"
         aria-expanded={open}
-        className="flex size-7 items-center justify-center rounded-game-sm border border-border font-mono text-game-sm text-content-secondary transition-colors hover:border-accent hover:text-accent"
+        className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
       >
-        ⓘ
+        <Image src="/assets/icons/info.svg" alt="" width={16} height={16} aria-hidden="true" />
       </button>
 
       {open ? (

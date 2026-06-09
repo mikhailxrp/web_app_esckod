@@ -34,7 +34,7 @@ export function DashboardClient({
   );
 
   return (
-    <div className="flex min-h-screen flex-col gap-6 px-11 py-6">
+    <div className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col gap-6 px-11 py-6">
       {/* Top bar: status + hint + logout */}
       <div className="flex items-start justify-between gap-4">
         <StatusBar targetName={GAME_TARGET_NAME} />

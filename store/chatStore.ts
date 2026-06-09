@@ -185,14 +185,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         state.marina.isVisible ? fetchMessages('MARINA') : Promise.resolve([]),
       ]);
 
-      set({
+      set((s) => ({
         version: state.version,
         finalChoice: state.finalChoice,
         detective: {
           messages: detectiveMessages,
           isTyping: false,
           pendingMessage: null,
-          unreadCount: 0,
+          unreadCount: Math.max(0, detectiveMessages.length - s.detective.messages.length),
           isWaiting: state.detective.isWaiting,
           isFinished: state.detective.isFinished,
           isVisible: true,
@@ -202,14 +202,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           messages: marinaMessages,
           isTyping: false,
           pendingMessage: null,
-          unreadCount: 0,
+          unreadCount: Math.max(0, marinaMessages.length - s.marina.messages.length),
           isWaiting: state.marina.isWaiting,
           isFinished: state.marina.isFinished,
           isVisible: state.marina.isVisible,
           status: 'ready',
         },
         error: null,
-      });
+      }));
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Ошибка загрузки чатов';
       console.error('[chatStore.refresh]', error);
