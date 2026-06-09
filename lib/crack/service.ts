@@ -285,17 +285,6 @@ export async function applyAttempt(
           },
         });
 
-        await tx.operationLog.create({
-          data: {
-            userId,
-            type: LogType.ERROR,
-            message: renderLogMessage('crack_attempt_failed', {
-              targetUrl: slot.targetUrl ?? PLACEHOLDER,
-              targetEmail: slot.targetEmail ?? PLACEHOLDER,
-            }),
-          },
-        });
-
         const existingProgress = await tx.missionProgress.findUnique({
           where: { userId_slotId: { userId, slotId: slot.id } },
         });
