@@ -33,6 +33,13 @@ interface PlayingState {
   targetEmail: string | null;
 }
 
+interface FailedState {
+  newWordList: string[];
+  version: number;
+  canSkip: boolean;
+  prevPlaying: PlayingState;
+}
+
 interface CompletedState {
   resultPassword: string | null;
   targetUrl: string | null;
@@ -44,6 +51,7 @@ type View =
   | { phase: 'loading' }
   | { phase: 'error'; message: string }
   | { phase: 'playing'; data: PlayingState }
+  | { phase: 'failed'; data: FailedState }
   | { phase: 'completed'; data: CompletedState };
 
 interface CrackGamePanelProps {
@@ -183,16 +191,13 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
         }
 
         if (result.isFailed) {
-          toast.warning('Доступ заблокирован: попытки исчерпаны. Поле перегенерировано.');
           setView({
-            phase: 'playing',
+            phase: 'failed',
             data: {
-              ...playing,
-              wordList: result.newWordList ?? playing.wordList,
-              attempts: [],
-              attemptsUsed: 0,
+              newWordList: result.newWordList ?? playing.wordList,
               version: result.version,
               canSkip: result.canSkip ?? playing.canSkip,
+              prevPlaying: playing,
             },
           });
           await refreshLogs();
@@ -218,10 +223,30 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
     [busy, view, slotKey, loadState, completeMission, refreshLogs],
   );
 
-  const handleSkip = useCallback(async (): Promise<boolean> => {
-    if (view.phase !== 'playing') return false;
+  const handleRestart = useCallback((): void => {
+    if (view.phase !== 'failed') return;
+    const { data } = view;
+    setInputWord('');
+    setView({
+      phase: 'playing',
+      data: {
+        ...data.prevPlaying,
+        wordList: data.newWordList,
+        attempts: [],
+        attemptsUsed: 0,
+        version: data.version,
+        canSkip: data.canSkip,
+      },
+    });
+  }, [view]);
 
-    const playing = view.data;
+  const handleSkip = useCallback(async (): Promise<boolean> => {
+    const playing =
+      view.phase === 'playing' ? view.data
+      : view.phase === 'failed' ? view.data.prevPlaying
+      : null;
+
+    if (!playing) return false;
 
     try {
       const res = await fetch(`/api/missions/crack/${slotKey}/skip`, {
@@ -255,7 +280,10 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
   }, [view, slotKey, refreshLogs, refreshChat]);
 
   const hintText =
-    view.phase === 'playing' || view.phase === 'completed' ? view.data.hintText : null;
+    view.phase === 'playing' ? view.data.hintText
+    : view.phase === 'failed' ? view.data.prevPlaying.hintText
+    : view.phase === 'completed' ? view.data.hintText
+    : null;
 
   return (
     <article
@@ -322,6 +350,44 @@ export function CrackGamePanel({ slotKey, onClose }: CrackGamePanelProps): React
               targetUrl={view.data.targetUrl}
               targetEmail={view.data.targetEmail}
             />
+          </div>
+        )}
+
+        {view.phase === 'failed' && (
+          <div className="flex flex-1 items-center justify-center px-6 py-8">
+            <div
+              className="flex w-[220px] flex-col gap-3 rounded-game-sm border border-border bg-bg-card p-4"
+              role="alert"
+              aria-live="assertive"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-game-sm text-content-primary">
+                  Миссия провалена.
+                </span>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label="Закрыть игровое поле"
+                  className="flex size-6 shrink-0 items-center justify-center rounded-game-sm border border-border font-mono text-game-xs text-content-secondary transition-colors hover:border-border-strong hover:text-content-primary"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleRestart}
+                className="h-input-height w-full rounded-game-full bg-accent font-mono text-game-sm uppercase tracking-game-wide text-content-inverse transition-opacity hover:opacity-90"
+              >
+                Начать заново
+              </button>
+
+              {view.data.canSkip ? (
+                <div className="flex justify-center">
+                  <CrackSkipButton onSkip={handleSkip} disabled={busy} />
+                </div>
+              ) : null}
+            </div>
           </div>
         )}
 
