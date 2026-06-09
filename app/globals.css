@@ -51,15 +51,15 @@
   body::before {
     content: "";
     position: fixed;
-    top: -135%;
+    top: calc(-70vw + 130px);
     left: 50%;
     transform: translateX(-50%);
     width: 100vw;
     height: 70vw;
     background: #79d9ff;
     border-radius: 50%;
-    filter: blur(120px);
-    opacity: 0.6;
+    filter: blur(200px);
+    opacity: 0.3;
     pointer-events: none;
     z-index: -1;
   }
