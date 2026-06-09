@@ -73,7 +73,7 @@ export function ChatMessage({
           <div
             className={[
               'max-w-[85%] rounded-game-md px-4 py-3',
-              isRight ? 'bg-accent text-content-inverse' : 'bg-bg-tertiary text-content-primary',
+              isRight ? 'bg-[rgba(164,244,240,0.60)] text-content-inverse' : 'bg-[rgba(255,255,255,0.30)] text-content-primary',
             ].join(' ')}
           >
             <AudioPlayer src={audioUrl} />
@@ -86,7 +86,7 @@ export function ChatMessage({
           className={[
             'max-w-[85%] rounded-game-md px-4 py-3',
             'font-mono text-game-sm leading-relaxed whitespace-pre-wrap',
-            isRight ? 'bg-accent text-content-inverse' : 'bg-bg-tertiary text-content-primary',
+            isRight ? 'bg-[rgba(164,244,240,0.60)] text-content-inverse' : 'bg-[rgba(255,255,255,0.30)] text-content-primary',
           ].join(' ')}
         >
           {text ? renderTextWithLinks(text) : null}

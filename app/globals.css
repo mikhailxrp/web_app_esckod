@@ -17,8 +17,9 @@
    ----------------------------------------------------------- */
 
 @font-face {
-  font-family: 'VCR OSD Mono';
-  src: url('/assets/fonts/VCROSDMono%5BNolivantNTEdit%5D-Regular%202.ttf') format('truetype');
+  font-family: "VCR OSD Mono";
+  src: url("/assets/fonts/VCROSDMono%5BNolivantNTEdit%5D-Regular%202.ttf")
+    format("truetype");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -29,22 +30,38 @@
    ----------------------------------------------------------- */
 
 @layer base {
-
   html {
     @apply bg-bg-page text-content-primary;
-    font-family: 'VCR OSD Mono', monospace;
+    font-family: "VCR OSD Mono", monospace;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  input, select, textarea, button {
+  input,
+  select,
+  textarea,
+  button {
     font-family: inherit;
   }
 
   body {
     @apply min-h-screen;
-    background: radial-gradient(ellipse 70% 70% at 50% 5%, #0d3540 0%, #000000 60%);
-    background-attachment: fixed;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    top: -135%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100vw;
+    height: 70vw;
+    background: #79d9ff;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.6;
+    pointer-events: none;
+    z-index: -1;
   }
 
   /* Сброс outline — заменяем на кастомный focus-ring */
@@ -65,7 +82,7 @@
   .admin-input:-webkit-autofill,
   .admin-input:-webkit-autofill:hover,
   .admin-input:-webkit-autofill:focus {
-    -webkit-box-shadow: 0 0 0 100px #EDEEF2 inset;
+    -webkit-box-shadow: 0 0 0 100px #edeef2 inset;
     -webkit-text-fill-color: #111827;
     transition: background-color 5000s ease-in-out 0s;
   }
@@ -74,11 +91,10 @@
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus {
-    -webkit-box-shadow: 0 0 0 100px theme('colors.bg.input') inset;
-    -webkit-text-fill-color: theme('colors.content.primary');
+    -webkit-box-shadow: 0 0 0 100px #121212 inset;
+    -webkit-text-fill-color: theme("colors.content.primary");
     transition: background-color 5000s ease-in-out 0s;
   }
-
 }
 
 /* -----------------------------------------------------------
@@ -87,17 +103,20 @@
    ----------------------------------------------------------- */
 
 @layer components {
-
   /* Фон страницы с градиентом */
   .page-bg {
     @apply relative min-h-screen overflow-hidden;
-    background: radial-gradient(ellipse 70% 70% at 50% -10%, #0d3540 0%, #000000 60%);
+    background: radial-gradient(
+      ellipse 70% 70% at 50% -10%,
+      #0d3540 0%,
+      #000000 60%
+    );
   }
 
   /* Контейнер SVG-букв ЭСКАПИСТ */
   .page-bg__letters {
     @apply absolute inset-0 pointer-events-none select-none;
-    z-index: theme('zIndex.bg-letters');
+    z-index: theme("zIndex.bg-letters");
   }
 
   /* Одна SVG буква — координаты задаются через style={{ top, left }} */
@@ -109,30 +128,30 @@
   /* Auth-карточка — центрированная форма */
   .auth-card {
     @apply relative z-card flex w-full max-w-[840px] flex-col overflow-hidden;
-    background: theme('colors.bg.card');
-    border: 1px solid theme('colors.border.card');
-    border-radius: theme('borderRadius.game-xl');
-    box-shadow: theme('boxShadow.game-card');
+    background: theme("colors.bg.card");
+    border: 1px solid theme("colors.border.card");
+    border-radius: theme("borderRadius.game-xl");
+    box-shadow: theme("boxShadow.game-card");
   }
 
   /* Шапка auth-карточки */
   .auth-card__header {
     @apply flex items-center justify-between px-8 py-3.5;
-    border-bottom: 1px solid theme('colors.border.DEFAULT');
+    border-bottom: 1px solid theme("colors.border.DEFAULT");
   }
 
   /* Заголовок auth-карточки */
   .auth-card__title {
     @apply font-mono font-semibold tracking-game-wide uppercase;
-    font-size: theme('fontSize.game-base[0]');
-    color: theme('colors.content.card-title');
+    font-size: theme("fontSize.game-base[0]");
+    color: theme("colors.content.card-title");
   }
 
   /* Паттерн //// в шапке */
   .auth-card__pattern {
     @apply font-mono overflow-hidden whitespace-nowrap;
-    font-size: theme('fontSize.game-sm[0]');
-    color: theme('colors.border.DEFAULT');
+    font-size: theme("fontSize.game-sm[0]");
+    color: theme("colors.border.DEFAULT");
     letter-spacing: -0.05em;
   }
 
@@ -149,63 +168,63 @@
   /* Лейбл поля */
   .form-field__label {
     @apply font-mono font-normal;
-    font-size: theme('fontSize.game-base[0]');
-    color: theme('colors.content.label');
+    font-size: theme("fontSize.game-base[0]");
+    color: theme("colors.content.label");
   }
 
   /* Инпут */
   .form-field__input {
     @apply w-full font-mono transition-all duration-150;
-    height: theme('spacing.input-height');
+    height: theme("spacing.input-height");
     padding: 0 16px;
-    background: theme('colors.bg.input');
-    border: 1px solid theme('colors.border.DEFAULT');
-    border-radius: theme('borderRadius.game-lg');
-    font-size: theme('fontSize.game-base[0]');
-    color: theme('colors.content.primary');
+    background: theme("colors.bg.input");
+    border: 1px solid theme("colors.border.DEFAULT");
+    border-radius: theme("borderRadius.game-lg");
+    font-size: theme("fontSize.game-base[0]");
+    color: theme("colors.content.primary");
   }
 
   .form-field__input::placeholder {
-    color: theme('colors.content.muted');
+    color: theme("colors.content.muted");
   }
 
   .form-field__input:focus {
-    border-color: theme('colors.border.focus');
-    box-shadow: theme('boxShadow.game-focus');
+    border-color: theme("colors.border.focus");
+    box-shadow: theme("boxShadow.game-focus");
   }
 
   /* Инпут в состоянии ошибки */
   .form-field--error .form-field__input {
-    border-color: theme('colors.border.error');
-    box-shadow: theme('boxShadow.game-error');
-    color: theme('colors.semantic.error');
+    border-color: theme("colors.border.error");
+    box-shadow: theme("boxShadow.game-error");
+    color: theme("colors.semantic.error");
   }
 
   /* Текст ошибки под полем */
   .form-field__error {
     @apply font-mono;
-    font-size: theme('fontSize.game-sm[0]');
-    color: theme('colors.semantic.error');
+    font-size: theme("fontSize.game-sm[0]");
+    color: theme("colors.semantic.error");
   }
 
   /* Кнопка Primary */
   .btn-primary {
     @apply w-full flex items-center justify-center font-mono font-semibold uppercase tracking-game-wide cursor-pointer transition-all duration-150;
-    height: theme('spacing.input-height');
-    background: theme('colors.accent.DEFAULT');
-    color: theme('colors.content.inverse');
-    border-radius: theme('borderRadius.game-lg');
-    font-size: theme('fontSize.game-base[0]');
+    height: theme("spacing.input-height");
+    background: theme("colors.accent.DEFAULT");
+    color: theme("colors.content.inverse");
+    border-radius: theme("borderRadius.game-lg");
+    font-size: theme("fontSize.game-base[0]");
     border: none;
   }
 
   .btn-primary:hover {
-    background: theme('colors.accent.hover');
-    box-shadow: theme('boxShadow.game-glow-sm');
+    background: theme("colors.accent.hover");
+    box-shadow: theme("boxShadow.game-glow-sm");
   }
 
   .btn-primary:active {
-    background: theme('colors.accent.hover');
+    background: theme("colors.accent.hover");
     box-shadow: none;
   }
 
@@ -216,40 +235,40 @@
   /* Кнопка Ghost */
   .btn-ghost {
     @apply flex items-center justify-center font-mono font-semibold uppercase tracking-game-wide cursor-pointer transition-all duration-150;
-    height: theme('spacing.input-height');
+    height: theme("spacing.input-height");
     background: transparent;
-    color: theme('colors.accent.DEFAULT');
-    border: 1px solid theme('colors.accent.DEFAULT');
-    border-radius: theme('borderRadius.game-lg');
-    font-size: theme('fontSize.game-base[0]');
+    color: theme("colors.accent.DEFAULT");
+    border: 1px solid theme("colors.accent.DEFAULT");
+    border-radius: theme("borderRadius.game-lg");
+    font-size: theme("fontSize.game-base[0]");
   }
 
   .btn-ghost:hover {
-    background: theme('colors.accent.muted');
+    background: theme("colors.accent.muted");
   }
 
   /* Ссылка формы */
   .form-link {
     @apply font-mono underline underline-offset-2 transition-colors duration-150;
-    font-size: theme('fontSize.game-sm[0]');
-    color: theme('colors.content.secondary');
+    font-size: theme("fontSize.game-sm[0]");
+    color: theme("colors.content.secondary");
   }
 
   .form-link:hover {
-    color: theme('colors.content.primary');
+    color: theme("colors.content.primary");
   }
 
   /* Блок успеха */
   .form-success__title {
     @apply font-mono font-semibold;
-    font-size: theme('fontSize.game-base[0]');
-    color: theme('colors.semantic.success');
+    font-size: theme("fontSize.game-base[0]");
+    color: theme("colors.semantic.success");
   }
 
   .form-success__text {
     @apply font-mono;
-    font-size: theme('fontSize.game-base[0]');
-    color: theme('colors.content.primary');
+    font-size: theme("fontSize.game-base[0]");
+    color: theme("colors.content.primary");
   }
 
   /* Двухколоночный layout формы (регистрация) */
@@ -265,9 +284,9 @@
 
   .form-split__text {
     @apply flex flex-col gap-4 font-mono;
-    font-size: theme('fontSize.game-lg[0]');
-    line-height: theme('fontSize.game-lg[1].lineHeight');
-    color: theme('colors.content.primary');
+    font-size: theme("fontSize.game-lg[0]");
+    line-height: theme("fontSize.game-lg[1].lineHeight");
+    color: theme("colors.content.primary");
   }
 
   .form-split__fields {
@@ -276,8 +295,8 @@
 
   .form-field__checkbox-label {
     @apply flex items-start gap-3 font-mono;
-    font-size: theme('fontSize.game-sm[0]');
-    color: theme('colors.content.primary');
+    font-size: theme("fontSize.game-sm[0]");
+    color: theme("colors.content.primary");
   }
 
   .form-field__checkbox {
@@ -286,53 +305,56 @@
 
   .form-alert {
     @apply rounded-game-lg border px-3 py-2 font-mono;
-    font-size: theme('fontSize.game-sm[0]');
+    font-size: theme("fontSize.game-sm[0]");
   }
 
   .form-alert--error {
-    border-color: theme('colors.semantic.error');
-    background: theme('colors.semantic.error-bg');
-    color: theme('colors.semantic.error');
+    border-color: theme("colors.semantic.error");
+    background: theme("colors.semantic.error-bg");
+    color: theme("colors.semantic.error");
   }
 
   .form-alert--warning {
-    border-color: theme('colors.semantic.warning');
-    background: theme('colors.semantic.warning-bg');
-    color: theme('colors.semantic.warning');
+    border-color: theme("colors.semantic.warning");
+    background: theme("colors.semantic.warning-bg");
+    color: theme("colors.semantic.warning");
   }
 
   /* Loader — полноэкранный */
   .loader-screen {
     @apply fixed inset-0 flex items-center justify-center overflow-hidden;
-    z-index: theme('zIndex.loader');
-    background: radial-gradient(ellipse 70% 70% at 50% -10%, #0d3540 0%, #000000 60%);
+    z-index: theme("zIndex.loader");
+    background: radial-gradient(
+      ellipse 70% 70% at 50% -10%,
+      #0d3540 0%,
+      #000000 60%
+    );
   }
 
   .loader-screen__text {
     @apply font-base text-content-primary mb-4 text-center;
-    font-size: theme('fontSize.game-base[0]');
+    font-size: theme("fontSize.game-base[0]");
   }
 
   .loader-screen__track {
     height: 6px;
-    width: theme('spacing.progress-width');
+    width: theme("spacing.progress-width");
     background: transparent;
-    border: 1px solid theme('colors.border.DEFAULT');
-    border-radius: theme('borderRadius.game-full');
+    border: 1px solid theme("colors.border.DEFAULT");
+    border-radius: theme("borderRadius.game-full");
     overflow: hidden;
   }
 
   .loader-screen__bar {
     @apply h-full transition-all duration-200;
     width: 0%;
-    background: theme('colors.accent.DEFAULT');
-    border-radius: theme('borderRadius.game-full');
+    background: theme("colors.accent.DEFAULT");
+    border-radius: theme("borderRadius.game-full");
   }
 
   .loader-screen--hidden {
     @apply opacity-0 pointer-events-none transition-opacity duration-400;
   }
-
 }
 
 /* -----------------------------------------------------------
@@ -342,8 +364,12 @@
 
 /* Typewriter эффект — печатающийся текст */
 @keyframes typewriter {
-  from { width: 0; }
-  to   { width: 100%; }
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
 }
 
 .typewriter {
@@ -366,10 +392,33 @@
    [GAME] — Игровые экраны
    ----------------------------------------------------------- */
 
+/* Полоса прокрутки в истории операций */
+.log-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: theme("colors.border.strong") transparent;
+}
+
+.log-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.log-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.log-scrollbar::-webkit-scrollbar-thumb {
+  background: theme("colors.border.DEFAULT");
+  border-radius: 9999px;
+}
+
+.log-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: theme("colors.border.strong");
+}
+
 /* Полоса прокрутки в панели чата */
 .chat-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: theme('colors.accent.muted') transparent;
+  scrollbar-color: rgba(68, 223, 215, 0.12) transparent;
 }
 
 .chat-scrollbar::-webkit-scrollbar {
@@ -381,12 +430,12 @@
 }
 
 .chat-scrollbar::-webkit-scrollbar-thumb {
-  background: theme('colors.accent.muted');
+  background: rgba(68, 223, 215, 0.12);
   border-radius: 9999px;
 }
 
 .chat-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 229, 204, 0.25);
+  background: rgba(68, 223, 215, 0.25);
 }
 
 /* -----------------------------------------------------------
@@ -394,32 +443,30 @@
    ----------------------------------------------------------- */
 
 @layer utilities {
-
   /* Паттерн //// для разделителей */
   .slash-pattern::after {
-    content: '////////////////////////////////////////////////////////////////////';
+    content: "////////////////////////////////////////////////////////////////////";
     @apply font-mono overflow-hidden whitespace-nowrap;
-    font-size: theme('fontSize.game-sm[0]');
-    color: theme('colors.border.DEFAULT');
+    font-size: theme("fontSize.game-sm[0]");
+    color: theme("colors.border.DEFAULT");
     letter-spacing: -0.05em;
   }
 
   /* Uppercase моно лейбл */
   .mono-label {
     @apply font-mono uppercase tracking-game-wide;
-    font-size: theme('fontSize.game-sm[0]');
-    color: theme('colors.content.secondary');
+    font-size: theme("fontSize.game-sm[0]");
+    color: theme("colors.content.secondary");
   }
 
   /* Мигающий курсор */
   .cursor-blink::after {
-    content: '█';
+    content: "█";
     @apply animate-blink;
-    color: theme('colors.accent.DEFAULT');
+    color: theme("colors.accent.DEFAULT");
   }
 
   /* [DASHBOARD] — добавить утилиты для dashboard-компонентов */
-
 }
 
 /* -----------------------------------------------------------
@@ -432,11 +479,11 @@
 }
 
 @media (max-width: 1023px), (max-height: 699px) {
-  html[data-device='tablet'] body > :not(.mobile-block-fallback) {
+  html[data-device="tablet"] body > :not(.mobile-block-fallback) {
     display: none;
   }
 
-  html[data-device='tablet'] .mobile-block-fallback {
+  html[data-device="tablet"] .mobile-block-fallback {
     display: flex;
   }
 }
@@ -454,13 +501,13 @@
    ----------------------------------------------------------- */
 
 .admin-zone {
-  font-family: var(--font-roboto), 'Roboto', sans-serif;
+  font-family: var(--font-roboto), "Roboto", sans-serif;
 }
 
 .admin-zone .font-base,
 .admin-zone .font-mono,
 .admin-zone .font-accent {
-  font-family: var(--font-roboto), 'Roboto', sans-serif;
+  font-family: var(--font-roboto), "Roboto", sans-serif;
 }
 
 /* -----------------------------------------------------------

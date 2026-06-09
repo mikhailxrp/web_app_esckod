@@ -13,6 +13,7 @@ import {
   type DecipherLaunchInput,
   type RdpLaunchInput,
 } from "@/lib/validations/missions";
+import { useLogStore } from "@/store/logStore";
 
 // ─── Static config per mission type ──────────────────────────────────────────
 
@@ -67,6 +68,7 @@ function CrackForm({ onLaunched }: CrackFormProps): React.ReactElement {
     mode: "onChange",
   });
   const [serverError, setServerError] = useState<string | null>(null);
+  const refreshLogs = useLogStore((s) => s.refreshLogs);
 
   const onSubmit = async (values: CrackLaunchInput): Promise<void> => {
     setServerError(null);
@@ -85,6 +87,7 @@ function CrackForm({ onLaunched }: CrackFormProps): React.ReactElement {
 
       if (!res.ok) {
         setServerError("Ошибка доступа. Проверьте данные.");
+        await refreshLogs();
         return;
       }
 
@@ -123,7 +126,7 @@ function CrackForm({ onLaunched }: CrackFormProps): React.ReactElement {
 
       <div className="flex flex-col gap-2">
         <label htmlFor="crack-targetEmail" className={LABEL_CLASS}>
-          Логин
+          Почта
         </label>
         <input
           {...register("targetEmail")}
@@ -303,7 +306,7 @@ function MissionModal({
       onClick={onClose}
     >
       <div
-        className="flex h-[480px] w-full max-w-[840px] animate-modal-panel flex-col rounded-game-lg border border-border bg-bg-primary shadow-game-card"
+        className="flex h-[530px] w-full max-w-[840px] animate-modal-panel flex-col rounded-game-lg border border-border bg-bg-primary shadow-game-card"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal header */}
@@ -334,9 +337,9 @@ function MissionModal({
             type="button"
             onClick={onClose}
             aria-label="Закрыть форму"
-            className="flex size-7 items-center justify-center rounded-game-sm border border-border font-mono text-game-xs text-content-secondary transition-colors hover:border-border-strong hover:text-content-primary"
+            className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
           >
-            ✕
+            <Image src="/assets/icons/close.svg" alt="" width={16} height={16} aria-hidden="true" />
           </button>
         </div>
 
@@ -381,7 +384,7 @@ export function MissionCard({
 
   return (
     <>
-      <article className="flex min-h-[200px] flex-col rounded-game-xl border border-white bg-bg-primary 2xl:min-h-[480px]">
+      <article className="flex min-h-[200px] flex-col rounded-game-xl border border-white bg-[rgba(255,255,255,0.08)] backdrop-blur-sm 2xl:min-h-[380px]">
         {/* Card header */}
         <div className="border-b border-white/30 px-4 pb-3 pt-4">
           <span className="font-mono text-game-lg text-accent">
@@ -390,7 +393,7 @@ export function MissionCard({
         </div>
 
         {/* Card icon area */}
-        <div className="flex flex-1 items-center justify-center p-6 [background:radial-gradient(ellipse_at_50%_50%,rgba(0,180,160,0.20)_0%,transparent_70%)]">
+        <div className="flex flex-1 items-center justify-center p-6 [background:radial-gradient(ellipse_at_50%_50%,rgba(68,223,215,0.20)_0%,transparent_70%)]">
           <Image
             src={config.iconSrc}
             alt={config.iconAlt}
@@ -405,7 +408,7 @@ export function MissionCard({
           <button
             type="button"
             onClick={() => setIsOpen(true)}
-            className="h-input-height w-[170px] rounded-[10px] border border-accent/60 font-mono text-game-sm uppercase tracking-game-wide text-white transition-colors hover:border-accent hover:bg-accent/10"
+            className="h-input-height w-[170px] rounded-[10px] border border-accent font-mono text-game-sm uppercase tracking-game-wide text-accent transition-colors hover:bg-accent/10"
             aria-haspopup="dialog"
           >
             Открыть

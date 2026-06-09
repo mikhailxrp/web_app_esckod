@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import type { ReactElement } from 'react';
 
 interface CrackCompletedViewProps {
@@ -106,9 +107,9 @@ export function CrackCompletedView({
                     type="button"
                     onClick={() => setCopied(false)}
                     aria-label="Закрыть"
-                    className="text-content-muted hover:text-content-primary"
+                    className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
                   >
-                    ✕
+                    <Image src="/assets/icons/close.svg" alt="" width={16} height={16} aria-hidden="true" />
                   </button>
                 </div>
               ) : null}

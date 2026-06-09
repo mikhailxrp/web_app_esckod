@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Image from 'next/image';
 import type { ReactElement } from 'react';
 
 import { AttemptHistory } from '@/components/game/crack/AttemptHistory';
@@ -316,9 +317,9 @@ export function CrackModal({ slotKey, onClose }: CrackModalProps): ReactElement 
               type="button"
               onClick={onClose}
               aria-label="Закрыть миссию"
-              className="flex size-7 items-center justify-center rounded-game-sm border border-border font-mono text-game-xs text-content-secondary transition-colors hover:border-border-strong hover:text-content-primary"
+              className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
             >
-              ✕
+              <Image src="/assets/icons/close.svg" alt="" width={16} height={16} aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -360,9 +361,9 @@ export function CrackModal({ slotKey, onClose }: CrackModalProps): ReactElement 
                     type="button"
                     onClick={onClose}
                     aria-label="Закрыть миссию"
-                    className="flex size-6 shrink-0 items-center justify-center rounded-game-sm border border-border font-mono text-game-xs text-content-secondary transition-colors hover:border-border-strong hover:text-content-primary"
+                    className="flex size-6 shrink-0 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
                   >
-                    ✕
+                    <Image src="/assets/icons/close.svg" alt="" width={14} height={14} aria-hidden="true" />
                   </button>
                 </div>
 
