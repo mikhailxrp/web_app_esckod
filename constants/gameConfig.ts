@@ -10,3 +10,14 @@ export const CRACK_DEFAULT_MAX_ATTEMPTS = 6;
 
 /** Сколько раз поле должно быть провалено, прежде чем станет доступен пропуск. */
 export const CRACK_SKIP_THRESHOLD = 2;
+
+// ─── Decipher mission ────────────────────────────────────────────────────────
+
+/** Сколько неправильных попыток подряд, прежде чем станет доступен пропуск. */
+export const DECIPHER_SKIP_THRESHOLD = 2;
+
+/** Rate limit: попытки расшифровки (на userId + slotKey). */
+export const DECIPHER_ATTEMPT_RATE_LIMIT = 20;
+
+/** Rate limit: запуск миссии через folderPath (на userId). */
+export const DECIPHER_LAUNCH_RATE_LIMIT = 30;

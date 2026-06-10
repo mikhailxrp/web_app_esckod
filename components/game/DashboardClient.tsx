@@ -9,6 +9,7 @@ import { ChatPanel } from "@/components/game/chat/ChatPanel";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { DetectiveHintsButton } from "@/components/game/hints/DetectiveHintsButton";
 import { CrackGamePanel } from "@/components/game/crack/CrackGamePanel";
+import { DecipherGamePanel } from "@/components/game/decipher/DecipherGamePanel";
 import { useChatStore } from "@/store/chatStore";
 import { GAME_TARGET_NAME } from "@/constants/gameConfig";
 
@@ -24,6 +25,7 @@ export function DashboardClient({
   const refresh = useChatStore((s) => s.refresh);
   const marinaVisible = useChatStore((s) => s.marina.isVisible);
   const [activeCrackSlotKey, setActiveCrackSlotKey] = useState<string | null>(null);
+  const [activeDecipherSlotKey, setActiveDecipherSlotKey] = useState<string | null>(null);
 
   useEffect(() => {
     void refresh();
@@ -56,6 +58,11 @@ export function DashboardClient({
                 slotKey={activeCrackSlotKey}
                 onClose={() => setActiveCrackSlotKey(null)}
               />
+            ) : activeDecipherSlotKey ? (
+              <DecipherGamePanel
+                slotKey={activeDecipherSlotKey}
+                onClose={() => setActiveDecipherSlotKey(null)}
+              />
             ) : (
               <div className="rounded-game-lg border border-border p-4">
                 {visibleMissions.length > 0 ? (
@@ -65,6 +72,7 @@ export function DashboardClient({
                         key={type}
                         missionType={type}
                         onCrackLaunched={setActiveCrackSlotKey}
+                        onDecipherLaunched={setActiveDecipherSlotKey}
                       />
                     ))}
                   </div>

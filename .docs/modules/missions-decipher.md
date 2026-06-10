@@ -793,13 +793,13 @@ async function getDecipherState(userId: string, slotKey: string) {
 
 **Response 200:**
 ```json
-{ "isCorrect": false }
+{ "isCorrect": false, "canSkip": true }
 ```
 
 или
 
 ```json
-{ "isCorrect": true }
+{ "isCorrect": true, "canSkip": false }
 ```
 
 **Response 429:** rate limit exceeded.
@@ -938,7 +938,7 @@ constants/
 
 10. **При успехе пишутся ДВА лога** в одной транзакции: `decipher_access_granted` + `mission_completed_overview`.
 
-11. **`advanceTriggerListeners` вызывается ВНЕ транзакции** — side-effect.
+11. **`advanceTriggerListeners(tx, …)` вызывается ВНУТРИ транзакции завершения** — как в `lib/crack/service.ts` (решение зафиксировано в `phase-12.md`, правило 5).
 
 12. **Изоморфный код шифров:** функции `buildPlayfairTable`, `getVigenereDigits` могут использоваться и на сервере (для GET), и на клиенте (для UI рендера). Главное — функция расшифровки `decipherPlayfair`/`decipherVigenere` НИКОГДА не используется на клиенте.
 

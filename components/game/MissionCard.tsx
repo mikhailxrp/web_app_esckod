@@ -160,17 +160,53 @@ function CrackForm({ onLaunched }: CrackFormProps): React.ReactElement {
 
 // ─── Form: DECIPHER ───────────────────────────────────────────────────────────
 
-function DecipherForm(): React.ReactElement {
+interface DecipherFormProps {
+  onLaunched: (slotKey: string) => void;
+}
+
+function DecipherForm({ onLaunched }: DecipherFormProps): React.ReactElement {
   const {
     register,
-    formState: { errors },
+    handleSubmit,
+    formState: { errors, isSubmitting },
   } = useForm<DecipherLaunchInput>({
     resolver: zodResolver(decipherLaunchSchema),
     mode: "onChange",
   });
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const onSubmit = async (values: DecipherLaunchInput): Promise<void> => {
+    setServerError(null);
+
+    try {
+      const res = await fetch("/api/missions/decipher/launch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+
+      if (res.status === 429) {
+        setServerError("Слишком много попыток. Подождите минуту.");
+        return;
+      }
+
+      if (!res.ok) {
+        setServerError("Путь или ключ не распознаны.");
+        return;
+      }
+
+      const data = (await res.json()) as { slotKey: string };
+      onLaunched(data.slotKey);
+    } catch {
+      setServerError("Ошибка соединения. Попробуйте ещё раз.");
+    }
+  };
 
   return (
-    <form className="mx-auto flex w-full max-w-[420px] flex-col gap-5">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="mx-auto flex w-full max-w-[420px] flex-col gap-5"
+    >
       <div className="flex flex-col gap-2">
         <label htmlFor="decipher-folderPath" className={LABEL_CLASS}>
           Ссылка / путь
@@ -213,7 +249,13 @@ function DecipherForm(): React.ReactElement {
         ) : null}
       </div>
 
-      <button type="button" className={SUBMIT_BTN_CLASS}>
+      {serverError ? (
+        <p className="font-mono text-game-sm text-semantic-error" role="alert">
+          {serverError}
+        </p>
+      ) : null}
+
+      <button type="submit" disabled={isSubmitting} className={SUBMIT_BTN_CLASS}>
         Начать
       </button>
     </form>
@@ -261,12 +303,8 @@ function RdpForm(): React.ReactElement {
   );
 }
 
-// Только Decipher/RDP — заглушки. CRACK обрабатывается отдельно (нужен onLaunched).
-const PLACEHOLDER_FORM_BY_TYPE: Record<
-  "DECIPHER" | "RDP",
-  () => React.ReactElement
-> = {
-  DECIPHER: DecipherForm,
+// Только RDP — заглушка. CRACK и DECIPHER обрабатываются отдельно (нужен onLaunched).
+const PLACEHOLDER_FORM_BY_TYPE: Record<"RDP", () => React.ReactElement> = {
   RDP: RdpForm,
 };
 
@@ -347,9 +385,11 @@ function MissionModal({
         <div className="flex flex-1 items-center justify-center px-8 py-6">
           {missionType === "CRACK" ? (
             <CrackForm onLaunched={onLaunched} />
+          ) : missionType === "DECIPHER" ? (
+            <DecipherForm onLaunched={onLaunched} />
           ) : (
             (() => {
-              const FormComponent = PLACEHOLDER_FORM_BY_TYPE[missionType];
+              const FormComponent = PLACEHOLDER_FORM_BY_TYPE[missionType as "RDP"];
               return <FormComponent />;
             })()
           )}
@@ -364,22 +404,22 @@ function MissionModal({
 
 interface MissionCardProps {
   missionType: MissionType;
-  /** Called when CRACK game is launched so parent can show CrackGamePanel inline. */
   onCrackLaunched?: (slotKey: string) => void;
+  onDecipherLaunched?: (slotKey: string) => void;
 }
 
 export function MissionCard({
   missionType,
   onCrackLaunched,
+  onDecipherLaunched,
 }: MissionCardProps): React.ReactElement {
   const [isOpen, setIsOpen] = useState(false);
   const config = MISSION_CONFIG[missionType];
 
   const handleLaunched = (slotKey: string): void => {
     setIsOpen(false);
-    if (onCrackLaunched) {
-      onCrackLaunched(slotKey);
-    }
+    if (missionType === 'CRACK' && onCrackLaunched) onCrackLaunched(slotKey);
+    if (missionType === 'DECIPHER' && onDecipherLaunched) onDecipherLaunched(slotKey);
   };
 
   return (

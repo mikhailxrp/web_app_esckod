@@ -46,10 +46,10 @@ const config: Config = {
         // Текст
         content: {
           primary: "#E6EDF3", // основной текст
-          secondary: "#8B949E", // лейблы, метаданные, timestamps
+          secondary: "#999999", // лейблы, метаданные, timestamps
           muted: "#484F58", // placeholder, неактивные элементы
           inverse: "#000000", // текст на accent-кнопке
-          label: "#8B949E", // лейблы полей формы
+          label: "#999999", // лейблы полей формы
           "card-title": "#44DFD7", // заголовок auth-карточки
         },
 

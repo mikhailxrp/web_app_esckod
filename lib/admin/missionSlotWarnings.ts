@@ -1,5 +1,4 @@
 import {
-  CipherType,
   type MissionSlot,
   MissionType,
   Prisma,
@@ -13,18 +12,8 @@ export interface SlotWarning {
 
 type DbClient = Prisma.TransactionClient;
 
-const PLAYFAIR_RESTRICTED_LETTERS = /[ЮЯ]/;
-
 function getDbClient(tx?: DbClient): DbClient {
   return tx ?? prisma;
-}
-
-function hasPlayfairRestrictedLetters(value: string | null | undefined): boolean {
-  if (!value) {
-    return false;
-  }
-
-  return PLAYFAIR_RESTRICTED_LETTERS.test(value);
 }
 
 export async function getMissionSlotWarnings(
@@ -152,19 +141,6 @@ export async function getMissionSlotWarnings(
         });
       }
     }
-  }
-
-  if (
-    slot.missionType === MissionType.DECIPHER &&
-    slot.cipherType === CipherType.PLAYFAIR &&
-    (hasPlayfairRestrictedLetters(slot.encryptedWord) ||
-      hasPlayfairRestrictedLetters(slot.cipherKey))
-  ) {
-    warnings.push({
-      code: 'PLAYFAIR_RESTRICTED_LETTERS',
-      message:
-        'Шифр Плейфера: буквы Ю и Я могут вызвать ошибку при расшифровке (попадание на пустую ячейку таблицы 6×6).',
-    });
   }
 
   return warnings;
