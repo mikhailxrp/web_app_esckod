@@ -236,7 +236,7 @@ export function MissionSlotForm({
       });
 
       const data = (await response.json()) as {
-        warnings?: string[];
+        warnings?: Array<{ code: string; message: string } | string>;
         error?: string;
         message?: string;
       };
@@ -246,7 +246,9 @@ export function MissionSlotForm({
         return;
       }
 
-      const warnings = data.warnings ?? [];
+      const warnings = (data.warnings ?? []).map((w) =>
+        typeof w === 'string' ? w : w.message,
+      );
       if (warnings.length > 0) {
         setApiWarnings(warnings);
         setTimeout(() => router.push('/admin/mission-slots'), 1500);
