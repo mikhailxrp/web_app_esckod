@@ -17,6 +17,10 @@ export const decipherLaunchSchema = z.object({
   cipherKey: z.string().min(1, 'Укажите ключ'),
 });
 
+export const decipherAttemptSchema = z.object({
+  decryptedWord: z.string().min(1).max(50),
+});
+
 export const rdpLaunchSchema = z.object({
   ip: z.string().regex(/^\d{1,3}(\.\d{1,3}){3}$/, 'Введите корректный IP'),
 });
@@ -24,4 +28,5 @@ export const rdpLaunchSchema = z.object({
 export type CrackLaunchInput = z.infer<typeof crackLaunchSchema>;
 export type CrackAttemptInput = z.infer<typeof crackAttemptSchema>;
 export type DecipherLaunchInput = z.infer<typeof decipherLaunchSchema>;
+export type DecipherAttemptInput = z.infer<typeof decipherAttemptSchema>;
 export type RdpLaunchInput = z.infer<typeof rdpLaunchSchema>;
