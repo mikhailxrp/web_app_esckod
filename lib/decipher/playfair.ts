@@ -1,11 +1,11 @@
-import { ALPHABET_RU, normalizeRu } from '@/constants/russianAlphabet';
+import { ALPHABET_PLAYFAIR, normalizeRu } from '@/constants/russianAlphabet';
 
 const TABLE_SIZE = 6;
 
 /**
  * Строит таблицу Плейфера 6×6 из ключевого слова.
  * Изоморфная — можно использовать и на клиенте (для рендера), и на сервере.
- * Ячейки 32–35 (строка 5, колонки 2–5) остаются пустыми ('').
+ * Алфавит: 30 букв (Ю и Я исключены — ОПАСНО). Ячейки 30–35 (вся строка 5) пустые ('').
  */
 export function buildPlayfairTable(key: string): string[][] {
   const normalizedKey = normalizeRu(key);
@@ -13,13 +13,13 @@ export function buildPlayfairTable(key: string): string[][] {
   const tableChars: string[] = [];
 
   for (const ch of normalizedKey) {
-    if (ALPHABET_RU.includes(ch) && !seen.has(ch)) {
+    if (ALPHABET_PLAYFAIR.includes(ch) && !seen.has(ch)) {
       seen.add(ch);
       tableChars.push(ch);
     }
   }
 
-  for (const ch of ALPHABET_RU) {
+  for (const ch of ALPHABET_PLAYFAIR) {
     if (!seen.has(ch)) {
       seen.add(ch);
       tableChars.push(ch);
