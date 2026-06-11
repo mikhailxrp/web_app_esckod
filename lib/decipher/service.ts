@@ -47,6 +47,7 @@ interface DecipherSlotRow {
   cipherKey: string | null;
   folderPassword: string | null;
   folderPath: string | null;
+  unlocksRdpFolder: string | null;
   hintText: string | null;
 }
 
@@ -163,6 +164,7 @@ const SLOT_SELECT = {
   cipherKey: true,
   folderPassword: true,
   folderPath: true,
+  unlocksRdpFolder: true,
   hintText: true,
 } as const;
 
@@ -178,6 +180,7 @@ function buildActiveState(
     cipherType: slot.cipherType,
     encryptedWord: slot.encryptedWord,
     cipherKey: slot.cipherKey,
+    folderName: slot.unlocksRdpFolder,
     hintText: slot.hintText,
   };
 
