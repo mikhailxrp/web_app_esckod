@@ -24,6 +24,7 @@ interface PlayingState {
   cipherType: CipherType;
   encryptedWord: string;
   cipherKey: string;
+  folderName: string | null;
   playfairTable?: string[][];
   vigenereDigits?: number[];
   hintText: string | null;
@@ -85,6 +86,7 @@ export function DecipherGamePanel({ slotKey, onClose }: DecipherGamePanelProps):
           cipherType: data.cipherType,
           encryptedWord: data.encryptedWord,
           cipherKey: data.cipherKey,
+          folderName: data.folderName,
           playfairTable: data.playfairTable,
           vigenereDigits: data.vigenereDigits,
           hintText: data.hintText,
@@ -328,7 +330,7 @@ export function DecipherGamePanel({ slotKey, onClose }: DecipherGamePanelProps):
                   />
                 </div>
                 <span className="font-mono text-[14px] text-white">
-                  File_name.zip
+                  {view.data.folderName ?? 'File_name.zip'}
                 </span>
               </div>
 

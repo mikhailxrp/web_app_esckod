@@ -5,6 +5,7 @@ interface DecipherStateActive {
   cipherType: CipherType;
   encryptedWord: string;
   cipherKey: string;
+  folderName: string | null;
   hintText: string | null;
   playfairTable?: string[][];
   vigenereDigits?: number[];
