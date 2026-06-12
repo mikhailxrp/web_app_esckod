@@ -25,8 +25,29 @@ export const rdpLaunchSchema = z.object({
   ip: z.string().regex(/^\d{1,3}(\.\d{1,3}){3}$/, 'Введите корректный IP'),
 });
 
+export const rdpRotateTileSchema = z.object({
+  tileId: z.string().min(1),
+  expectedVersion: z.number().int().nonnegative(),
+});
+
+export const rdpCheckPuzzleSchema = z.object({
+  expectedVersion: z.number().int().nonnegative(),
+});
+
+export const rdpTimerExpiredSchema = z.object({
+  expectedVersion: z.number().int().nonnegative(),
+});
+
+export const rdpSkipSchema = z.object({
+  expectedVersion: z.number().int().nonnegative().optional(),
+});
+
 export type CrackLaunchInput = z.infer<typeof crackLaunchSchema>;
 export type CrackAttemptInput = z.infer<typeof crackAttemptSchema>;
 export type DecipherLaunchInput = z.infer<typeof decipherLaunchSchema>;
 export type DecipherAttemptInput = z.infer<typeof decipherAttemptSchema>;
 export type RdpLaunchInput = z.infer<typeof rdpLaunchSchema>;
+export type RdpRotateTileInput = z.infer<typeof rdpRotateTileSchema>;
+export type RdpCheckPuzzleInput = z.infer<typeof rdpCheckPuzzleSchema>;
+export type RdpTimerExpiredInput = z.infer<typeof rdpTimerExpiredSchema>;
+export type RdpSkipInput = z.infer<typeof rdpSkipSchema>;

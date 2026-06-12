@@ -121,7 +121,7 @@
 
 **Сценарий 1:** пишет лог «доступ потерян, два активных сеанса». Возвращает `scenarioFinal: 'session_lost'`. После этого игрок может вызвать `/complete`.
 
-**Сценарий 2:** активирует чат Марины (`marinaTriggered=true` + `advanceTriggerListeners(rdp_marina_triggered)`). Возвращает `scenarioFinal: 'session_terminated'`. После этого `/complete`.
+**Сценарий 2:** активирует чат Марины (`marinaTriggered=true` + `advanceTriggerListeners(tx, rdp_marina_triggered)` в транзакции). Возвращает `scenarioFinal: 'session_terminated'`. После этого `/complete`.
 
 После активации в `metadata.triggerActivated=true` — `/complete` это проверяет.
 
@@ -131,7 +131,7 @@
 
 В сценарии 2 — есть таймер 120 секунд. По истечении — пишется лог `rdp_timer_expired`, инкрементится `metadata.timerExpiredCount`, генерируется **новое** поле пазла, таймер запускается заново. **Не блокирует прохождение** — игрок может пробовать сколько угодно раз.
 
-**Для сценария 2** после **2 истечений таймера** (`metadata.timerExpiredCount >= 2`) клиент показывает кнопку «Пропустить». При нажатии → `POST /api/missions/rdp/<slotKey>/skip`. Сервер пишет `completed=true, metadata.skipped=true`, активирует триггер (`triggerActivated=true`), записывает логи как при честном прохождении сценария 2 (включая `marinaTriggered=true` и `advanceTriggerListeners('rdp_marina_triggered')`). **Для сценария 1 пропуск недоступен** — миссия считается несложной.
+**Для сценария 2** после **2 истечений таймера** (`metadata.timerExpiredCount >= 2`) клиент показывает кнопку «Пропустить». При нажатии → `POST /api/missions/rdp/<slotKey>/skip`. Сервер пишет `completed=true, metadata.skipped=true`, активирует триггер (`triggerActivated=true`), записывает логи как при честном прохождении сценария 2 (включая `marinaTriggered=true` и `advanceTriggerListeners(tx, 'rdp_marina_triggered')` в транзакции). **Для сценария 1 пропуск недоступен** — миссия считается несложной.
 
 В сценарии 1 — таймера нет. Игрок может крутить плитки сколько угодно.
 
@@ -230,7 +230,7 @@
 
 [Сценарий 1]                              [Сценарий 2]
    лог rdp_session_lost                       GameProgress.marinaTriggered=true
-   (с {nextIp} из nextRdpSlotKey)             advanceTriggerListeners(rdp_marina_triggered)
+   (с {nextIp} из nextRdpSlotKey)             advanceTriggerListeners(tx, rdp_marina_triggered)
    возвращает { triggered: true,             возвращает { triggered: true,
                   scenarioFinal: 'session_lost' }    scenarioFinal: 'session_terminated' }
    ↓                                          ↓
@@ -243,13 +243,14 @@
    ↓
    Транзакция: MissionProgress(completed=true, skipped=true, triggerActivated=true)
              + GameProgress(marinaTriggered=true) + 2 лога
-   advanceTriggerListeners(rdp_completed:<slotKey>) + advanceTriggerListeners(rdp_marina_triggered)
+             + advanceTriggerListeners(tx, rdp_completed:<slotKey>)
+             + advanceTriggerListeners(tx, rdp_marina_triggered)
 
 [Игрок закрывает финальное окно]
    POST /api/missions/rdp/[slotKey]/complete
    ↓
    Транзакция: MissionProgress(completed=true) + 2 лога
-   advanceTriggerListeners(rdp_completed:<slotKey>)
+             + advanceTriggerListeners(tx, rdp_completed:<slotKey>)
 ```
 
 ---
@@ -826,11 +827,14 @@ async function handleFileViewed(userId: string, slotKey: string, fileId: string)
   }
 
   if (slot.rdpScenario === 2) {
-    await prisma.gameProgress.update({
-      where: { userId },
-      data: { marinaTriggered: true },
+    // marinaTriggered и продвижение чата — в одной транзакции (atomicity).
+    await prisma.$transaction(async (tx) => {
+      await tx.gameProgress.update({
+        where: { userId },
+        data: { marinaTriggered: true, version: { increment: 1 } },
+      });
+      await advanceTriggerListeners(tx, userId, 'rdp_marina_triggered');
     });
-    await advanceTriggerListeners(userId, 'rdp_marina_triggered');
     // Лог про активацию Марины не пишется — это сюжетный момент,
     // отражается в чате
     return { triggered: true, scenarioFinal: 'session_terminated' };
@@ -942,20 +946,21 @@ async function handleComplete(userId: string, slotKey: string) {
   });
   const techMessage = renderLogMessage("rdp_completed", {});
 
-  await prisma.$transaction([
-    prisma.missionProgress.update({
+  // Callback-форма транзакции: advanceTriggerListeners принимает tx
+  // и продвигает чат В ТОЙ ЖЕ транзакции, что и фиксация прогресса.
+  await prisma.$transaction(async (tx) => {
+    await tx.missionProgress.update({
       where: { userId_slotId: { userId, slotId: slot.id } },
-      data: { completed: true, completedAt: new Date() },
-    }),
-    prisma.operationLog.create({
+      data: { completed: true, completedAt: new Date(), version: { increment: 1 } },
+    });
+    await tx.operationLog.create({
       data: { userId, type: "SUCCESS", message: techMessage },
-    }),
-    prisma.operationLog.create({
+    });
+    await tx.operationLog.create({
       data: { userId, type: "SUCCESS", message: overviewMessage },
-    }),
-  ]);
-
-  await advanceTriggerListeners(userId, `rdp_completed:${slotKey}`);
+    });
+    await advanceTriggerListeners(tx, userId, `rdp_completed:${slotKey}`);
+  });
 
   return { success: true };
 }
@@ -986,15 +991,15 @@ async function handleComplete(userId: string, slotKey: string) {
 2. `rdpScenario === 2` — иначе 400 `SKIP_NOT_ALLOWED_SCENARIO_1`.
 3. `metadata.timerExpiredCount >= 2` — иначе 400 `CANNOT_SKIP`.
 
-**Транзакция:**
-- UPDATE `MissionProgress`: `completed=true, completedAt=now, metadata.skipped=true, metadata.triggerActivated=true`
-- UPDATE `GameProgress`: `marinaTriggered=true`
+**Транзакция (callback-форма `prisma.$transaction(async (tx) => { … })`):**
+- UPDATE `MissionProgress`: `completed=true, completedAt=now, metadata.skipped=true, metadata.triggerActivated=true, version++`
+- UPDATE `GameProgress`: `marinaTriggered=true, version++`
 - INSERT `OperationLog` `rdp_completed`
 - INSERT `OperationLog` `mission_completed_overview`
+- `advanceTriggerListeners(tx, userId, 'rdp_completed:<slotKey>')`
+- `advanceTriggerListeners(tx, userId, 'rdp_marina_triggered')`
 
-**Вне транзакции:**
-- `advanceTriggerListeners(userId, 'rdp_completed:<slotKey>')`
-- `advanceTriggerListeners(userId, 'rdp_marina_triggered')`
+> Триггеры вызываются **внутри** транзакции — `advanceTriggerListeners` принимает транзакционный клиент `tx` (актуальная сигнатура `lib/chat/triggers.ts`). Это гарантирует атомарность завершения миссии и продвижения чатов и корректную итоговую `version` у `ChatState`. Идемпотентность: повторный вызов уже завершённой миссии — success без повторных логов и триггеров.
 
 **Response 200:**
 ```json
@@ -1206,7 +1211,7 @@ lib/
 
 7. **`/complete` для RDP пишет ДВА лога** в одной транзакции: `rdp_completed` (технический) + `mission_completed_overview` (обзорный).
 
-8. **`advanceTriggerListeners` вызывается ВНЕ транзакции** — side-effect.
+8. **`advanceTriggerListeners(tx, userId, code)` вызывается ВНУТРИ транзакции** завершения (`/complete`, `/skip`) и активации триггера (`/file-viewed`), получая транзакционный клиент `tx`. Это соответствует актуальной реализации `lib/chat/triggers.ts` (Phase 7) и поведению Crack/Decipher: продвижение чат-триггера и фиксация прогресса либо проходят вместе, либо откатываются вместе (важно для atomicity и корректной итоговой `version` у `ChatState`).
 
 9. **При перезапуске игры** — все `MissionProgress` (включая RDP) удаляются. См. `restart.md`.
 
@@ -1232,7 +1237,7 @@ lib/
 
 - **`database.md`** — модели `MissionSlot` (включая новое поле `nextRdpSlotKey`), `MissionProgress`, `RdpFile`, `GameProgress` описаны там; здесь только применение.
 - **`concurrency.md`** — все mutate-эндпоинты используют optimistic locking. Поля `version` на `MissionProgress` и `GameProgress` инкрементируются при UPDATE.
-- **`chats.md`** — после `/complete` или `/skip` вызывается `advanceTriggerListeners(userId, 'rdp_completed:<slotKey>')`. Дополнительно: `/file-viewed` и `/skip` для сценария 2 устанавливают `marinaTriggered=true` и вызывают `rdp_marina_triggered`.
+- **`chats.md`** — после `/complete` или `/skip` вызывается `advanceTriggerListeners(tx, userId, 'rdp_completed:<slotKey>')` внутри транзакции эндпоинта. Дополнительно: `/file-viewed` и `/skip` для сценария 2 устанавливают `marinaTriggered=true` и вызывают `advanceTriggerListeners(tx, userId, 'rdp_marina_triggered')` в той же транзакции.
 - **`logs.md`** — используются шаблоны `rdp_invalid_ip`, `rdp_puzzle_solved`, `rdp_timer_expired`, `rdp_session_lost` (расширен параметром `nextIp`), `rdp_completed`, `rdp_folder_unlocked`, `mission_completed_overview`.
 - **`missions-decipher.md`** — `folderPassword` из Decipher-слотов используется для разблокировки папок в RDP. Структурная связь через FK-поля `MissionSlot.unlocksRdpFolder` + `MissionSlot.unlocksRdpSlotKey`.
 - **`mobile-block.md`** — общая заглушка перехватывает на уровне корневого layout. Точечной RDP-заглушки больше нет — игрок не дойдёт до открытия RDP-модалки на устройстве, не удовлетворяющем минимальным требованиям экрана.
