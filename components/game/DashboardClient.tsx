@@ -10,8 +10,10 @@ import { LogoutButton } from "@/components/auth/LogoutButton";
 import { DetectiveHintsButton } from "@/components/game/hints/DetectiveHintsButton";
 import { CrackGamePanel } from "@/components/game/crack/CrackGamePanel";
 import { DecipherGamePanel } from "@/components/game/decipher/DecipherGamePanel";
+import { RdpGamePanel } from "@/components/game/rdp/RdpGamePanel";
 import { useChatStore } from "@/store/chatStore";
 import { GAME_TARGET_NAME } from "@/constants/gameConfig";
+import type { RdpConnectResult } from "@/types/rdp";
 
 const MISSION_ORDER: MissionType[] = ["CRACK", "DECIPHER", "RDP"];
 
@@ -26,6 +28,7 @@ export function DashboardClient({
   const marinaVisible = useChatStore((s) => s.marina.isVisible);
   const [activeCrackSlotKey, setActiveCrackSlotKey] = useState<string | null>(null);
   const [activeDecipherSlotKey, setActiveDecipherSlotKey] = useState<string | null>(null);
+  const [activeRdpConnect, setActiveRdpConnect] = useState<RdpConnectResult | null>(null);
 
   useEffect(() => {
     void refresh();
@@ -51,7 +54,7 @@ export function DashboardClient({
       <div className="flex flex-1 gap-6">
         {/* Left column: missions section + operation history */}
         <div className="flex min-w-0 flex-1 flex-col gap-6">
-          {/* Missions section — shows game panel when crack is active */}
+          {/* Missions section — shows game panel when a mission is active */}
           <section aria-label="Миссии">
             {activeCrackSlotKey ? (
               <CrackGamePanel
@@ -63,6 +66,11 @@ export function DashboardClient({
                 slotKey={activeDecipherSlotKey}
                 onClose={() => setActiveDecipherSlotKey(null)}
               />
+            ) : activeRdpConnect ? (
+              <RdpGamePanel
+                connectResult={activeRdpConnect}
+                onClose={() => setActiveRdpConnect(null)}
+              />
             ) : (
               <div className="rounded-game-lg border border-border p-4">
                 {visibleMissions.length > 0 ? (
@@ -73,6 +81,7 @@ export function DashboardClient({
                         missionType={type}
                         onCrackLaunched={setActiveCrackSlotKey}
                         onDecipherLaunched={setActiveDecipherSlotKey}
+                        onRdpLaunched={setActiveRdpConnect}
                       />
                     ))}
                   </div>
@@ -99,6 +108,7 @@ export function DashboardClient({
           {marinaVisible && <ChatPanel chatType="MARINA" />}
         </aside>
       </div>
+
     </div>
   );
 }

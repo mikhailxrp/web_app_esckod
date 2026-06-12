@@ -14,6 +14,7 @@ import {
   type RdpLaunchInput,
 } from "@/lib/validations/missions";
 import { useLogStore } from "@/store/logStore";
+import type { RdpConnectResult } from "@/types/rdp";
 
 // ─── Static config per mission type ──────────────────────────────────────────
 
@@ -264,17 +265,60 @@ function DecipherForm({ onLaunched }: DecipherFormProps): React.ReactElement {
 
 // ─── Form: RDP ────────────────────────────────────────────────────────────────
 
-function RdpForm(): React.ReactElement {
+interface RdpFormProps {
+  onLaunched: (data: RdpConnectResult) => void;
+}
+
+function RdpForm({ onLaunched }: RdpFormProps): React.ReactElement {
   const {
     register,
-    formState: { errors },
+    handleSubmit,
+    formState: { errors, isSubmitting },
   } = useForm<RdpLaunchInput>({
     resolver: zodResolver(rdpLaunchSchema),
     mode: "onChange",
   });
+  const [serverError, setServerError] = useState<string | null>(null);
+  const refreshLogs = useLogStore((s) => s.refreshLogs);
+
+  const onSubmit = async (values: RdpLaunchInput): Promise<void> => {
+    setServerError(null);
+
+    try {
+      const res = await fetch("/api/missions/rdp/connect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+
+      if (res.status === 429) {
+        setServerError("Слишком много попыток. Подождите минуту.");
+        return;
+      }
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        if (data.error === "INVALID_IP") {
+          setServerError("IP не распознан. Проверьте адрес.");
+        } else {
+          setServerError("Ошибка подключения. Попробуйте ещё раз.");
+        }
+        await refreshLogs();
+        return;
+      }
+
+      const data = (await res.json()) as RdpConnectResult;
+      onLaunched(data);
+    } catch {
+      setServerError("Ошибка соединения. Попробуйте ещё раз.");
+    }
+  };
 
   return (
-    <form className="mx-auto flex w-full max-w-[420px] flex-col gap-5">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="mx-auto flex w-full max-w-[420px] flex-col gap-5"
+    >
       <div className="flex flex-col gap-2">
         <label htmlFor="rdp-ip" className={LABEL_CLASS}>
           IP адрес
@@ -285,6 +329,7 @@ function RdpForm(): React.ReactElement {
           type="text"
           aria-invalid={Boolean(errors.ip)}
           className={INPUT_CLASS}
+          placeholder="192.168.1.1"
         />
         {errors.ip ? (
           <p
@@ -296,17 +341,18 @@ function RdpForm(): React.ReactElement {
         ) : null}
       </div>
 
-      <button type="button" className={SUBMIT_BTN_CLASS}>
-        Начать
+      {serverError ? (
+        <p className="font-mono text-game-sm text-semantic-error" role="alert">
+          {serverError}
+        </p>
+      ) : null}
+
+      <button type="submit" disabled={isSubmitting} className={SUBMIT_BTN_CLASS}>
+        Подключиться
       </button>
     </form>
   );
 }
-
-// Только RDP — заглушка. CRACK и DECIPHER обрабатываются отдельно (нужен onLaunched).
-const PLACEHOLDER_FORM_BY_TYPE: Record<"RDP", () => React.ReactElement> = {
-  RDP: RdpForm,
-};
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
@@ -314,12 +360,14 @@ interface MissionModalProps {
   missionType: MissionType;
   onClose: () => void;
   onLaunched: (slotKey: string) => void;
+  onRdpLaunched?: (data: RdpConnectResult) => void;
 }
 
 function MissionModal({
   missionType,
   onClose,
   onLaunched,
+  onRdpLaunched,
 }: MissionModalProps): React.ReactElement {
   const config = MISSION_CONFIG[missionType];
 
@@ -388,10 +436,12 @@ function MissionModal({
           ) : missionType === "DECIPHER" ? (
             <DecipherForm onLaunched={onLaunched} />
           ) : (
-            (() => {
-              const FormComponent = PLACEHOLDER_FORM_BY_TYPE[missionType as "RDP"];
-              return <FormComponent />;
-            })()
+            <RdpForm
+              onLaunched={(data) => {
+                onClose();
+                onRdpLaunched?.(data);
+              }}
+            />
           )}
         </div>
 
@@ -406,12 +456,14 @@ interface MissionCardProps {
   missionType: MissionType;
   onCrackLaunched?: (slotKey: string) => void;
   onDecipherLaunched?: (slotKey: string) => void;
+  onRdpLaunched?: (data: RdpConnectResult) => void;
 }
 
 export function MissionCard({
   missionType,
   onCrackLaunched,
   onDecipherLaunched,
+  onRdpLaunched,
 }: MissionCardProps): React.ReactElement {
   const [isOpen, setIsOpen] = useState(false);
   const config = MISSION_CONFIG[missionType];
@@ -420,6 +472,11 @@ export function MissionCard({
     setIsOpen(false);
     if (missionType === 'CRACK' && onCrackLaunched) onCrackLaunched(slotKey);
     if (missionType === 'DECIPHER' && onDecipherLaunched) onDecipherLaunched(slotKey);
+  };
+
+  const handleRdpLaunched = (data: RdpConnectResult): void => {
+    setIsOpen(false);
+    onRdpLaunched?.(data);
   };
 
   return (
@@ -461,6 +518,7 @@ export function MissionCard({
           missionType={missionType}
           onClose={() => setIsOpen(false)}
           onLaunched={handleLaunched}
+          onRdpLaunched={handleRdpLaunched}
         />
       ) : null}
     </>

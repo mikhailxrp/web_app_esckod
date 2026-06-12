@@ -21,3 +21,8 @@ export const DECIPHER_ATTEMPT_RATE_LIMIT = 20;
 
 /** Rate limit: запуск миссии через folderPath (на userId). */
 export const DECIPHER_LAUNCH_RATE_LIMIT = 30;
+
+// ─── RDP mission ─────────────────────────────────────────────────────────────
+
+/** Rate limit: подключение по IP (на userId). */
+export const RDP_CONNECT_RATE_LIMIT = 10;
