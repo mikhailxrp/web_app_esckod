@@ -3,8 +3,8 @@ import { adminAuth as auth } from '@/lib/auth-admin';
 import { prisma } from '@/lib/prisma';
 import { buildPublicUrl, putObject } from '@/lib/s3';
 import {
-  ALLOWED_PDF_MIME,
-  MAX_PDF_SIZE_BYTES,
+  ALLOWED_RDP_MIME,
+  MAX_RDP_FILE_SIZE_BYTES,
   buildRdpFileKey,
   fileUploadFieldsSchema,
   normalizeFilename,
@@ -97,16 +97,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const allowedMimes: readonly string[] = ALLOWED_PDF_MIME;
-
-  if (!allowedMimes.includes(file.type)) {
+  if (!(ALLOWED_RDP_MIME as readonly string[]).includes(file.type)) {
     return NextResponse.json(
-      { error: 'INVALID_FILE_TYPE', message: 'Допустимый формат: PDF' },
+      { error: 'INVALID_FILE_TYPE', message: 'Допустимые форматы: PDF, JPG, PNG' },
       { status: 400 },
     );
   }
 
-  if (file.size > MAX_PDF_SIZE_BYTES) {
+  if (file.size > MAX_RDP_FILE_SIZE_BYTES) {
     return NextResponse.json(
       { error: 'FILE_TOO_LARGE', message: 'Файл превышает 10 МБ' },
       { status: 400 },
@@ -139,7 +137,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const body = Buffer.from(arrayBuffer);
 
   try {
-    await putObject(rawKey, body, 'application/pdf');
+    await putObject(rawKey, body, file.type);
   } catch (error) {
     console.error('[files/route] S3 upload error:', error);
 

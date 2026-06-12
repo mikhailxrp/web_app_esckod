@@ -3,16 +3,16 @@
 import { useRef, useState } from 'react';
 import { CloudUpload, Loader2 } from 'lucide-react';
 import {
-  MAX_PDF_SIZE_BYTES,
-  ALLOWED_PDF_MIME,
+  MAX_RDP_FILE_SIZE_BYTES,
+  ALLOWED_RDP_MIME,
 } from '@/lib/validations/admin-files';
 import type { RdpSlotData } from '@/types/admin-files';
 
-const MAX_SIZE_MB = MAX_PDF_SIZE_BYTES / (1024 * 1024);
+const MAX_SIZE_MB = MAX_RDP_FILE_SIZE_BYTES / (1024 * 1024);
 const NEW_FOLDER_VALUE = '__new__';
 
 const ERROR_MESSAGES: Record<string, string> = {
-  INVALID_FILE_TYPE: 'Только PDF-файлы. Выберите другой файл.',
+  INVALID_FILE_TYPE: 'Допустимые форматы: PDF, JPG, PNG. Выберите другой файл.',
   FILE_TOO_LARGE: `Файл превышает ${MAX_SIZE_MB} МБ.`,
   FILE_NAME_EXISTS: 'Файл с таким именем уже существует в этой папке.',
   NOT_RDP_SLOT: 'Выбранный слот не является RDP-слотом.',
@@ -65,10 +65,10 @@ export function FileUploadSection({
   }
 
   function validateFile(file: File): string | null {
-    if (!ALLOWED_PDF_MIME.includes(file.type as 'application/pdf')) {
+    if (!(ALLOWED_RDP_MIME as readonly string[]).includes(file.type)) {
       return ERROR_MESSAGES.INVALID_FILE_TYPE;
     }
-    if (file.size > MAX_PDF_SIZE_BYTES) {
+    if (file.size > MAX_RDP_FILE_SIZE_BYTES) {
       return ERROR_MESSAGES.FILE_TOO_LARGE;
     }
     return null;
@@ -249,7 +249,7 @@ export function FileUploadSection({
       <div
         role="button"
         tabIndex={0}
-        aria-label="Зона загрузки файла. Нажмите или перетащите PDF."
+        aria-label="Зона загрузки файла. Нажмите или перетащите PDF, JPG или PNG."
         onClick={handleZoneClick}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') handleZoneClick();
@@ -283,12 +283,12 @@ export function FileUploadSection({
           )}
         </p>
         <p className="text-xs text-gray-400 dark:text-gray-500">
-          PDF, до {MAX_SIZE_MB} МБ
+          PDF, JPG, PNG — до {MAX_SIZE_MB} МБ
         </p>
         <input
           ref={fileInputRef}
           type="file"
-          accept="application/pdf"
+          accept="application/pdf,image/jpeg,image/png"
           onChange={handleFileInputChange}
           disabled={isUploading}
           className="sr-only"
