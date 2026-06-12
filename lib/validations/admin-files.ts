@@ -1,15 +1,22 @@
 import { z } from 'zod';
 
 export const ALLOWED_PDF_MIME = ['application/pdf'] as const;
+export const ALLOWED_IMAGE_MIME = ['image/jpeg', 'image/png'] as const;
+export const ALLOWED_RDP_MIME = [...ALLOWED_PDF_MIME, ...ALLOWED_IMAGE_MIME] as const;
 
-export const MAX_PDF_SIZE_BYTES = 10 * 1024 * 1024;
+export type AllowedRdpMime = (typeof ALLOWED_RDP_MIME)[number];
+
+export const MAX_RDP_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+
+/** @deprecated используй MAX_RDP_FILE_SIZE_BYTES */
+export const MAX_PDF_SIZE_BYTES = MAX_RDP_FILE_SIZE_BYTES;
 
 export function normalizeFilename(name: string): string {
   return name.toLowerCase().replace(/\s+/g, '_');
 }
 
 export function buildRdpFileKey(slotKey: string, folder: string, name: string): string {
-  return `pdf/rdp/${slotKey}/${folder}/${name}`;
+  return `files/rdp/${slotKey}/${folder}/${name}`;
 }
 
 export const fileUploadFieldsSchema = z.object({
