@@ -57,8 +57,25 @@ const MAX_FIELD_ATTEMPTS = 50;
 /**
  * Сила «тяги к цели» при укладке пути: чем больше, тем сильнее путь петляет.
  * Балансирует интересность поля и вероятность непересечения двух путей (сц.2).
+ * Повышен (3→6), чтобы DFS чаще порождал извилистые маршруты — иначе высокое
+ * требование углов (`MIN_PATH_CORNERS`) почти всегда отбраковывало бы укладку.
  */
-const PATH_GOAL_JITTER = 3;
+const PATH_GOAL_JITTER = 6;
+/**
+ * Минимум поворотов (углов) в каждом пути. Без него DFS часто кладёт прямой
+ * коридор (только STRAIGHT-плитки): он собирается тривиально/в один клик, а в
+ * сц.2 один из двух путей нередко выглядит «уже собранным». Требование углов
+ * заставляет оба пути петлять — обе трубы требуют реальной сборки.
+ *
+ * Сценарий 2 заметно выше (6): два пути по отдельным «столбцам» выглядели
+ * слишком очевидно. Больше углов → маршруты заходят вглубь поля и переплетение
+ * читается сложнее (пути остаются вершинно-непересекающимися — это Вариант A,
+ * см. примечание в `.docs/phases/phase-14.md`).
+ */
+const MIN_PATH_CORNERS: Record<Scenario, number> = {
+  1: 3,
+  2: 6,
+};
 
 // --- ГСЧ (детерминизм при заданном seed — желательно) ----------------------
 
@@ -222,11 +239,30 @@ const findPath = (
 };
 
 /**
+ * Число поворотов пути: внутренние клетки, где входящее и исходящее направления
+ * перпендикулярны (не противоположны). Прямой коридор даёт 0 углов.
+ */
+const countCorners = (path: GridPosition[]): number => {
+  let corners = 0;
+  for (let index = 1; index < path.length - 1; index += 1) {
+    const toPrev = directionBetween(path[index], path[index - 1]);
+    const toNext = directionBetween(path[index], path[index + 1]);
+    if (OPPOSITE[toPrev] !== toNext) {
+      corners += 1;
+    }
+  }
+  return corners;
+};
+
+/**
  * Прокладывает все пути сценария вершинно-непересекающимися (для сц.2 — два).
- * Retry-лимит на укладку; при исчерпании — `throw` (а не зависание).
+ * Каждый путь обязан иметь >= `MIN_PATH_CORNERS` углов — иначе попытка укладки
+ * отбрасывается (защита от тривиального прямого коридора). Retry-лимит на
+ * укладку; при исчерпании — `throw` (а не зависание).
  */
 const layPaths = (scenario: Scenario, rng: Rng): GridPosition[][] => {
   const { gridSize, entries, exits } = SCENARIO_ENDPOINTS[scenario];
+  const minCorners = MIN_PATH_CORNERS[scenario];
 
   for (let attempt = 0; attempt < MAX_LAYOUT_ATTEMPTS; attempt += 1) {
     const blocked = new Set<string>();
@@ -235,7 +271,7 @@ const layPaths = (scenario: Scenario, rng: Rng): GridPosition[][] => {
 
     for (let i = 0; i < entries.length; i += 1) {
       const path = findPath(gridSize, entries[i], exits[i], blocked, rng);
-      if (!path) {
+      if (!path || countCorners(path) < minCorners) {
         ok = false;
         break;
       }
@@ -335,9 +371,28 @@ const randomRotation = (rng: Rng): TileRotation =>
   ROTATIONS[Math.floor(rng() * ROTATIONS.length)];
 
 /**
+ * Решена ли хотя бы одна пара `entries[i] → exits[i]` по отдельности.
+ *
+ * `checkSolution` для одной пары проверяет именно её достижимость, поэтому
+ * каждую пару прогоняем независимо. Нужно для сц.2: общий `checkSolution`
+ * = `false`, даже когда один путь уже собран, а другой сломан — и тогда поле
+ * выглядит наполовину решённым. Здесь же ловим любую отдельно собранную пару.
+ */
+const anyPairSolved = (field: PuzzleField): boolean =>
+  field.entries.some((entry, index) =>
+    checkSolution({
+      ...field,
+      entries: [entry],
+      exits: [field.exits[index]],
+    }),
+  );
+
+/**
  * Возвращает копию поля со случайными поворотами не-`isLocked` плиток,
- * гарантируя `checkSolution` = `false` (учитывая симметрию STRAIGHT через
- * фактическую проверку). `null`, если за лимит попыток сломать не удалось.
+ * гарантируя, что НИ ОДНА пара вход→выход не собрана на старте (учитывая
+ * симметрию STRAIGHT через фактическую проверку). Это сильнее, чем «всё поле
+ * не решено»: в сц.2 ни одна из двух труб не должна выглядеть уже собранной.
+ * `null`, если за лимит попыток сломать не удалось.
  *
  * Внутренний хелпер для тестируемости.
  */
@@ -355,7 +410,7 @@ export const shuffleRotations = (
       exits: field.exits.map((p) => ({ ...p })),
     };
 
-    if (!checkSolution(shuffled)) {
+    if (!anyPairSolved(shuffled)) {
       return shuffled;
     }
   }

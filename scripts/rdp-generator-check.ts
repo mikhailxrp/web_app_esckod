@@ -146,6 +146,23 @@ for (let i = 0; i < RUNS; i += 1) {
   assert(!shared, `сц.2 #${i}: пути не имеют общих клеток`);
 }
 
+console.log(
+  `[5b] Сц.2 — на старте НИ ОДНА пара не собрана отдельно (${RUNS} прогонов)`,
+);
+for (let i = 0; i < RUNS; i += 1) {
+  const field = generateField(7, 2);
+  const compA = reachableCells(field, field.entries[0]);
+  const compB = reachableCells(field, field.entries[1]);
+  assert(
+    !compA.has(tileId(field.exits[0].row, field.exits[0].col)),
+    `сц.2 #${i}: путь A не собран на старте`,
+  );
+  assert(
+    !compB.has(tileId(field.exits[1].row, field.exits[1].col)),
+    `сц.2 #${i}: путь B не собран на старте`,
+  );
+}
+
 // --- Негативные сценарии (solver) -------------------------------------------
 
 console.log('[6] Негатив: rotate-all-90 на решённом поле → false');
