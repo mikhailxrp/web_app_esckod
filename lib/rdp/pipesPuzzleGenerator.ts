@@ -77,6 +77,36 @@ const MIN_PATH_CORNERS: Record<Scenario, number> = {
   2: 6,
 };
 
+/**
+ * Минимальная длина (число клеток) каждого пути. Без него DFS с goal-bias
+ * кладёт короткий маршрут «к ближайшему углу»: поле выглядит разреженным, трубы
+ * жмутся к границе двумя блобами (фидбэк заказчика по сц.2).
+ *
+ * Это нижний порог (floor): DFS с goal-jitter естественно петляет длиннее, и
+ * фактическая плотность выходит ~60% (сц.1) / ~65% (сц.2) — поле «гуще» и
+ * заметно разбросаннее двух прежних блобов у границы. Все клетки остаются «на
+ * пути» — инвариант solver'а и прогресс-бара цел (decoy-плитки сломали бы
+ * `isLocallySolved`/`computePuzzleProgress`).
+ *
+ * Сознательно НЕ «под завязку»: запас до полного заполнения держит укладку двух
+ * вершинно-непересекающихся путей надёжной (низкий риск исчерпания попыток —
+ * подтверждено прогоном `scripts/rdp-generator-check.ts`).
+ */
+const MIN_PATH_LENGTH: Record<Scenario, number> = {
+  1: 18,
+  2: 12,
+};
+
+/**
+ * Максимальная длина пути. Нужен для сц.1: иначе извилистый путь иногда
+ * заполняет почти всё поле, не оставляя клеток под decoy-обманки. Предел
+ * резервирует пустые клетки. Для сц.2 ограничения нет (обманок там нет).
+ */
+const MAX_PATH_LENGTH: Record<Scenario, number> = {
+  1: 26,
+  2: Number.POSITIVE_INFINITY,
+};
+
 // --- ГСЧ (детерминизм при заданном seed — желательно) ----------------------
 
 type Rng = () => number;
@@ -90,6 +120,16 @@ const mulberry32 = (seed: number): Rng => {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+};
+
+/** Копия массива в случайном порядке (Fisher–Yates, детерминированно при seed). */
+const shuffleArray = <T>(arr: readonly T[], rng: Rng): T[] => {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
 };
 
 // --- Геометрия плиток -------------------------------------------------------
@@ -256,13 +296,17 @@ const countCorners = (path: GridPosition[]): number => {
 
 /**
  * Прокладывает все пути сценария вершинно-непересекающимися (для сц.2 — два).
- * Каждый путь обязан иметь >= `MIN_PATH_CORNERS` углов — иначе попытка укладки
- * отбрасывается (защита от тривиального прямого коридора). Retry-лимит на
- * укладку; при исчерпании — `throw` (а не зависание).
+ * Каждый путь обязан иметь >= `MIN_PATH_CORNERS` углов и длину в диапазоне
+ * [`MIN_PATH_LENGTH`, `MAX_PATH_LENGTH`] — иначе попытка укладки отбрасывается
+ * (защита от тривиального коридора, разреженного поля и переполнения, не
+ * оставляющего места под decoy). Retry-лимит на укладку; при исчерпании —
+ * `throw` (а не зависание).
  */
 const layPaths = (scenario: Scenario, rng: Rng): GridPosition[][] => {
   const { gridSize, entries, exits } = SCENARIO_ENDPOINTS[scenario];
   const minCorners = MIN_PATH_CORNERS[scenario];
+  const minLength = MIN_PATH_LENGTH[scenario];
+  const maxLength = MAX_PATH_LENGTH[scenario];
 
   for (let attempt = 0; attempt < MAX_LAYOUT_ATTEMPTS; attempt += 1) {
     const blocked = new Set<string>();
@@ -271,7 +315,12 @@ const layPaths = (scenario: Scenario, rng: Rng): GridPosition[][] => {
 
     for (let i = 0; i < entries.length; i += 1) {
       const path = findPath(gridSize, entries[i], exits[i], blocked, rng);
-      if (!path || countCorners(path) < minCorners) {
+      if (
+        !path ||
+        path.length < minLength ||
+        path.length > maxLength ||
+        countCorners(path) < minCorners
+      ) {
         ok = false;
         break;
       }
@@ -289,6 +338,102 @@ const layPaths = (scenario: Scenario, rng: Rng): GridPosition[][] => {
   throw new Error(
     `layPaths: не удалось проложить пути сценария ${scenario} за ${MAX_LAYOUT_ATTEMPTS} попыток`,
   );
+};
+
+// --- Decoy-плитки (тупики-обманки) ------------------------------------------
+
+/**
+ * Доля оставшихся пустых клеток, заполняемых decoy-«обрубками» (тупиками).
+ * Обманки выглядят как трубы, но не ведут к решению. По решению заказчика —
+ * только сц.1: сц.2 их не получает (там два пути, поле и так плотное).
+ */
+const DECOY_FILL_RATIO: Record<Scenario, number> = {
+  1: 0.65,
+  2: 0,
+};
+
+/**
+ * Тип+поворот для decoy-клетки. Коннекторы НЕ направлены ни на одну клетку пути
+ * (forbidden-направления) — обрубок не «утыкается» в решение. Возвращает `null`,
+ * если безопасной ориентации нет (клетка зажата путём со всех сторон).
+ *
+ * Корректность не зависит от этого правила: плитки пути задают коннекторы только
+ * вдоль пути, поэтому путь никогда не указывает на decoy, и взаимного (mutual)
+ * ребра путь↔decoy не возникает в принципе. Запрет «в путь» — для аккуратного
+ * вида и чистоты проверки достижимости.
+ */
+const chooseDecoy = (
+  pos: GridPosition,
+  gridSize: number,
+  pathSet: ReadonlySet<string>,
+  rng: Rng,
+): { type: TileType; rotation: TileRotation } | null => {
+  const forbidden = new Set<Direction>();
+  for (const dir of ALL_DIRECTIONS) {
+    const row = pos.row + DELTA[dir].dr;
+    const col = pos.col + DELTA[dir].dc;
+    if (inBounds(gridSize, row, col) && pathSet.has(`${row},${col}`)) {
+      forbidden.add(dir);
+    }
+  }
+
+  const types = shuffleArray<TileType>(['STRAIGHT', 'CORNER', 'TEE'], rng);
+  for (const type of types) {
+    const rotations = shuffleArray(ROTATIONS, rng);
+    for (const rotation of rotations) {
+      const connectors = TILE_CONNECTORS[type][rotation];
+      if (
+        connectors &&
+        connectors.length > 0 &&
+        connectors.every((dir) => !forbidden.has(dir))
+      ) {
+        return { type, rotation };
+      }
+    }
+  }
+
+  return null;
+};
+
+/**
+ * Заполняет часть пустых клеток decoy-плитками (только если `DECOY_FILL_RATIO`
+ * сценария > 0). Мутирует переданный массив `tiles`. Обманки кликабельны
+ * (`isLocked=false`) — игрок крутит их наравне с настоящими трубами.
+ */
+const placeDecoys = (
+  tiles: Tile[],
+  gridSize: number,
+  scenario: Scenario,
+  pathSet: ReadonlySet<string>,
+  rng: Rng,
+): void => {
+  const ratio = DECOY_FILL_RATIO[scenario];
+  if (ratio <= 0) return;
+
+  const emptyPositions: GridPosition[] = [];
+  for (let row = 0; row < gridSize; row += 1) {
+    for (let col = 0; col < gridSize; col += 1) {
+      if (!pathSet.has(`${row},${col}`)) {
+        emptyPositions.push({ row, col });
+      }
+    }
+  }
+
+  const target = Math.floor(emptyPositions.length * ratio);
+  const order = shuffleArray(emptyPositions, rng);
+  let placed = 0;
+
+  for (const pos of order) {
+    if (placed >= target) break;
+    const choice = chooseDecoy(pos, gridSize, pathSet, rng);
+    if (!choice) continue;
+
+    const tile = tiles[pos.row * gridSize + pos.col];
+    tile.type = choice.type;
+    tile.rotation = choice.rotation;
+    tile.isLocked = false;
+    placed += 1;
+  }
 };
 
 // --- Сборка решённого поля --------------------------------------------------
@@ -356,6 +501,15 @@ export const buildSolvedField = (
       tile.isLocked = isEndpoint;
     }
   }
+
+  // Тупики-обманки на части пустых клеток (изолированы от пути — см. chooseDecoy).
+  const pathSet = new Set<string>();
+  for (const path of paths) {
+    for (const cell of path) {
+      pathSet.add(posKey(cell));
+    }
+  }
+  placeDecoys(tiles, gridSize, scenario, pathSet, rng);
 
   return {
     gridSize,

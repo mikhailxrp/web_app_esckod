@@ -69,11 +69,65 @@ function bfsReachable(field: PuzzleField): Set<string> {
 }
 
 /**
- * Вычисляет прогресс связности пазла.
- * Метрика: BFS-достижимые непустые плитки / все непустые плитки.
- * Возвращает значение от 0 до 1.
+ * Соединена ли конкретная пара вход→выход через цепочку встречных коннекторов.
+ * BFS от входа; учитываются только взаимные стыки (как в серверном solver'е).
+ * Зеркало `checkSolution` для одной пары — корректно при наличии decoy-обманок
+ * (мусор не входит в компоненту входа, т.к. путь не указывает на него).
+ */
+function isPairConnected(
+  field: PuzzleField,
+  entry: { row: number; col: number },
+  exit: { row: number; col: number },
+): boolean {
+  const startTile = tileAt(field, entry.row, entry.col);
+  if (!startTile || startTile.type === 'EMPTY') return false;
+
+  const visited = new Set<string>([startTile.id]);
+  const queue: Array<{ row: number; col: number }> = [entry];
+
+  let head = 0;
+  while (head < queue.length) {
+    const { row, col } = queue[head++];
+    if (row === exit.row && col === exit.col) return true;
+
+    const tile = tileAt(field, row, col);
+    if (!tile) continue;
+
+    for (const dir of getConnectors(tile)) {
+      const { dr, dc } = DELTA[dir];
+      const nr = row + dr;
+      const nc = col + dc;
+      const neighbor = tileAt(field, nr, nc);
+      if (!neighbor || neighbor.type === 'EMPTY' || visited.has(neighbor.id)) continue;
+
+      if (getConnectors(neighbor).includes(OPPOSITE[dir])) {
+        visited.add(neighbor.id);
+        queue.push({ row: nr, col: nc });
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Вычисляет прогресс связности пазла (0..1).
+ *
+ * Метрика зависит от числа линий:
+ * - 1 линия (сц.1, может содержать decoy-обманки) — клеточная метрика неверна
+ *   (обманки никогда не достижимы), поэтому считаем по факту соединения пары:
+ *   0 или 1.
+ * - ≥2 линий (сц.2, без обманок) — плавная метрика: доля достижимых непустых
+ *   плиток (все непустые плитки лежат на путях).
  */
 export function computePuzzleProgress(field: PuzzleField): number {
+  const pairs = field.entries.length;
+  if (pairs === 0) return 1;
+
+  if (pairs === 1) {
+    return isPairConnected(field, field.entries[0], field.exits[0]) ? 1 : 0;
+  }
+
   const nonEmpty = field.tiles.filter((t) => t.type !== 'EMPTY');
   if (nonEmpty.length === 0) return 1;
 
@@ -82,21 +136,16 @@ export function computePuzzleProgress(field: PuzzleField): number {
 }
 
 /**
- * Возвращает true, если все непустые плитки достижимы из entry И все exits достижимы.
- * По инварианту генератора (все непустые плитки — на пути), 100% связность = решено.
+ * Возвращает true, если КАЖДАЯ пара вход→выход соединена (зеркало серверного
+ * `checkSolution`). Не опирается на «все непустые плитки на пути» — поэтому
+ * корректно при наличии decoy-обманок (сц.1).
  */
 export function isLocallySolved(field: PuzzleField): boolean {
-  const nonEmpty = field.tiles.filter((t) => t.type !== 'EMPTY');
-  if (nonEmpty.length === 0) return false;
-
-  const reachable = bfsReachable(field);
-
-  if (reachable.size !== nonEmpty.length) return false;
-
-  for (const exit of field.exits) {
-    const tile = tileAt(field, exit.row, exit.col);
-    if (!tile || !reachable.has(tile.id)) return false;
+  if (field.entries.length === 0 || field.entries.length !== field.exits.length) {
+    return false;
   }
 
-  return true;
+  return field.entries.every((entry, index) =>
+    isPairConnected(field, entry, field.exits[index]),
+  );
 }

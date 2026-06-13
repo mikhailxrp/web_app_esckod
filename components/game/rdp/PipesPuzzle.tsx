@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 
 import { PipeTimer } from '@/components/game/rdp/PipeTimer';
 import { PipeTile } from '@/components/game/rdp/PipeTile';
+import type { PipeEndpoint } from '@/components/game/rdp/PipeTile';
 import { RdpAccessDeniedOverlay } from '@/components/game/rdp/RdpAccessDeniedOverlay';
 import { RdpSkipButton } from '@/components/game/rdp/RdpSkipButton';
 import { toast } from '@/components/ui/Toast';
@@ -177,6 +178,21 @@ export function PipesPuzzle({
     }
   }, [slotKey, version, onLoadState, refreshLogs]);
 
+  // Карта tileId → роль/линия для подсветки точек входа и выхода.
+  // entries[i] ↔ exits[i] — пара одной линии (источник правды генератора).
+  const endpointByTileId = useMemo<Map<string, PipeEndpoint>>(() => {
+    const map = new Map<string, PipeEndpoint>();
+    field.entries.forEach((pos, index) => {
+      map.set(`r${pos.row}c${pos.col}`, { role: 'entry', pairIndex: index });
+    });
+    field.exits.forEach((pos, index) => {
+      map.set(`r${pos.row}c${pos.col}`, { role: 'exit', pairIndex: index });
+    });
+    return map;
+  }, [field.entries, field.exits]);
+
+  const pairCount = field.entries.length;
+
   const progress = computePuzzleProgress(field);
   const progressPercent = Math.round(progress * 100);
 
@@ -211,6 +227,8 @@ export function PipesPuzzle({
                 void handleRotate(tile.id);
               }}
               disabled={busy}
+              endpoint={endpointByTileId.get(tile.id)}
+              whiteMarker={pairCount === 1}
             />
           ))}
         </div>

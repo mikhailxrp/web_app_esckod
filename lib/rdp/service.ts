@@ -532,24 +532,12 @@ export async function handleTimerExpired(
   };
 
   try {
-    const updated = await prisma.$transaction(async (tx) => {
-      const record = await tx.missionProgress.update({
-        where: { id: progress.id, version: expectedVersion },
-        data: {
-          metadata: metadataToJson(updatedMeta),
-          version: { increment: 1 },
-        },
-      });
-
-      await tx.operationLog.create({
-        data: {
-          userId,
-          type: LogType.ERROR,
-          message: renderLogMessage('rdp_timer_expired', {}),
-        },
-      });
-
-      return record;
+    const updated = await prisma.missionProgress.update({
+      where: { id: progress.id, version: expectedVersion },
+      data: {
+        metadata: metadataToJson(updatedMeta),
+        version: { increment: 1 },
+      },
     });
 
     return {
