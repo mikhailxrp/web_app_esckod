@@ -17,7 +17,6 @@ import type {
   RdpFilesResult,
   RdpPuzzleState,
   RdpScenario,
-  RdpScenarioFinal,
 } from '@/types/rdp';
 
 // ─── Типы стадий ─────────────────────────────────────────────────────────────
@@ -124,13 +123,10 @@ export function RdpModal({ connectResult, onClose }: RdpModalProps): ReactElemen
     await refreshLogs();
   }, [refreshLogs]);
 
-  const handleTriggered = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    (_scenarioFinal: RdpScenarioFinal, _version: number): void => {
-      // Task 4 seam
-    },
-    [],
-  );
+  const handleCompleted = useCallback(async (): Promise<void> => {
+    setStage({ phase: 'completed' });
+    await Promise.all([refreshLogs(), refreshChat()]);
+  }, [refreshLogs, refreshChat]);
 
   const handleSkip = useCallback(async (): Promise<boolean> => {
     try {
@@ -266,7 +262,8 @@ export function RdpModal({ connectResult, onClose }: RdpModalProps): ReactElemen
             <WindowsSimulation
               slotKey={slotKey}
               rdpScenario={rdpScenario as RdpScenario}
-              onTriggered={handleTriggered}
+              onCompleted={() => void handleCompleted()}
+              onUnlockedCountChange={() => undefined}
             />
           )}
 

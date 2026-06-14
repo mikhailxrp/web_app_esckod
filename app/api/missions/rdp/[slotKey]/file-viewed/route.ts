@@ -63,6 +63,7 @@ export async function POST(
           ...(outcome.alreadyTriggered !== undefined && { alreadyTriggered: outcome.alreadyTriggered }),
           ...(outcome.scenarioFinal !== undefined && { scenarioFinal: outcome.scenarioFinal }),
           version: outcome.version,
+          ...(outcome.nextIp !== undefined && { nextIp: outcome.nextIp }),
         });
       case 'CONFLICT':
         return NextResponse.json(

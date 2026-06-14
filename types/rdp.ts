@@ -24,6 +24,7 @@ export interface RdpFilesResult {
   version: number;
   triggerActivated: boolean;
   completed: boolean;
+  nextIp?: string;
 }
 
 export interface RdpUnlockResult {
@@ -80,6 +81,7 @@ export interface RdpFileViewedResult {
   alreadyTriggered?: boolean;
   scenarioFinal?: RdpScenarioFinal;
   version: number;
+  nextIp?: string;
 }
 
 export interface RdpCompleteResult {

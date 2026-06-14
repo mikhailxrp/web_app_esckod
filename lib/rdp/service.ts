@@ -186,6 +186,7 @@ export type RdpFilesOutcome =
       version: number;
       triggerActivated: boolean;
       completed: boolean;
+      nextIp?: string;
     }
   | { type: 'SLOT_NOT_FOUND' }
   | { type: 'PUZZLE_NOT_SOLVED' };
@@ -206,6 +207,7 @@ export type RdpFileViewedOutcome =
       alreadyTriggered?: boolean;
       scenarioFinal?: 'session_lost' | 'session_terminated';
       version: number;
+      nextIp?: string;
     }
   | { type: 'SLOT_NOT_FOUND' }
   | { type: 'PUZZLE_NOT_SOLVED' }
@@ -227,7 +229,7 @@ export async function getFiles(
 ): Promise<RdpFilesOutcome> {
   const slot = await prisma.missionSlot.findUnique({
     where: { slotKey },
-    select: { id: true, missionType: true, isActive: true },
+    select: { id: true, missionType: true, isActive: true, rdpScenario: true, nextRdpSlotKey: true },
   });
 
   if (!slot || !slot.isActive || slot.missionType !== 'RDP') {
@@ -307,12 +309,23 @@ export async function getFiles(
     folders.push(entry);
   }
 
+  let nextIp: string | undefined;
+
+  if (meta.triggerActivated && slot.rdpScenario === 1 && slot.nextRdpSlotKey) {
+    const nextSlot = await prisma.missionSlot.findUnique({
+      where: { slotKey: slot.nextRdpSlotKey },
+      select: { correctIp: true },
+    });
+    nextIp = nextSlot?.correctIp ?? '—';
+  }
+
   return {
     type: 'SUCCESS',
     folders,
     version: progress.version,
     triggerActivated: meta.triggerActivated,
     completed: progress.completed,
+    ...(nextIp !== undefined && { nextIp }),
   };
 }
 
@@ -966,7 +979,7 @@ export async function handleFileViewed(
           },
         });
 
-        return { record, scenarioFinal: 'session_lost' as const };
+        return { record, scenarioFinal: 'session_lost' as const, nextIp };
       } else {
         await tx.gameProgress.upsert({
           where: { userId },
@@ -985,6 +998,7 @@ export async function handleFileViewed(
       triggered: true,
       scenarioFinal: result.scenarioFinal,
       version: result.record.version,
+      ...('nextIp' in result && result.nextIp !== undefined ? { nextIp: result.nextIp } : {}),
     };
   } catch (error) {
     if (isPrismaRecordNotFound(error)) {

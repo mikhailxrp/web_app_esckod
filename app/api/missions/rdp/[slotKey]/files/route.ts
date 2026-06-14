@@ -29,6 +29,7 @@ export async function GET(
           version: outcome.version,
           triggerActivated: outcome.triggerActivated,
           completed: outcome.completed,
+          ...(outcome.nextIp !== undefined && { nextIp: outcome.nextIp }),
         });
       case 'PUZZLE_NOT_SOLVED':
         return NextResponse.json({ error: 'PUZZLE_NOT_SOLVED' }, { status: 400 });

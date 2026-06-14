@@ -17,7 +17,6 @@ import type {
   RdpFilesResult,
   RdpPuzzleState,
   RdpScenario,
-  RdpScenarioFinal,
 } from '@/types/rdp';
 
 // ─── Типы стадий ─────────────────────────────────────────────────────────────
@@ -52,6 +51,7 @@ export function RdpGamePanel({ connectResult, onClose }: RdpGamePanelProps): Rea
   const [stage, setStage] = useState<Stage>(
     isCompleted ? { phase: 'completed' } : { phase: 'loading' },
   );
+  const [unlockedCount, setUnlockedCount] = useState(0);
 
   const refreshLogs = useLogStore((s) => s.refreshLogs);
   const refreshChat = useChatStore((s) => s.refresh);
@@ -148,19 +148,19 @@ export function RdpGamePanel({ connectResult, onClose }: RdpGamePanelProps): Rea
     }
   }, [slotKey, refreshLogs, refreshChat]);
 
-  // Seam for Task 4 — final modals (SessionLostModal / SessionTerminatedModal) go here
-  const handleTriggered = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    (_scenarioFinal: RdpScenarioFinal, _version: number): void => {
-      // Task 4 will implement modal logic here
-    },
-    [],
-  );
+  const handleCompleted = useCallback(async (): Promise<void> => {
+    setStage({ phase: 'completed' });
+    await Promise.all([refreshLogs(), refreshChat()]);
+  }, [refreshLogs, refreshChat]);
 
   const activeHintText =
     stage.phase === 'puzzle' || stage.phase === 'loading' || stage.phase === 'error'
       ? hintText
       : null;
+
+  // Close (X) is hidden during files stage for scenario 1 until first folder is unlocked
+  const showCloseButton =
+    stage.phase !== 'files' || rdpScenario !== 1 || unlockedCount > 0;
 
   return (
     <article
@@ -195,7 +195,7 @@ export function RdpGamePanel({ connectResult, onClose }: RdpGamePanelProps): Rea
         <div className="flex shrink-0 items-center gap-2">
           <RdpHintButton hintText={activeHintText} />
 
-          {/* Minimize button — only during files stage; progress is preserved on server */}
+          {/* Minimize button — available during files stage; progress is preserved on server */}
           {stage.phase === 'files' ? (
             <div className="relative group">
               <button
@@ -223,20 +223,23 @@ export function RdpGamePanel({ connectResult, onClose }: RdpGamePanelProps): Rea
             </div>
           ) : null}
 
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Закрыть удалённый доступ"
-            className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
-          >
-            <Image
-              src="/assets/icons/close.svg"
-              alt=""
-              width={16}
-              height={16}
-              aria-hidden="true"
-            />
-          </button>
+          {/* Close (X) — hidden during files stage for scenario 1 until first folder unlocked */}
+          {showCloseButton ? (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Закрыть удалённый доступ"
+              className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
+            >
+              <Image
+                src="/assets/icons/close.svg"
+                alt=""
+                width={16}
+                height={16}
+                aria-hidden="true"
+              />
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -283,7 +286,8 @@ export function RdpGamePanel({ connectResult, onClose }: RdpGamePanelProps): Rea
           <WindowsSimulation
             slotKey={slotKey}
             rdpScenario={rdpScenario as RdpScenario}
-            onTriggered={handleTriggered}
+            onCompleted={() => void handleCompleted()}
+            onUnlockedCountChange={setUnlockedCount}
           />
         ) : null}
 

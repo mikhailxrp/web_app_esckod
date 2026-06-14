@@ -7,7 +7,12 @@ import { FolderContent } from '@/components/game/rdp/FolderContent';
 import { FolderIcon } from '@/components/game/rdp/FolderIcon';
 import { FolderPasswordPrompt } from '@/components/game/rdp/FolderPasswordPrompt';
 import { PdfViewer } from '@/components/game/rdp/PdfViewer';
+import { SessionLostModal } from '@/components/game/rdp/SessionLostModal';
+import { SessionTerminatedModal } from '@/components/game/rdp/SessionTerminatedModal';
+import { fetchWithVersion } from '@/lib/api/fetchWithVersion';
+import { toast } from '@/components/ui/Toast';
 import type {
+  RdpCompleteResult,
   RdpFileView,
   RdpFileViewedResult,
   RdpFilesResult,
@@ -40,6 +45,7 @@ type SimStage =
   | { phase: 'loading' }
   | { phase: 'browsing' }
   | { phase: 'triggered'; scenarioFinal: RdpScenarioFinal }
+  | { phase: 'completing' }
   | { phase: 'error'; message: string };
 
 // ─── Props ───────────────────────────────────────────────────────────────────
@@ -47,7 +53,8 @@ type SimStage =
 interface WindowsSimulationProps {
   slotKey: string;
   rdpScenario: RdpScenario;
-  onTriggered: (scenarioFinal: RdpScenarioFinal, version: number) => void;
+  onCompleted: () => void;
+  onUnlockedCountChange: (count: number) => void;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -55,28 +62,43 @@ interface WindowsSimulationProps {
 export function WindowsSimulation({
   slotKey,
   rdpScenario,
-  onTriggered,
+  onCompleted,
+  onUnlockedCountChange,
 }: WindowsSimulationProps): ReactElement {
   const [stage, setStage] = useState<SimStage>({ phase: 'loading' });
   const [folders, setFolders] = useState<RdpFolderView[]>([]);
   const [version, setVersion] = useState(0);
+  const [nextIp, setNextIp] = useState<string | null>(null);
   const [windows, setWindows] = useState<WindowEntry[]>([]);
   const [windowOrder, setWindowOrder] = useState<WindowId[]>([]);
   const [passwordFolder, setPasswordFolder] = useState<RdpFolderView | null>(null);
+  // Scenario 1: плашка «файлы скрыты» → клик → показать SessionLostModal
+  const [showSessionLostModal, setShowSessionLostModal] = useState(false);
 
   // Track cascading position per window (stable across re-renders)
   const windowPositionCounter = useRef(0);
   const windowPositions = useRef<Map<WindowId, number>>(new Map());
 
-  // Stable ref for onTriggered callback to avoid stale closures
-  const onTriggeredRef = useRef(onTriggered);
+  // Stable refs to avoid stale closures in callbacks
+  const onCompletedRef = useRef(onCompleted);
+  const onUnlockedCountChangeRef = useRef(onUnlockedCountChange);
   useEffect(() => {
-    onTriggeredRef.current = onTriggered;
+    onCompletedRef.current = onCompleted;
+  });
+  useEffect(() => {
+    onUnlockedCountChangeRef.current = onUnlockedCountChange;
   });
 
   const getScenarioFinal = useCallback((): RdpScenarioFinal => {
     return rdpScenario === 1 ? 'session_lost' : 'session_terminated';
   }, [rdpScenario]);
+
+  // ─── Unlocked count helper ────────────────────────────────────────────────
+
+  const reportUnlockedCount = useCallback((currentFolders: RdpFolderView[]): void => {
+    const count = currentFolders.filter((f) => f.isUnlocked).length;
+    onUnlockedCountChangeRef.current(count);
+  }, []);
 
   // ─── Data fetching ───────────────────────────────────────────────────────
 
@@ -92,11 +114,14 @@ export function WindowsSimulation({
       const data = (await res.json()) as RdpFilesResult;
       setFolders(data.folders);
       setVersion(data.version);
+      reportUnlockedCount(data.folders);
 
       if (data.triggerActivated) {
         const sf = getScenarioFinal();
+        if (data.nextIp) {
+          setNextIp(data.nextIp);
+        }
         setStage({ phase: 'triggered', scenarioFinal: sf });
-        onTriggeredRef.current(sf, data.version);
       } else {
         setStage({ phase: 'browsing' });
       }
@@ -104,7 +129,7 @@ export function WindowsSimulation({
       console.error('[WindowsSimulation.loadFiles]', err);
       setStage({ phase: 'error', message: 'Ошибка соединения.' });
     }
-  }, [slotKey, getScenarioFinal]);
+  }, [slotKey, getScenarioFinal, reportUnlockedCount]);
 
   useEffect(() => {
     void loadFiles();
@@ -113,6 +138,46 @@ export function WindowsSimulation({
   const handleConflict = useCallback(async (): Promise<void> => {
     await loadFiles();
   }, [loadFiles]);
+
+  // ─── Complete mission ────────────────────────────────────────────────────
+
+  const handleComplete = useCallback(async (): Promise<void> => {
+    setStage({ phase: 'completing' });
+
+    try {
+      const res = await fetchWithVersion(`/api/missions/rdp/${slotKey}/complete`, {
+        body: { expectedVersion: version },
+        onConflict: async () => {
+          await loadFiles();
+        },
+      });
+
+      if (res.status === 409) {
+        // onConflict already called loadFiles(); stage will be reset by loadFiles
+        return;
+      }
+
+      if (!res.ok) {
+        const errData = (await res.json().catch(() => ({}))) as { error?: string };
+        const msg =
+          errData.error === 'TRIGGER_NOT_ACTIVATED'
+            ? 'Миссия ещё не активирована.'
+            : 'Не удалось завершить миссию.';
+        toast.error(msg);
+        // Restore triggered stage so user can retry
+        setStage({ phase: 'triggered', scenarioFinal: getScenarioFinal() });
+        return;
+      }
+
+      const data = (await res.json()) as RdpCompleteResult;
+      setVersion(data.version);
+      onCompletedRef.current();
+    } catch (err) {
+      console.error('[WindowsSimulation.handleComplete]', err);
+      toast.error('Ошибка соединения.');
+      setStage({ phase: 'triggered', scenarioFinal: getScenarioFinal() });
+    }
+  }, [slotKey, version, loadFiles, getScenarioFinal]);
 
   // ─── Window manager ──────────────────────────────────────────────────────
 
@@ -169,15 +234,20 @@ export function WindowsSimulation({
 
   const handleUnlock = useCallback(
     (folderName: string, newVersion: number): void => {
-      // Optimistic update: mark folder as unlocked immediately
-      setFolders((prev) =>
-        prev.map((f) => (f.folderName === folderName ? { ...f, isUnlocked: true } : f)),
+      // Optimistic update: mark folder as unlocked so the explorer opens immediately.
+      // Files still have url: null from the initial locked fetch, so we also call
+      // loadFiles() to get the real file URLs for the now-unlocked folder.
+      const updatedFolders = folders.map((f) =>
+        f.folderName === folderName ? { ...f, isUnlocked: true } : f,
       );
+      setFolders(updatedFolders);
+      reportUnlockedCount(updatedFolders);
       setVersion(newVersion);
       setPasswordFolder(null);
       openExplorer(folderName);
+      void loadFiles();
     },
-    [openExplorer],
+    [folders, openExplorer, reportUnlockedCount, loadFiles],
   );
 
   const handleViewerClose = useCallback(
@@ -187,8 +257,10 @@ export function WindowsSimulation({
 
       if (result.triggered && result.scenarioFinal) {
         const sf = result.scenarioFinal;
+        if (result.nextIp) {
+          setNextIp(result.nextIp);
+        }
         setStage({ phase: 'triggered', scenarioFinal: sf });
-        onTriggeredRef.current(sf, result.version);
       }
     },
     [closeWindow],
@@ -197,7 +269,12 @@ export function WindowsSimulation({
   // ─── Render ──────────────────────────────────────────────────────────────
 
   const isBrowsing = stage.phase === 'browsing';
+  const isTriggered = stage.phase === 'triggered';
+  const isCompleting = stage.phase === 'completing';
   const passwordZIndex = 10 + windowOrder.length + 20;
+
+  const triggeredScenarioFinal =
+    isTriggered ? (stage as { phase: 'triggered'; scenarioFinal: RdpScenarioFinal }).scenarioFinal : null;
 
   return (
     <div
@@ -228,11 +305,60 @@ export function WindowsSimulation({
         </div>
       ) : null}
 
-      {/* Triggered placeholder — seam for Task 4 */}
-      {stage.phase === 'triggered' ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+      {/* Triggered — scenario 2: SessionTerminatedModal immediately */}
+      {isTriggered && triggeredScenarioFinal === 'session_terminated' ? (
+        <SessionTerminatedModal
+          onClose={() => void handleComplete()}
+          isLoading={isCompleting}
+        />
+      ) : null}
+
+      {/* Triggered — scenario 1: plashka + optional SessionLostModal */}
+      {isTriggered && triggeredScenarioFinal === 'session_lost' ? (
+        <>
+          {/* «Files hidden» plashka — click opens the modal */}
+          <button
+            type="button"
+            className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/50 cursor-pointer"
+            onClick={() => setShowSessionLostModal(true)}
+            aria-label="Показать сообщение об ошибке сессии"
+          >
+            <svg
+              width="36"
+              height="36"
+              viewBox="0 0 36 36"
+              fill="none"
+              aria-hidden="true"
+            >
+              <circle cx="18" cy="18" r="17" stroke="white" strokeWidth="1.5" strokeOpacity="0.6" />
+              <path
+                d="M10 10l16 16M26 10L10 26"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeOpacity="0.8"
+              />
+            </svg>
+            <p className="font-mono text-game-sm text-white/80 drop-shadow select-none">
+              Соединение разорвано. Нажмите для подробностей.
+            </p>
+          </button>
+
+          {showSessionLostModal ? (
+            <SessionLostModal
+              nextIp={nextIp ?? '—'}
+              onClose={() => void handleComplete()}
+              isLoading={isCompleting}
+            />
+          ) : null}
+        </>
+      ) : null}
+
+      {/* Completing overlay */}
+      {isCompleting ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-50">
           <p className="font-mono text-game-sm text-white drop-shadow" role="status">
-            Сессия завершена. Файлы скрыты.
+            Завершение миссии…
           </p>
         </div>
       ) : null}
