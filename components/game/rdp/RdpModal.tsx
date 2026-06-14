@@ -7,12 +7,18 @@ import type { ReactElement } from 'react';
 import { PipesPuzzle } from '@/components/game/rdp/PipesPuzzle';
 import { RdpCompletedView } from '@/components/game/rdp/RdpCompletedView';
 import { RdpHintButton } from '@/components/game/rdp/RdpHintButton';
-import { RdpSolvedPlaceholder } from '@/components/game/rdp/RdpSolvedPlaceholder';
+import { WindowsSimulation } from '@/components/game/rdp/WindowsSimulation';
 import { toast } from '@/components/ui/Toast';
 import type { PuzzleField } from '@/lib/rdp/types';
 import { useChatStore } from '@/store/chatStore';
 import { useLogStore } from '@/store/logStore';
-import type { RdpConnectResult, RdpPuzzleState, RdpScenario } from '@/types/rdp';
+import type {
+  RdpConnectResult,
+  RdpFilesResult,
+  RdpPuzzleState,
+  RdpScenario,
+  RdpScenarioFinal,
+} from '@/types/rdp';
 
 // ─── Типы стадий ─────────────────────────────────────────────────────────────
 
@@ -28,7 +34,7 @@ type Stage =
   | { phase: 'loading' }
   | { phase: 'error'; message: string }
   | { phase: 'puzzle'; data: PuzzleStageData }
-  | { phase: 'solvedPlaceholder' }
+  | { phase: 'files' }
   | { phase: 'completed' };
 
 // ─── Props ───────────────────────────────────────────────────────────────────
@@ -52,25 +58,42 @@ export function RdpModal({ connectResult, onClose }: RdpModalProps): ReactElemen
 
   const loadState = useCallback(async (): Promise<void> => {
     try {
-      const res = await fetch(`/api/missions/rdp/${slotKey}/puzzle-state`);
+      const filesRes = await fetch(`/api/missions/rdp/${slotKey}/files`);
 
-      if (!res.ok) {
-        setStage({ phase: 'error', message: 'Не удалось загрузить состояние миссии.' });
+      if (filesRes.ok) {
+        const filesData = (await filesRes.json()) as RdpFilesResult;
+        if (filesData.completed) {
+          setStage({ phase: 'completed' });
+        } else {
+          setStage({ phase: 'files' });
+        }
         return;
       }
 
-      const data = (await res.json()) as RdpPuzzleState;
+      const errData = (await filesRes.json().catch(() => ({}))) as { error?: string };
 
-      setStage({
-        phase: 'puzzle',
-        data: {
-          field: data.puzzleField,
-          version: data.version,
-          timerStartedAt: data.timerStartedAt,
-          timerSeconds: data.timerSeconds,
-          canSkip: false,
-        },
-      });
+      if (filesRes.status === 400 && errData.error === 'PUZZLE_NOT_SOLVED') {
+        const puzzleRes = await fetch(`/api/missions/rdp/${slotKey}/puzzle-state`);
+
+        if (!puzzleRes.ok) {
+          setStage({ phase: 'error', message: 'Не удалось загрузить состояние миссии.' });
+          return;
+        }
+
+        const data = (await puzzleRes.json()) as RdpPuzzleState;
+        setStage({
+          phase: 'puzzle',
+          data: {
+            field: data.puzzleField,
+            version: data.version,
+            timerStartedAt: data.timerStartedAt,
+            timerSeconds: data.timerSeconds,
+            canSkip: false,
+          },
+        });
+      } else {
+        setStage({ phase: 'error', message: 'Не удалось загрузить состояние миссии.' });
+      }
     } catch (error) {
       console.error('[RdpModal.loadState]', error);
       setStage({ phase: 'error', message: 'Ошибка соединения.' });
@@ -97,9 +120,17 @@ export function RdpModal({ connectResult, onClose }: RdpModalProps): ReactElemen
   }, [handleKeyDown]);
 
   const handleSolved = useCallback(async (): Promise<void> => {
-    setStage({ phase: 'solvedPlaceholder' });
+    setStage({ phase: 'files' });
     await refreshLogs();
   }, [refreshLogs]);
+
+  const handleTriggered = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    (_scenarioFinal: RdpScenarioFinal, _version: number): void => {
+      // Task 4 seam
+    },
+    [],
+  );
 
   const handleSkip = useCallback(async (): Promise<boolean> => {
     try {
@@ -231,8 +262,12 @@ export function RdpModal({ connectResult, onClose }: RdpModalProps): ReactElemen
             />
           )}
 
-          {stage.phase === 'solvedPlaceholder' && (
-            <RdpSolvedPlaceholder onClose={onClose} />
+          {stage.phase === 'files' && (
+            <WindowsSimulation
+              slotKey={slotKey}
+              rdpScenario={rdpScenario as RdpScenario}
+              onTriggered={handleTriggered}
+            />
           )}
 
           {stage.phase === 'completed' && (

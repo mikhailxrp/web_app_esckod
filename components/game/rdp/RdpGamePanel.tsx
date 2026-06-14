@@ -7,12 +7,18 @@ import type { ReactElement } from 'react';
 import { PipesPuzzle } from '@/components/game/rdp/PipesPuzzle';
 import { RdpCompletedView } from '@/components/game/rdp/RdpCompletedView';
 import { RdpHintButton } from '@/components/game/rdp/RdpHintButton';
-import { RdpSolvedPlaceholder } from '@/components/game/rdp/RdpSolvedPlaceholder';
+import { WindowsSimulation } from '@/components/game/rdp/WindowsSimulation';
 import { toast } from '@/components/ui/Toast';
 import type { PuzzleField } from '@/lib/rdp/types';
 import { useChatStore } from '@/store/chatStore';
 import { useLogStore } from '@/store/logStore';
-import type { RdpConnectResult, RdpPuzzleState, RdpScenario } from '@/types/rdp';
+import type {
+  RdpConnectResult,
+  RdpFilesResult,
+  RdpPuzzleState,
+  RdpScenario,
+  RdpScenarioFinal,
+} from '@/types/rdp';
 
 // ─── Типы стадий ─────────────────────────────────────────────────────────────
 
@@ -28,7 +34,7 @@ type Stage =
   | { phase: 'loading' }
   | { phase: 'error'; message: string }
   | { phase: 'puzzle'; data: PuzzleStageData }
-  | { phase: 'solvedPlaceholder' }
+  | { phase: 'files' }
   | { phase: 'completed' };
 
 // ─── Props ───────────────────────────────────────────────────────────────────
@@ -50,27 +56,50 @@ export function RdpGamePanel({ connectResult, onClose }: RdpGamePanelProps): Rea
   const refreshLogs = useLogStore((s) => s.refreshLogs);
   const refreshChat = useChatStore((s) => s.refresh);
 
+  // ─── files-first loadState ────────────────────────────────────────────────
+  // 1. Try GET /files — 200 means puzzle is solved (files stage / completed)
+  // 2. 400 PUZZLE_NOT_SOLVED → fallback to GET /puzzle-state (puzzle stage)
+
   const loadState = useCallback(async (): Promise<void> => {
     try {
-      const res = await fetch(`/api/missions/rdp/${slotKey}/puzzle-state`);
+      const filesRes = await fetch(`/api/missions/rdp/${slotKey}/files`);
 
-      if (!res.ok) {
-        setStage({ phase: 'error', message: 'Не удалось загрузить состояние миссии.' });
+      if (filesRes.ok) {
+        const filesData = (await filesRes.json()) as RdpFilesResult;
+        if (filesData.completed) {
+          setStage({ phase: 'completed' });
+        } else {
+          // triggerActivated && !completed OR normal browsing — WindowsSimulation handles both
+          setStage({ phase: 'files' });
+        }
         return;
       }
 
-      const data = (await res.json()) as RdpPuzzleState;
+      const errData = (await filesRes.json().catch(() => ({}))) as { error?: string };
 
-      setStage({
-        phase: 'puzzle',
-        data: {
-          field: data.puzzleField,
-          version: data.version,
-          timerStartedAt: data.timerStartedAt,
-          timerSeconds: data.timerSeconds,
-          canSkip: false,
-        },
-      });
+      if (filesRes.status === 400 && errData.error === 'PUZZLE_NOT_SOLVED') {
+        // Puzzle not yet solved — load puzzle state
+        const puzzleRes = await fetch(`/api/missions/rdp/${slotKey}/puzzle-state`);
+
+        if (!puzzleRes.ok) {
+          setStage({ phase: 'error', message: 'Не удалось загрузить состояние миссии.' });
+          return;
+        }
+
+        const data = (await puzzleRes.json()) as RdpPuzzleState;
+        setStage({
+          phase: 'puzzle',
+          data: {
+            field: data.puzzleField,
+            version: data.version,
+            timerStartedAt: data.timerStartedAt,
+            timerSeconds: data.timerSeconds,
+            canSkip: false,
+          },
+        });
+      } else {
+        setStage({ phase: 'error', message: 'Не удалось загрузить состояние миссии.' });
+      }
     } catch (error) {
       console.error('[RdpGamePanel.loadState]', error);
       setStage({ phase: 'error', message: 'Ошибка соединения.' });
@@ -85,7 +114,7 @@ export function RdpGamePanel({ connectResult, onClose }: RdpGamePanelProps): Rea
   }, [isCompleted, loadState]);
 
   const handleSolved = useCallback(async (): Promise<void> => {
-    setStage({ phase: 'solvedPlaceholder' });
+    setStage({ phase: 'files' });
     await refreshLogs();
   }, [refreshLogs]);
 
@@ -118,6 +147,15 @@ export function RdpGamePanel({ connectResult, onClose }: RdpGamePanelProps): Rea
       return false;
     }
   }, [slotKey, refreshLogs, refreshChat]);
+
+  // Seam for Task 4 — final modals (SessionLostModal / SessionTerminatedModal) go here
+  const handleTriggered = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    (_scenarioFinal: RdpScenarioFinal, _version: number): void => {
+      // Task 4 will implement modal logic here
+    },
+    [],
+  );
 
   const activeHintText =
     stage.phase === 'puzzle' || stage.phase === 'loading' || stage.phase === 'error'
@@ -156,6 +194,35 @@ export function RdpGamePanel({ connectResult, onClose }: RdpGamePanelProps): Rea
 
         <div className="flex shrink-0 items-center gap-2">
           <RdpHintButton hintText={activeHintText} />
+
+          {/* Minimize button — only during files stage; progress is preserved on server */}
+          {stage.phase === 'files' ? (
+            <div className="relative group">
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Свернуть — прогресс сохранён"
+                className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
+              >
+                <svg
+                  width="12"
+                  height="2"
+                  viewBox="0 0 12 2"
+                  aria-hidden="true"
+                  className="text-content-secondary group-hover:text-accent transition-colors"
+                >
+                  <path d="M0 1h12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </button>
+              <span
+                className="pointer-events-none absolute right-0 top-full mt-1.5 whitespace-nowrap rounded-game-sm border border-border bg-bg-secondary px-2 py-1 font-mono text-game-xs text-content-secondary opacity-0 group-hover:opacity-100 transition-opacity z-50"
+                role="tooltip"
+              >
+                Свернуть — прогресс сохранён
+              </span>
+            </div>
+          ) : null}
+
           <button
             type="button"
             onClick={onClose}
@@ -173,25 +240,25 @@ export function RdpGamePanel({ connectResult, onClose }: RdpGamePanelProps): Rea
         </div>
       </div>
 
-      {/* Body */}
-      <div className="p-6">
-        {stage.phase === 'loading' && (
+      {/* Body — no inner padding for files stage (desktop fills the area) */}
+      <div className={stage.phase === 'files' ? '' : 'p-6'}>
+        {stage.phase === 'loading' ? (
           <div className="flex min-h-[300px] items-center justify-center">
             <p className="font-mono text-game-sm text-content-muted" role="status">
               Установка соединения…
             </p>
           </div>
-        )}
+        ) : null}
 
-        {stage.phase === 'error' && (
+        {stage.phase === 'error' ? (
           <div className="flex min-h-[300px] items-center justify-center">
             <p className="font-mono text-game-sm text-semantic-error" role="alert">
               {stage.message}
             </p>
           </div>
-        )}
+        ) : null}
 
-        {stage.phase === 'puzzle' && (
+        {stage.phase === 'puzzle' ? (
           <PipesPuzzle
             slotKey={slotKey}
             rdpScenario={rdpScenario as RdpScenario}
@@ -210,15 +277,19 @@ export function RdpGamePanel({ connectResult, onClose }: RdpGamePanelProps): Rea
             onSkip={handleSkip}
             onLoadState={loadState}
           />
-        )}
+        ) : null}
 
-        {stage.phase === 'solvedPlaceholder' && (
-          <RdpSolvedPlaceholder onClose={onClose} />
-        )}
+        {stage.phase === 'files' ? (
+          <WindowsSimulation
+            slotKey={slotKey}
+            rdpScenario={rdpScenario as RdpScenario}
+            onTriggered={handleTriggered}
+          />
+        ) : null}
 
-        {stage.phase === 'completed' && (
+        {stage.phase === 'completed' ? (
           <RdpCompletedView displayName={displayName} onClose={onClose} />
-        )}
+        ) : null}
       </div>
     </article>
   );

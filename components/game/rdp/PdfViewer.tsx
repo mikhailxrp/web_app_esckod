@@ -1,0 +1,177 @@
+'use client';
+
+import { useState } from 'react';
+import type { ReactElement } from 'react';
+
+import { fetchWithVersion } from '@/lib/api/fetchWithVersion';
+import { toast } from '@/components/ui/Toast';
+import type { RdpFileView, RdpFileViewedResult } from '@/types/rdp';
+
+// ─── Props ───────────────────────────────────────────────────────────────────
+
+interface PdfViewerProps {
+  file: RdpFileView;
+  slotKey: string;
+  version: number;
+  zIndex: number;
+  positionOffset: number;
+  onClose: (result: RdpFileViewedResult) => void;
+  onFocus: () => void;
+  onConflict: () => Promise<void>;
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
+
+export function PdfViewer({
+  file,
+  slotKey,
+  version,
+  zIndex,
+  positionOffset,
+  onClose,
+  onFocus,
+  onConflict,
+}: PdfViewerProps): ReactElement {
+  const [closing, setClosing] = useState(false);
+  const [maximized, setMaximized] = useState(false);
+
+  const top = 60 + positionOffset * 25;
+  const left = 200 + positionOffset * 25;
+
+  const handleClose = async (): Promise<void> => {
+    setClosing(true);
+
+    try {
+      const res = await fetchWithVersion(`/api/missions/rdp/${slotKey}/file-viewed`, {
+        body: { fileId: file.id, expectedVersion: version },
+        onConflict,
+      });
+
+      if (res.status === 409) {
+        // onConflict was called by fetchWithVersion; parent refetches and
+        // re-renders this component with an updated version prop
+        setClosing(false);
+        return;
+      }
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        console.error('[PdfViewer.handleClose]', data.error);
+        toast.error('Не удалось закрыть файл. Попробуйте ещё раз.');
+        setClosing(false);
+        return;
+      }
+
+      const result = (await res.json()) as RdpFileViewedResult;
+      onClose(result);
+    } catch (err) {
+      console.error('[PdfViewer.handleClose]', err);
+      toast.error('Ошибка соединения.');
+      setClosing(false);
+    }
+  };
+
+  // When maximized — fill the entire simulation container (inset-0 overrides top/left)
+  const containerStyle = maximized ? { zIndex } : { zIndex, top, left };
+  const containerClass = maximized
+    ? 'absolute inset-0 shadow-2xl overflow-hidden border border-gray-300 select-none flex flex-col'
+    : 'absolute w-80 shadow-2xl overflow-hidden border border-gray-300 select-none flex flex-col';
+
+  return (
+    <div
+      style={containerStyle}
+      onMouseDown={onFocus}
+      className={containerClass}
+      role="dialog"
+      aria-label={`Просмотр: ${file.name}`}
+    >
+      {/* Titlebar */}
+      <div className="flex shrink-0 items-center gap-2 bg-gray-100 border-b border-gray-200 px-3 py-1.5">
+        <span className="flex-1 font-sans text-sm text-gray-800 font-medium">Скан</span>
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            aria-label="Свернуть"
+            className="flex size-6 items-center justify-center rounded-sm hover:bg-gray-300 text-gray-700"
+          >
+            <svg width="10" height="1" viewBox="0 0 10 1" aria-hidden="true">
+              <path d="M0 0.5h10" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+          </button>
+
+          {/* Maximize / Restore toggle */}
+          <button
+            type="button"
+            onClick={() => setMaximized((v) => !v)}
+            aria-label={maximized ? 'Восстановить размер' : 'Развернуть на весь экран'}
+            className="flex size-6 items-center justify-center rounded-sm hover:bg-gray-300 text-gray-700"
+          >
+            {maximized ? <RestoreIcon /> : <MaximizeIcon />}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => void handleClose()}
+            disabled={closing}
+            aria-label="Закрыть"
+            className="flex size-6 items-center justify-center rounded-sm hover:bg-red-500 hover:text-white text-gray-700 disabled:opacity-50"
+          >
+            {closing ? (
+              <span
+                className="size-3 animate-spin rounded-full border border-current border-t-transparent"
+                aria-hidden="true"
+              />
+            ) : (
+              <svg width="9" height="9" viewBox="0 0 9 9" aria-hidden="true">
+                <path
+                  d="M1 1l7 7M8 1l-7 7"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                />
+              </svg>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* PDF content — grows to fill remaining height when maximized */}
+      <div className="flex-1 bg-white overflow-hidden">
+        {file.url ? (
+          <iframe
+            src={file.url}
+            title={file.name}
+            className="w-full h-full border-0"
+            aria-label={`Документ: ${file.name}`}
+            style={maximized ? undefined : { minHeight: '420px' }}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full" style={{ minHeight: '420px' }}>
+            <p className="font-sans text-sm text-gray-400">Файл недоступен</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
+
+function MaximizeIcon(): ReactElement {
+  return (
+    <svg width="9" height="9" viewBox="0 0 9 9" fill="none" aria-hidden="true">
+      <rect x="0.5" y="0.5" width="8" height="8" stroke="currentColor" strokeWidth="1" />
+    </svg>
+  );
+}
+
+function RestoreIcon(): ReactElement {
+  return (
+    <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+      {/* back square (top-right offset) */}
+      <rect x="3" y="0.5" width="7" height="7" stroke="currentColor" strokeWidth="1" />
+      {/* front square (bottom-left offset), filled white to "cut out" overlap */}
+      <rect x="0.5" y="3" width="7" height="7" stroke="currentColor" strokeWidth="1" fill="white" />
+    </svg>
+  );
+}
