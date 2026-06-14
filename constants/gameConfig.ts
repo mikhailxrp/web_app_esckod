@@ -26,3 +26,12 @@ export const DECIPHER_LAUNCH_RATE_LIMIT = 30;
 
 /** Rate limit: подключение по IP (на userId). */
 export const RDP_CONNECT_RATE_LIMIT = 10;
+
+/** Rate limit: разблокировка папки (на userId + slotKey). */
+export const RDP_UNLOCK_FOLDER_RATE_LIMIT = 10;
+
+/** Rate limit: отметка просмотра файла (на userId + slotKey). */
+export const RDP_FILE_VIEWED_RATE_LIMIT = 60;
+
+/** Rate limit: завершение миссии (на userId + slotKey). */
+export const RDP_COMPLETE_RATE_LIMIT = 5;

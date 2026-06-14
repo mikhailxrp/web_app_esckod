@@ -10,7 +10,7 @@ export const logTemplates = {
   decipher_access_granted:
     'Папка {folderPath} расшифрована. Пароль: {folderPassword}',
   rdp_invalid_ip: 'Неверный IP-адрес: {ip}',
-  rdp_puzzle_solved: 'Соединение с {logSubjectName} установлено',
+  rdp_puzzle_solved: 'Доступ к удалённому компьютеру ({logSubjectName}) предоставлен',
   rdp_timer_expired: 'Сеанс прерван: соединение разорвано',
   rdp_session_lost:
     'Доступ к {logSubjectName} потерян: обнаружено два активных сеанса. Новый IP: {nextIp}',
