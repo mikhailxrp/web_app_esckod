@@ -42,6 +42,12 @@ export const rdpSkipSchema = z.object({
   expectedVersion: z.number().int().nonnegative().optional(),
 });
 
+export const rdpUnlockFolderSchema = z.object({
+  folderName: z.string().min(1),
+  password: z.string().min(1),
+  expectedVersion: z.number().int().nonnegative(),
+});
+
 export type CrackLaunchInput = z.infer<typeof crackLaunchSchema>;
 export type CrackAttemptInput = z.infer<typeof crackAttemptSchema>;
 export type DecipherLaunchInput = z.infer<typeof decipherLaunchSchema>;
@@ -51,3 +57,4 @@ export type RdpRotateTileInput = z.infer<typeof rdpRotateTileSchema>;
 export type RdpCheckPuzzleInput = z.infer<typeof rdpCheckPuzzleSchema>;
 export type RdpTimerExpiredInput = z.infer<typeof rdpTimerExpiredSchema>;
 export type RdpSkipInput = z.infer<typeof rdpSkipSchema>;
+export type RdpUnlockFolderInput = z.infer<typeof rdpUnlockFolderSchema>;
