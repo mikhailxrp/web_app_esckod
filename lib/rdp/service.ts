@@ -199,6 +199,26 @@ export type RdpUnlockOutcome =
   | { type: 'INVALID_PASSWORD' }
   | { type: 'CONFLICT'; currentVersion: number };
 
+export type RdpFileViewedOutcome =
+  | {
+      type: 'SUCCESS';
+      triggered: boolean;
+      alreadyTriggered?: boolean;
+      scenarioFinal?: 'session_lost' | 'session_terminated';
+      version: number;
+    }
+  | { type: 'SLOT_NOT_FOUND' }
+  | { type: 'PUZZLE_NOT_SOLVED' }
+  | { type: 'FILE_NOT_FOUND_IN_SLOT' }
+  | { type: 'FOLDER_NOT_UNLOCKED' }
+  | { type: 'CONFLICT'; currentVersion: number };
+
+export type RdpCompleteOutcome =
+  | { type: 'SUCCESS'; version: number }
+  | { type: 'SLOT_NOT_FOUND' }
+  | { type: 'TRIGGER_NOT_ACTIVATED' }
+  | { type: 'CONFLICT'; currentVersion: number };
+
 // ─── getFiles ────────────────────────────────────────────────────────────────
 
 export async function getFiles(
@@ -793,6 +813,268 @@ export async function handleTimerExpired(
       canSkip,
       version: updated.version,
     };
+  } catch (error) {
+    if (isPrismaRecordNotFound(error)) {
+      const fresh = await prisma.missionProgress.findUnique({
+        where: { id: progress.id },
+        select: { version: true },
+      });
+
+      return { type: 'CONFLICT', currentVersion: fresh?.version ?? expectedVersion };
+    }
+
+    throw error;
+  }
+}
+
+// ─── handleFileViewed ────────────────────────────────────────────────────────
+
+export async function handleFileViewed(
+  userId: string,
+  slotKey: string,
+  fileId: string,
+  expectedVersion: number,
+): Promise<RdpFileViewedOutcome> {
+  const slot = await prisma.missionSlot.findUnique({
+    where: { slotKey },
+    select: {
+      id: true,
+      slotKey: true,
+      missionType: true,
+      isActive: true,
+      rdpScenario: true,
+      logSubjectName: true,
+      nextRdpSlotKey: true,
+    },
+  });
+
+  if (!slot || !slot.isActive || slot.missionType !== 'RDP') {
+    return { type: 'SLOT_NOT_FOUND' };
+  }
+
+  const progress = await prisma.missionProgress.findUnique({
+    where: { userId_slotId: { userId, slotId: slot.id } },
+  });
+
+  const meta = parseMetadata(progress?.metadata ?? null);
+
+  if (!progress || !meta.puzzleSolved) {
+    return { type: 'PUZZLE_NOT_SOLVED' };
+  }
+
+  // Ранний идемпотентный возврат — ДО сверки версии, чтобы устаревшая вкладка
+  // после уже сработавшего триггера не получала ложный 409.
+  if (progress.completed || meta.triggerActivated) {
+    return { type: 'SUCCESS', triggered: true, alreadyTriggered: true, version: progress.version };
+  }
+
+  if (progress.version !== expectedVersion) {
+    return { type: 'CONFLICT', currentVersion: progress.version };
+  }
+
+  const file = await prisma.rdpFile.findFirst({
+    where: { id: fileId, slotId: slot.id },
+    select: { id: true, folder: true, isLocked: true },
+  });
+
+  if (!file) {
+    return { type: 'FILE_NOT_FOUND_IN_SLOT' };
+  }
+
+  if (file.isLocked && !meta.unlockedFolders.includes(file.folder)) {
+    return { type: 'FOLDER_NOT_UNLOCKED' };
+  }
+
+  const newViewedFileIds = meta.viewedFileIds.includes(fileId)
+    ? meta.viewedFileIds
+    : [...meta.viewedFileIds, fileId];
+
+  const allFiles = await prisma.rdpFile.findMany({
+    where: { slotId: slot.id },
+    select: { id: true },
+  });
+
+  const allViewed = allFiles.length > 0 && allFiles.every((f) => newViewedFileIds.includes(f.id));
+
+  if (!allViewed) {
+    const updatedMeta: RdpMetadata = { ...meta, viewedFileIds: newViewedFileIds };
+
+    try {
+      const updated = await prisma.missionProgress.update({
+        where: { id: progress.id, version: expectedVersion },
+        data: {
+          metadata: metadataToJson(updatedMeta),
+          version: { increment: 1 },
+        },
+      });
+
+      return { type: 'SUCCESS', triggered: false, version: updated.version };
+    } catch (error) {
+      if (isPrismaRecordNotFound(error)) {
+        const fresh = await prisma.missionProgress.findUnique({
+          where: { id: progress.id },
+          select: { version: true },
+        });
+
+        return { type: 'CONFLICT', currentVersion: fresh?.version ?? expectedVersion };
+      }
+
+      throw error;
+    }
+  }
+
+  // Все файлы просмотрены — атомарный триггер
+  const scenario = slot.rdpScenario ?? 1;
+  const updatedMeta: RdpMetadata = {
+    ...meta,
+    viewedFileIds: newViewedFileIds,
+    triggerActivated: true,
+  };
+
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const record = await tx.missionProgress.update({
+        where: { id: progress.id, version: expectedVersion },
+        data: {
+          metadata: metadataToJson(updatedMeta),
+          version: { increment: 1 },
+        },
+      });
+
+      if (scenario === 1) {
+        let nextIp = '—';
+
+        if (slot.nextRdpSlotKey) {
+          const nextSlot = await tx.missionSlot.findUnique({
+            where: { slotKey: slot.nextRdpSlotKey },
+            select: { correctIp: true },
+          });
+
+          if (nextSlot?.correctIp) {
+            nextIp = nextSlot.correctIp;
+          }
+        }
+
+        await tx.operationLog.create({
+          data: {
+            userId,
+            type: LogType.SUCCESS,
+            message: renderLogMessage('rdp_session_lost', {
+              logSubjectName: slot.logSubjectName ?? '—',
+              nextIp,
+            }),
+          },
+        });
+
+        return { record, scenarioFinal: 'session_lost' as const };
+      } else {
+        await tx.gameProgress.upsert({
+          where: { userId },
+          create: { userId, marinaTriggered: true },
+          update: { marinaTriggered: true, version: { increment: 1 } },
+        });
+
+        await advanceTriggerListeners(tx, userId, CHAT_TRIGGER_EVENTS.RDP_MARINA_TRIGGERED);
+
+        return { record, scenarioFinal: 'session_terminated' as const };
+      }
+    });
+
+    return {
+      type: 'SUCCESS',
+      triggered: true,
+      scenarioFinal: result.scenarioFinal,
+      version: result.record.version,
+    };
+  } catch (error) {
+    if (isPrismaRecordNotFound(error)) {
+      const fresh = await prisma.missionProgress.findUnique({
+        where: { id: progress.id },
+        select: { version: true },
+      });
+
+      return { type: 'CONFLICT', currentVersion: fresh?.version ?? expectedVersion };
+    }
+
+    throw error;
+  }
+}
+
+// ─── handleComplete ──────────────────────────────────────────────────────────
+
+export async function handleComplete(
+  userId: string,
+  slotKey: string,
+  expectedVersion: number,
+): Promise<RdpCompleteOutcome> {
+  const slot = await prisma.missionSlot.findUnique({
+    where: { slotKey },
+    select: {
+      id: true,
+      slotKey: true,
+      missionType: true,
+      isActive: true,
+      displayName: true,
+    },
+  });
+
+  if (!slot || !slot.isActive || slot.missionType !== 'RDP') {
+    return { type: 'SLOT_NOT_FOUND' };
+  }
+
+  const progress = await prisma.missionProgress.findUnique({
+    where: { userId_slotId: { userId, slotId: slot.id } },
+  });
+
+  if (progress?.completed) {
+    return { type: 'SUCCESS', version: progress.version };
+  }
+
+  const meta = parseMetadata(progress?.metadata ?? null);
+
+  if (!progress || !meta.triggerActivated) {
+    return { type: 'TRIGGER_NOT_ACTIVATED' };
+  }
+
+  if (progress.version !== expectedVersion) {
+    return { type: 'CONFLICT', currentVersion: progress.version };
+  }
+
+  try {
+    const updated = await prisma.$transaction(async (tx) => {
+      const record = await tx.missionProgress.update({
+        where: { id: progress.id, version: expectedVersion },
+        data: {
+          completed: true,
+          completedAt: new Date(),
+          version: { increment: 1 },
+        },
+      });
+
+      await tx.operationLog.create({
+        data: {
+          userId,
+          type: LogType.SUCCESS,
+          message: renderLogMessage('rdp_completed', {}),
+        },
+      });
+
+      await tx.operationLog.create({
+        data: {
+          userId,
+          type: LogType.SUCCESS,
+          message: renderLogMessage('mission_completed_overview', {
+            displayName: slot.displayName,
+          }),
+        },
+      });
+
+      await advanceTriggerListeners(tx, userId, CHAT_TRIGGER_EVENTS.RDP_COMPLETED(slot.slotKey));
+
+      return record;
+    });
+
+    return { type: 'SUCCESS', version: updated.version };
   } catch (error) {
     if (isPrismaRecordNotFound(error)) {
       const fresh = await prisma.missionProgress.findUnique({

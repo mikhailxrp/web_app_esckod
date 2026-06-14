@@ -70,3 +70,19 @@ export interface RdpTimerExpiredResult {
 export interface RdpSkipResult {
   success: true;
 }
+
+// ─── RDP File Viewed / Complete ──────────────────────────────────────────────
+
+export type RdpScenarioFinal = 'session_lost' | 'session_terminated';
+
+export interface RdpFileViewedResult {
+  triggered: boolean;
+  alreadyTriggered?: boolean;
+  scenarioFinal?: RdpScenarioFinal;
+  version: number;
+}
+
+export interface RdpCompleteResult {
+  success: true;
+  version: number;
+}
