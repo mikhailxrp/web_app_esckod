@@ -233,7 +233,7 @@ export function renderLogMessage(templateKey: LogTemplateKey, params: Record<str
 | Ключ | Шаблон | Type | Параметры |
 |---|---|---|---|
 | `rdp_invalid_ip` | Неверный IP-адрес: {ip} | ERROR | ip |
-| `rdp_puzzle_solved` | Соединение с {logSubjectName} установлено | SUCCESS | logSubjectName |
+| `rdp_puzzle_solved` | Доступ к удалённому компьютеру ({logSubjectName}) предоставлен | SUCCESS | logSubjectName |
 | `rdp_timer_expired` | Сеанс прерван: соединение разорвано | ERROR | — |
 | `rdp_session_lost` | Доступ к {logSubjectName} потерян: обнаружено два активных сеанса. Новый IP: {nextIp} | ERROR | logSubjectName, nextIp |
 | `rdp_folder_unlocked` | Папка {folderPath} в системе {logSubjectName} разблокирована. Пароль: {folderPassword} | SUCCESS | folderPath, folderPassword, logSubjectName |
