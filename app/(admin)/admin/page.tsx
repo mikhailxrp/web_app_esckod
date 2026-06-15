@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { Key, Users, Layers } from 'lucide-react';
+import { DevResetAllButton } from '@/components/admin/DevResetAllButton';
 
 interface StatCardProps {
   label: string;
@@ -49,6 +50,13 @@ export default async function AdminPage(): Promise<React.ReactElement> {
           value={slotsCount}
           icon={<Layers size={22} />}
         />
+      </div>
+
+      <div className="mt-8 pt-6 border-t border-admin-card-border">
+        <p className="text-xs text-admin-label mb-3 uppercase tracking-wide font-medium">
+          Инструменты разработки
+        </p>
+        <DevResetAllButton />
       </div>
     </>
   );
