@@ -11,6 +11,7 @@ import { SessionLostModal } from '@/components/game/rdp/SessionLostModal';
 import { SessionTerminatedModal } from '@/components/game/rdp/SessionTerminatedModal';
 import { fetchWithVersion } from '@/lib/api/fetchWithVersion';
 import { toast } from '@/components/ui/Toast';
+import { useChatStore } from '@/store/chatStore';
 import type {
   RdpCompleteResult,
   RdpFileView,
@@ -65,6 +66,8 @@ export function WindowsSimulation({
   onCompleted,
   onUnlockedCountChange,
 }: WindowsSimulationProps): ReactElement {
+  const refreshChat = useChatStore((s) => s.refresh);
+
   const [stage, setStage] = useState<SimStage>({ phase: 'loading' });
   const [folders, setFolders] = useState<RdpFolderView[]>([]);
   const [version, setVersion] = useState(0);
@@ -255,6 +258,10 @@ export function WindowsSimulation({
       closeWindow(windowId);
       setVersion(result.version);
 
+      if (result.chatAdvanced) {
+        void refreshChat();
+      }
+
       if (result.triggered && result.scenarioFinal) {
         const sf = result.scenarioFinal;
         if (result.nextIp) {
@@ -263,7 +270,7 @@ export function WindowsSimulation({
         setStage({ phase: 'triggered', scenarioFinal: sf });
       }
     },
-    [closeWindow],
+    [closeWindow, refreshChat],
   );
 
   // ─── Render ──────────────────────────────────────────────────────────────

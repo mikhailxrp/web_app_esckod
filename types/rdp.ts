@@ -79,6 +79,7 @@ export type RdpScenarioFinal = 'session_lost' | 'session_terminated';
 export interface RdpFileViewedResult {
   triggered: boolean;
   alreadyTriggered?: boolean;
+  chatAdvanced?: boolean;
   scenarioFinal?: RdpScenarioFinal;
   version: number;
   nextIp?: string;

@@ -61,6 +61,7 @@ export async function POST(
         return NextResponse.json({
           triggered: outcome.triggered,
           ...(outcome.alreadyTriggered !== undefined && { alreadyTriggered: outcome.alreadyTriggered }),
+          ...(outcome.chatAdvanced !== undefined && { chatAdvanced: outcome.chatAdvanced }),
           ...(outcome.scenarioFinal !== undefined && { scenarioFinal: outcome.scenarioFinal }),
           version: outcome.version,
           ...(outcome.nextIp !== undefined && { nextIp: outcome.nextIp }),

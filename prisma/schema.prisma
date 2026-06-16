@@ -168,6 +168,7 @@ model ChatState {
   finalChoice              String?
   detectiveFinished        Boolean      @default(false)
   marinaFinished           Boolean      @default(false)
+  firedTriggers            String[]     @default([])
   version                  Int          @default(0)
   createdAt                DateTime     @default(now())
   updatedAt                DateTime     @updatedAt
