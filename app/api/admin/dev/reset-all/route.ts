@@ -32,6 +32,7 @@ export async function POST(): Promise<NextResponse> {
         finalChoice: null,
         detectiveFinished: false,
         marinaFinished: false,
+        firedTriggers: [],
       },
     });
 

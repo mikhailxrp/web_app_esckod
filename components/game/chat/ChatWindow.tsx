@@ -78,7 +78,7 @@ export function ChatWindow({ chatType }: ChatWindowProps): React.ReactElement {
             Нет сообщений
           </p>
         ) : (
-          slot.messages.map((msg) =>
+          slot.messages.map((msg, index) =>
             msg.text || msg.audioUrl ? (
               <ChatMessage
                 key={msg.id}
@@ -86,6 +86,7 @@ export function ChatWindow({ chatType }: ChatWindowProps): React.ReactElement {
                 author={msg.author}
                 text={msg.text}
                 audioUrl={msg.audioUrl}
+                isAwaiting={showAdvance && index === slot.messages.length - 1}
               />
             ) : null,
           )

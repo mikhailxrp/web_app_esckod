@@ -249,6 +249,18 @@ const config: Config = {
           "0%, 100%": { borderColor: "rgba(255,255,255,0.1)" },
           "50%": { borderColor: "#00E5CC" },
         },
+
+        // Пульсация пузырька сообщения — ожидание действия игрока
+        "message-await": {
+          "0%, 100%": {
+            boxShadow: "0 0 0 1px rgba(68,223,215,0.15)",
+            opacity: "1",
+          },
+          "50%": {
+            boxShadow: "0 0 10px 2px rgba(68,223,215,0.35)",
+            opacity: "0.82",
+          },
+        },
       },
 
       animation: {
@@ -260,6 +272,7 @@ const config: Config = {
         "modal-panel":
           "modal-panel 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards",
         "chat-notify": "chat-notify 1.2s ease-in-out infinite",
+        "message-await": "message-await 1.8s ease-in-out infinite",
         // [DASHBOARD] — добавить glitch, scanline
       },
 

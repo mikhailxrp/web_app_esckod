@@ -10,6 +10,7 @@ interface ChatMessageProps {
   author: ChatAuthor;
   text: string | null;
   audioUrl: string | null;
+  isAwaiting?: boolean;
 }
 
 const AUTHOR_LABEL: Record<ChatAuthor, string> = {
@@ -57,10 +58,12 @@ export function ChatMessage({
   author,
   text,
   audioUrl,
+  isAwaiting = false,
 }: ChatMessageProps): React.ReactElement | null {
   if (!text && !audioUrl) return null;
 
   const isRight = IS_RIGHT[author];
+  const awaitingClass = isAwaiting && !isRight ? 'animate-message-await' : '';
 
   return (
     <div className={`flex flex-col gap-1 ${isRight ? 'items-end' : 'items-start'}`}>
@@ -74,6 +77,7 @@ export function ChatMessage({
             className={[
               'max-w-[85%] rounded-game-md px-4 py-3',
               isRight ? 'bg-[rgba(164,244,240,0.60)] text-content-inverse' : 'bg-[rgba(255,255,255,0.30)] text-content-primary',
+              awaitingClass,
             ].join(' ')}
           >
             <AudioPlayer src={audioUrl} />
@@ -87,6 +91,7 @@ export function ChatMessage({
             'max-w-[85%] rounded-game-md px-4 py-3',
             'font-mono text-game-sm leading-relaxed whitespace-pre-wrap',
             isRight ? 'bg-[rgba(164,244,240,0.60)] text-content-inverse' : 'bg-[rgba(255,255,255,0.30)] text-content-primary',
+            awaitingClass,
           ].join(' ')}
         >
           {text ? renderTextWithLinks(text) : null}

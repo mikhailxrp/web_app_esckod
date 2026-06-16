@@ -20,6 +20,7 @@ interface RdpMetadata {
   timerExpiredCount: number;
   skipped: boolean;
   triggerActivated: boolean;
+  archivTriggerFired: boolean;
   viewedFileIds: string[];
   unlockedFolders: string[];
 }
@@ -30,6 +31,7 @@ function parseMetadata(raw: Prisma.JsonValue | null): RdpMetadata {
     timerExpiredCount: 0,
     skipped: false,
     triggerActivated: false,
+    archivTriggerFired: false,
     viewedFileIds: [],
     unlockedFolders: [],
   };
@@ -44,6 +46,7 @@ function parseMetadata(raw: Prisma.JsonValue | null): RdpMetadata {
   if (typeof r.timerExpiredCount === 'number') base.timerExpiredCount = r.timerExpiredCount;
   if (typeof r.skipped === 'boolean') base.skipped = r.skipped;
   if (typeof r.triggerActivated === 'boolean') base.triggerActivated = r.triggerActivated;
+  if (typeof r.archivTriggerFired === 'boolean') base.archivTriggerFired = r.archivTriggerFired;
   if (typeof r.timerStartedAt === 'string') base.timerStartedAt = r.timerStartedAt;
 
   if (
@@ -70,6 +73,8 @@ function metadataToJson(meta: RdpMetadata): Prisma.InputJsonValue {
 }
 
 // ─── Slot helpers ────────────────────────────────────────────────────────────
+
+const ARCHIV_FOLDER = 'Архив';
 
 const SLOT_SELECT = {
   id: true,
@@ -205,6 +210,7 @@ export type RdpFileViewedOutcome =
       type: 'SUCCESS';
       triggered: boolean;
       alreadyTriggered?: boolean;
+      chatAdvanced?: boolean;
       scenarioFinal?: 'session_lost' | 'session_terminated';
       version: number;
       nextIp?: string;
@@ -904,12 +910,19 @@ export async function handleFileViewed(
 
   const allFiles = await prisma.rdpFile.findMany({
     where: { slotId: slot.id },
-    select: { id: true },
+    select: { id: true, folder: true },
   });
 
   const allViewed = allFiles.length > 0 && allFiles.every((f) => newViewedFileIds.includes(f.id));
 
-  if (!allViewed) {
+  const archivFiles = allFiles.filter((f) => f.folder === ARCHIV_FOLDER);
+  const allArchivViewed =
+    slot.rdpScenario === 1 &&
+    !meta.archivTriggerFired &&
+    archivFiles.length > 0 &&
+    archivFiles.every((f) => newViewedFileIds.includes(f.id));
+
+  if (!allViewed && !allArchivViewed) {
     const updatedMeta: RdpMetadata = { ...meta, viewedFileIds: newViewedFileIds };
 
     try {
@@ -936,12 +949,13 @@ export async function handleFileViewed(
     }
   }
 
-  // Все файлы просмотрены — атомарный триггер
+  // Транзакция: либо просмотрены все файлы Архива (→ rdp_completed), либо все файлы (→ session_lost)
   const scenario = slot.rdpScenario ?? 1;
   const updatedMeta: RdpMetadata = {
     ...meta,
     viewedFileIds: newViewedFileIds,
-    triggerActivated: true,
+    ...(allArchivViewed && { archivTriggerFired: true }),
+    ...(allViewed && { triggerActivated: true }),
   };
 
   try {
@@ -954,49 +968,58 @@ export async function handleFileViewed(
         },
       });
 
-      if (scenario === 1) {
-        let nextIp = '—';
+      if (allArchivViewed) {
+        await advanceTriggerListeners(tx, userId, CHAT_TRIGGER_EVENTS.RDP_COMPLETED(slotKey));
+      }
 
-        if (slot.nextRdpSlotKey) {
-          const nextSlot = await tx.missionSlot.findUnique({
-            where: { slotKey: slot.nextRdpSlotKey },
-            select: { correctIp: true },
+      if (allViewed) {
+        if (scenario === 1) {
+          let nextIp = '—';
+
+          if (slot.nextRdpSlotKey) {
+            const nextSlot = await tx.missionSlot.findUnique({
+              where: { slotKey: slot.nextRdpSlotKey },
+              select: { correctIp: true },
+            });
+
+            if (nextSlot?.correctIp) {
+              nextIp = nextSlot.correctIp;
+            }
+          }
+
+          await tx.operationLog.create({
+            data: {
+              userId,
+              type: LogType.SUCCESS,
+              message: renderLogMessage('rdp_session_lost', {
+                logSubjectName: slot.logSubjectName ?? '—',
+                nextIp,
+              }),
+            },
           });
 
-          if (nextSlot?.correctIp) {
-            nextIp = nextSlot.correctIp;
-          }
+          return { record, scenarioFinal: 'session_lost' as const, nextIp };
+        } else {
+          await tx.gameProgress.upsert({
+            where: { userId },
+            create: { userId, marinaTriggered: true },
+            update: { marinaTriggered: true, version: { increment: 1 } },
+          });
+
+          await advanceTriggerListeners(tx, userId, CHAT_TRIGGER_EVENTS.RDP_MARINA_TRIGGERED);
+
+          return { record, scenarioFinal: 'session_terminated' as const };
         }
-
-        await tx.operationLog.create({
-          data: {
-            userId,
-            type: LogType.SUCCESS,
-            message: renderLogMessage('rdp_session_lost', {
-              logSubjectName: slot.logSubjectName ?? '—',
-              nextIp,
-            }),
-          },
-        });
-
-        return { record, scenarioFinal: 'session_lost' as const, nextIp };
-      } else {
-        await tx.gameProgress.upsert({
-          where: { userId },
-          create: { userId, marinaTriggered: true },
-          update: { marinaTriggered: true, version: { increment: 1 } },
-        });
-
-        await advanceTriggerListeners(tx, userId, CHAT_TRIGGER_EVENTS.RDP_MARINA_TRIGGERED);
-
-        return { record, scenarioFinal: 'session_terminated' as const };
       }
+
+      return { record, chatAdvanced: allArchivViewed };
     });
 
     return {
       type: 'SUCCESS',
-      triggered: true,
-      scenarioFinal: result.scenarioFinal,
+      triggered: allViewed,
+      ...('scenarioFinal' in result ? { scenarioFinal: result.scenarioFinal } : {}),
+      ...('chatAdvanced' in result && result.chatAdvanced ? { chatAdvanced: true } : {}),
       version: result.record.version,
       ...('nextIp' in result && result.nextIp !== undefined ? { nextIp: result.nextIp } : {}),
     };

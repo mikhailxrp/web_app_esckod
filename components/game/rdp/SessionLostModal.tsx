@@ -18,13 +18,15 @@ export function SessionLostModal({
   onClose,
   isLoading = false,
 }: SessionLostModalProps): ReactElement {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [hasEverCopied, setHasEverCopied] = useState(false);
 
   const handleCopy = async (): Promise<void> => {
     try {
       await navigator.clipboard.writeText(nextIp);
       setCopied(true);
+      setHasEverCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // clipboard unavailable — silently ignore
@@ -158,15 +160,22 @@ export function SessionLostModal({
         ) : null}
 
         {/* Close button */}
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={isLoading}
-          className="mt-2 rounded-lg bg-white/20 px-8 py-2 font-sans text-sm font-medium text-white transition-colors hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-60"
-          aria-label="Закрыть и завершить сессию"
-        >
-          {isLoading ? 'Завершение…' : 'Закрыть'}
-        </button>
+        <div className="mt-2 flex flex-col items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading || !hasEverCopied}
+            className="rounded-lg bg-white/20 px-8 py-2 font-sans text-sm font-medium text-white transition-colors hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-40"
+            aria-label="Закрыть и завершить сессию"
+          >
+            {isLoading ? 'Завершение…' : 'Закрыть'}
+          </button>
+          {!hasEverCopied && (
+            <span className="font-sans text-xs text-white/60">
+              Скопируйте IP второго сеанса, чтобы продолжить
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
