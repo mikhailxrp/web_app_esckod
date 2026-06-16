@@ -546,6 +546,7 @@ export async function getOrCreatePuzzleState(
     timerExpiredCount: 0,
     skipped: false,
     triggerActivated: false,
+    archivTriggerFired: false,
     viewedFileIds: [],
     unlockedFolders: [],
     ...(timerStartedAt && { timerStartedAt }),
