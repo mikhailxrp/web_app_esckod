@@ -170,11 +170,6 @@ export function SessionLostModal({
           >
             {isLoading ? 'Завершение…' : 'Закрыть'}
           </button>
-          {!hasEverCopied && (
-            <span className="font-sans text-xs text-white/60">
-              Скопируйте IP второго сеанса, чтобы продолжить
-            </span>
-          )}
         </div>
       </div>
     </div>
