@@ -19,8 +19,8 @@ const CHAT_LABEL: Record<ChatType, string> = {
 export function ChatPanel({ chatType }: ChatPanelProps): React.ReactElement {
   const [isOpen, setIsOpen] = useState(chatType !== 'MARINA');
 
-  const unreadCount = useChatStore((s) =>
-    chatType === 'DETECTIVE' ? s.detective.unreadCount : s.marina.unreadCount,
+  const slot = useChatStore((s) =>
+    chatType === 'DETECTIVE' ? s.detective : s.marina,
   );
   const markRead = useChatStore((s) => s.markRead);
 
@@ -31,13 +31,32 @@ export function ChatPanel({ chatType }: ChatPanelProps): React.ReactElement {
     }
   }, [isOpen, chatType, markRead]);
 
-  const hasUnread = !isOpen && unreadCount > 0;
+  const hasUnread = !isOpen && slot.unreadCount > 0;
+
+  const lastMessage = slot.messages.at(-1);
+  const showChoices =
+    !slot.isTyping &&
+    !slot.isWaiting &&
+    !slot.isFinished &&
+    lastMessage?.hasChoices === true &&
+    lastMessage.choices !== null &&
+    lastMessage.choices.length > 0;
+
+  const awaitingAdvance =
+    isOpen &&
+    !slot.isTyping &&
+    !slot.isWaiting &&
+    !slot.isFinished &&
+    !showChoices &&
+    slot.messages.length > 0;
+
+  const shouldPulse = hasUnread || awaitingAdvance;
 
   return (
     <div
       className={[
         'flex flex-col rounded-game-lg border bg-bg-secondary overflow-hidden',
-        hasUnread ? 'border-border animate-chat-notify' : 'border-border',
+        shouldPulse ? 'border-border animate-chat-notify' : 'border-border',
       ].join(' ')}
     >
       {/* Header / toggle bar */}
@@ -59,9 +78,9 @@ export function ChatPanel({ chatType }: ChatPanelProps): React.ReactElement {
           {hasUnread && (
             <span
               className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-accent font-mono text-[9px] font-bold text-content-inverse"
-              aria-label={`${unreadCount} новых сообщений`}
+              aria-label={`${slot.unreadCount} новых сообщений`}
             >
-              {unreadCount > 9 ? '9+' : unreadCount}
+              {slot.unreadCount > 9 ? '9+' : slot.unreadCount}
             </span>
           )}
         </div>
