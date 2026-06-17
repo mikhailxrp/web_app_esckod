@@ -66,7 +66,7 @@ export function WindowsSimulation({
   onCompleted,
   onUnlockedCountChange,
 }: WindowsSimulationProps): ReactElement {
-  const refreshChat = useChatStore((s) => s.refresh);
+  const showTriggeredMessage = useChatStore((s) => s.showTriggeredMessage);
 
   const [stage, setStage] = useState<SimStage>({ phase: 'loading' });
   const [folders, setFolders] = useState<RdpFolderView[]>([]);
@@ -258,7 +258,7 @@ export function WindowsSimulation({
       setVersion(result.version);
 
       if (result.chatAdvanced) {
-        void refreshChat();
+        void showTriggeredMessage('DETECTIVE');
       }
 
       if (result.triggered && result.scenarioFinal) {
@@ -269,7 +269,7 @@ export function WindowsSimulation({
         setStage({ phase: 'triggered', scenarioFinal: sf });
       }
     },
-    [closeWindow, refreshChat],
+    [closeWindow, showTriggeredMessage],
   );
 
   // ─── Render ──────────────────────────────────────────────────────────────

@@ -51,6 +51,7 @@ interface ChatStore {
   advance: (chatType: ChatType) => Promise<void>;
   choice: (chatType: ChatType, value: string) => Promise<void>;
   markRead: (chatType: ChatType) => void;
+  showTriggeredMessage: (chatType: ChatType) => Promise<void>;
 }
 
 // =============================================================
@@ -276,9 +277,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           };
         }
 
-        // Skip typing delay: first message or choices prompt (no text to "type")
+        // Skip typing delay: first message, choices prompt, or last message before waiting for trigger
         const skipTyping =
-          current.messages.length === 0 || data.currentMessage.hasChoices;
+          current.messages.length === 0 || data.currentMessage.hasChoices || data.isWaiting;
 
         if (skipTyping) {
           const isFirstMessage = current.messages.length === 0;
@@ -405,6 +406,22 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           };
         }
 
+        // Skip typing delay when next message only waits for a trigger
+        if (data.isWaiting) {
+          return {
+            version: data.version,
+            finalChoice: chatType === 'MARINA' ? (s.finalChoice ?? null) : s.finalChoice,
+            [slotKey(chatType)]: {
+              ...current,
+              messages: [...current.messages, playerMessage, data.currentMessage],
+              unreadCount: current.unreadCount + 1,
+              isWaiting: data.isWaiting,
+              isFinished: data.isFinished,
+              status: 'ready',
+            },
+          };
+        }
+
         // Player reply → immediate; NPC text response → typing delay
         schedulePendingMessage(chatType, data.currentMessage.id);
 
@@ -436,5 +453,63 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         unreadCount: 0,
       },
     }));
+  },
+
+  showTriggeredMessage: async (chatType) => {
+    try {
+      const stateRes = await fetch('/api/chat/state');
+
+      if (!stateRes.ok) {
+        return;
+      }
+
+      const state = (await stateRes.json()) as StateResponse;
+      const slotState = chatType === 'DETECTIVE' ? state.detective : state.marina;
+      const currentMsg = slotState.currentMessage;
+
+      if (!currentMsg) {
+        return;
+      }
+
+      set((s) => {
+        const current = s[slotKey(chatType)];
+        const lastId = current.messages.at(-1)?.id;
+
+        if (currentMsg.id === lastId) {
+          return { version: state.version };
+        }
+
+        // No animation when next state is also waiting for a trigger
+        if (slotState.isWaiting) {
+          return {
+            version: state.version,
+            [slotKey(chatType)]: {
+              ...current,
+              messages: [...current.messages, currentMsg],
+              unreadCount: current.unreadCount + 1,
+              isWaiting: slotState.isWaiting,
+              isFinished: slotState.isFinished,
+              status: 'ready',
+            },
+          };
+        }
+
+        schedulePendingMessage(chatType, currentMsg.id);
+
+        return {
+          version: state.version,
+          [slotKey(chatType)]: {
+            ...current,
+            isTyping: true,
+            pendingMessage: currentMsg,
+            isWaiting: slotState.isWaiting,
+            isFinished: slotState.isFinished,
+            status: 'ready',
+          },
+        };
+      });
+    } catch (error) {
+      console.error('[chatStore.showTriggeredMessage]', error);
+    }
   },
 }));

@@ -19,15 +19,11 @@ const MISSION_ORDER: MissionType[] = ["CRACK", "DECIPHER", "RDP"];
 interface DashboardClientProps {
   activeMissionTypes: MissionType[];
   playerLogin: string;
-  progressTotal: number;
-  progressCompleted: number;
 }
 
 export function DashboardClient({
   activeMissionTypes,
   playerLogin,
-  progressTotal,
-  progressCompleted,
 }: DashboardClientProps): React.ReactElement {
   const refresh = useChatStore((s) => s.refresh);
   const marinaVisible = useChatStore((s) => s.marina.isVisible);
@@ -47,11 +43,7 @@ export function DashboardClient({
     <div className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col gap-6 px-11 py-6">
       {/* Top bar: status + hint + logout */}
       <div className="flex items-start justify-between gap-4">
-        <StatusBar
-          playerLogin={playerLogin}
-          progressTotal={progressTotal}
-          progressCompleted={progressCompleted}
-        />
+        <StatusBar playerLogin={playerLogin} />
 
         <div className="flex items-center gap-3">
           <DetectiveHintsButton />

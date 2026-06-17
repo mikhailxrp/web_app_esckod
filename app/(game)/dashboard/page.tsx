@@ -5,19 +5,12 @@ import { DashboardClient } from '@/components/game/DashboardClient';
 
 export default async function DashboardPage(): Promise<React.ReactElement> {
   const session = await auth();
-  const userId = session?.user?.id ?? '';
 
-  const [slots, progressTotal, progressCompleted] = await Promise.all([
-    prisma.missionSlot.findMany({
-      where: { isActive: true },
-      select: { missionType: true },
-      distinct: ['missionType'],
-    }),
-    prisma.missionSlot.count({ where: { isActive: true } }),
-    userId
-      ? prisma.missionProgress.count({ where: { userId, completed: true } })
-      : Promise.resolve(0),
-  ]);
+  const slots = await prisma.missionSlot.findMany({
+    where: { isActive: true },
+    select: { missionType: true },
+    distinct: ['missionType'],
+  });
 
   const activeMissionTypes: MissionType[] = slots.map((s) => s.missionType);
   const playerLogin = session?.user?.name ?? session?.user?.email ?? 'АГЕНТ';
@@ -26,8 +19,6 @@ export default async function DashboardPage(): Promise<React.ReactElement> {
     <DashboardClient
       activeMissionTypes={activeMissionTypes}
       playerLogin={playerLogin}
-      progressTotal={progressTotal}
-      progressCompleted={progressCompleted}
     />
   );
 }
