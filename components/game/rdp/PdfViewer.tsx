@@ -34,6 +34,23 @@ export function PdfViewer({
 }: PdfViewerProps): ReactElement {
   const [closing, setClosing] = useState(false);
   const [maximized, setMaximized] = useState(false);
+  const [zoom, setZoom] = useState(100);
+
+  const ZOOM_STEPS = [50, 75, 100, 125, 150] as const;
+
+  const zoomOut = (): void => {
+    setZoom((prev) => {
+      const idx = ZOOM_STEPS.indexOf(prev as typeof ZOOM_STEPS[number]);
+      return idx > 0 ? ZOOM_STEPS[idx - 1] : prev;
+    });
+  };
+
+  const zoomIn = (): void => {
+    setZoom((prev) => {
+      const idx = ZOOM_STEPS.indexOf(prev as typeof ZOOM_STEPS[number]);
+      return idx < ZOOM_STEPS.length - 1 ? ZOOM_STEPS[idx + 1] : prev;
+    });
+  };
 
   const top = 60 + positionOffset * 25;
   const left = 200 + positionOffset * 25;
@@ -88,18 +105,34 @@ export function PdfViewer({
       {/* Titlebar */}
       <div className="flex shrink-0 items-center gap-2 bg-gray-100 border-b border-gray-200 px-3 py-1.5">
         <span className="flex-1 font-sans text-sm text-gray-800 font-medium">Скан</span>
-        <div className="flex items-center gap-0.5">
+
+        {/* Zoom controls */}
+        <div className="flex items-center gap-0.5 mr-2">
           <button
             type="button"
-            aria-label="Свернуть"
-            className="flex size-6 items-center justify-center rounded-sm hover:bg-gray-300 text-gray-700"
+            onClick={zoomOut}
+            disabled={zoom === 50}
+            aria-label="Уменьшить"
+            className="flex size-6 items-center justify-center rounded-sm hover:bg-gray-300 text-gray-700 disabled:opacity-40 font-mono text-sm leading-none"
           >
-            <svg width="10" height="1" viewBox="0 0 10 1" aria-hidden="true">
-              <path d="M0 0.5h10" stroke="currentColor" strokeWidth="1.5" />
-            </svg>
+            −
           </button>
+          <span className="w-10 text-center font-sans text-xs text-gray-600 select-none tabular-nums">
+            {zoom}%
+          </span>
+          <button
+            type="button"
+            onClick={zoomIn}
+            disabled={zoom === 150}
+            aria-label="Увеличить"
+            className="flex size-6 items-center justify-center rounded-sm hover:bg-gray-300 text-gray-700 disabled:opacity-40 font-mono text-sm leading-none"
+          >
+            +
+          </button>
+        </div>
 
-          {/* Maximize / Restore toggle */}
+        {/* Window controls */}
+        <div className="flex items-center gap-0.5">
           <button
             type="button"
             onClick={() => setMaximized((v) => !v)}
@@ -135,18 +168,19 @@ export function PdfViewer({
         </div>
       </div>
 
-      {/* PDF content — grows to fill remaining height when maximized */}
+      {/* PDF content */}
       <div className="flex-1 bg-white overflow-hidden">
         {file.url ? (
           <iframe
-            src={file.url}
+            key={zoom}
+            src={`${file.url}#toolbar=0&zoom=${zoom}`}
             title={file.name}
-            className="w-full h-full border-0"
+            className="w-full border-0 block"
             aria-label={`Документ: ${file.name}`}
-            style={maximized ? undefined : { minHeight: '420px' }}
+            style={{ height: maximized ? '100%' : '420px' }}
           />
         ) : (
-          <div className="flex items-center justify-center h-full" style={{ minHeight: '420px' }}>
+          <div className="flex items-center justify-center" style={{ minHeight: '420px' }}>
             <p className="font-sans text-sm text-gray-400">Файл недоступен</p>
           </div>
         )}

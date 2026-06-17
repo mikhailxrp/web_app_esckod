@@ -179,11 +179,11 @@ function FileItem({ file, onOpen }: FileItemProps): ReactElement {
       <Image
         src="/assets/desctop/document_icon.png"
         alt=""
-        width={36}
-        height={36}
+        width={48}
+        height={48}
         aria-hidden="true"
       />
-      <span className="font-sans text-xs text-gray-700 text-center max-w-[72px] break-words leading-tight">
+      <span className="font-sans text-xs text-gray-700 text-center max-w-[80px] break-words leading-tight">
         {file.name}
       </span>
     </button>

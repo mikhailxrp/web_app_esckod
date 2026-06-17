@@ -12,17 +12,22 @@ import { CrackGamePanel } from "@/components/game/crack/CrackGamePanel";
 import { DecipherGamePanel } from "@/components/game/decipher/DecipherGamePanel";
 import { RdpGamePanel } from "@/components/game/rdp/RdpGamePanel";
 import { useChatStore } from "@/store/chatStore";
-import { GAME_TARGET_NAME } from "@/constants/gameConfig";
 import type { RdpConnectResult } from "@/types/rdp";
 
 const MISSION_ORDER: MissionType[] = ["CRACK", "DECIPHER", "RDP"];
 
 interface DashboardClientProps {
   activeMissionTypes: MissionType[];
+  playerLogin: string;
+  progressTotal: number;
+  progressCompleted: number;
 }
 
 export function DashboardClient({
   activeMissionTypes,
+  playerLogin,
+  progressTotal,
+  progressCompleted,
 }: DashboardClientProps): React.ReactElement {
   const refresh = useChatStore((s) => s.refresh);
   const marinaVisible = useChatStore((s) => s.marina.isVisible);
@@ -42,7 +47,11 @@ export function DashboardClient({
     <div className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col gap-6 px-11 py-6">
       {/* Top bar: status + hint + logout */}
       <div className="flex items-start justify-between gap-4">
-        <StatusBar targetName={GAME_TARGET_NAME} />
+        <StatusBar
+          playerLogin={playerLogin}
+          progressTotal={progressTotal}
+          progressCompleted={progressCompleted}
+        />
 
         <div className="flex items-center gap-3">
           <DetectiveHintsButton />

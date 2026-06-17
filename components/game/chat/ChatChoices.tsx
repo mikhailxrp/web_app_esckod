@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/Button";
 import { useChatStore } from "@/store/chatStore";
 import type { ChatChoice, ChatType } from "@/types/chat";
 
@@ -27,16 +26,32 @@ export function ChatChoices({
       aria-label="Варианты ответа"
     >
       {choices.map((c) => (
-        <Button
+        <button
           key={c.value}
-          variant="secondary"
-          loading={isLoading}
+          type="button"
+          disabled={isLoading}
           onClick={() => void choice(chatType, c.value)}
-          className="w-full text-left justify-start h-auto min-h-[44px] py-2.5 whitespace-normal"
           aria-label={`Выбрать: ${c.label}`}
+          className={[
+            'w-full rounded-game-full border border-border bg-bg-secondary px-6 py-2.5',
+            'text-left font-accent text-game-sm uppercase tracking-game-wide text-content-primary',
+            'whitespace-normal transition-colors duration-200',
+            'hover:border-border-strong hover:bg-bg-tertiary',
+            'disabled:cursor-not-allowed disabled:opacity-50',
+          ].join(' ')}
         >
-          {c.label}
-        </Button>
+          {isLoading ? (
+            <span className="flex items-center gap-2">
+              <span
+                className="size-4 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent"
+                aria-hidden="true"
+              />
+              {c.label}
+            </span>
+          ) : (
+            c.label
+          )}
+        </button>
       ))}
     </div>
   );
