@@ -439,6 +439,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           },
         };
       });
+
+      // Выбор в чате Марины может сдвинуть чат детектива через кросс-чат триггер
+      // (final_choice_made). Ответ /choice описывает только активный чат, поэтому
+      // отдельно подтягиваем состояние детектива, чтобы его новая реплика появилась
+      // сразу, а не после перезагрузки страницы.
+      if (chatType === 'MARINA') {
+        void get().showTriggeredMessage('DETECTIVE');
+      }
     } catch (error) {
       console.error('[chatStore.choice]', error);
       toast.error('Ошибка соединения');
