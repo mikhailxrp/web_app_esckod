@@ -79,7 +79,6 @@ export function WindowsSimulation({
   const [showSessionLostModal, setShowSessionLostModal] = useState(false);
 
   // Track cascading position per window (stable across re-renders)
-  const windowPositionCounter = useRef(0);
   const windowPositions = useRef<Map<WindowId, number>>(new Map());
 
   // Stable refs to avoid stale closures in callbacks
@@ -186,7 +185,7 @@ export function WindowsSimulation({
 
   const getWindowPosition = useCallback((id: WindowId): number => {
     if (!windowPositions.current.has(id)) {
-      windowPositions.current.set(id, windowPositionCounter.current++);
+      windowPositions.current.set(id, windowPositions.current.size);
     }
     return windowPositions.current.get(id) ?? 0;
   }, []);

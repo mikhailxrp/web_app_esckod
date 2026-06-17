@@ -22,100 +22,103 @@ export async function GET(
 
   const { id } = await context.params;
 
-  const user = await prisma.user.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      isBlocked: true,
-      onboardingDone: true,
-      consentMarketing: true,
-      consentPolicy: true,
-      createdAt: true,
-      accessKey: {
-        select: {
-          key: true,
-          isBlocked: true,
-        },
-      },
-      progress: {
-        select: {
-          marinaTriggered: true,
-          finalReportDone: true,
-          finalScore: true,
-        },
-      },
-      chatState: {
-        select: {
-          playerChoices: true,
-          finalChoice: true,
-          detectiveFinished: true,
-          marinaFinished: true,
-          currentDetectiveMessage: {
-            select: {
-              code: true,
-              text: true,
-            },
-          },
-          currentMarinaMessage: {
-            select: {
-              code: true,
-              text: true,
-            },
+  const [user, totalActiveSlots] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        isBlocked: true,
+        onboardingDone: true,
+        consentMarketing: true,
+        consentPolicy: true,
+        createdAt: true,
+        accessKey: {
+          select: {
+            key: true,
+            isBlocked: true,
           },
         },
-      },
-      missionProgress: {
-        select: {
-          completed: true,
-          completedAt: true,
-          metadata: true,
-          slot: {
-            select: {
-              slotKey: true,
+        progress: {
+          select: {
+            marinaTriggered: true,
+            finalReportDone: true,
+            finalScore: true,
+          },
+        },
+        chatState: {
+          select: {
+            playerChoices: true,
+            finalChoice: true,
+            detectiveFinished: true,
+            marinaFinished: true,
+            currentDetectiveMessage: {
+              select: {
+                code: true,
+                text: true,
+              },
+            },
+            currentMarinaMessage: {
+              select: {
+                code: true,
+                text: true,
+              },
             },
           },
         },
-        orderBy: {
-          slot: {
-            orderIndex: 'asc',
+        missionProgress: {
+          select: {
+            completed: true,
+            completedAt: true,
+            metadata: true,
+            slot: {
+              select: {
+                slotKey: true,
+              },
+            },
           },
-        },
-      },
-      crackSessions: {
-        select: {
-          attemptsUsed: true,
-          maxAttempts: true,
-          slot: {
-            select: {
-              slotKey: true,
+          orderBy: {
+            slot: {
+              orderIndex: 'asc',
             },
           },
         },
-      },
-      hintProgress: {
-        select: {
-          lastSeenHintIndex: true,
+        crackSessions: {
+          select: {
+            attemptsUsed: true,
+            maxAttempts: true,
+            slot: {
+              select: {
+                slotKey: true,
+              },
+            },
+          },
+        },
+        hintProgress: {
+          select: {
+            lastSeenHintIndex: true,
+          },
+        },
+        operationLogs: {
+          take: 10,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            type: true,
+            message: true,
+            createdAt: true,
+          },
+        },
+        _count: {
+          select: {
+            operationLogs: true,
+          },
         },
       },
-      operationLogs: {
-        take: 10,
-        orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          type: true,
-          message: true,
-          createdAt: true,
-        },
-      },
-      _count: {
-        select: {
-          operationLogs: true,
-        },
-      },
-    },
-  });
+    }),
+    prisma.missionSlot.count({ where: { isActive: true } }),
+  ]);
 
   if (!user) {
     return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
@@ -157,6 +160,7 @@ export async function GET(
       maxAttempts: item.maxAttempts,
     })),
     hintProgress,
+    totalActiveSlots,
     logsCount: _count.operationLogs,
     recentLogs: operationLogs,
   });

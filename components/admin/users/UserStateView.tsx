@@ -20,10 +20,15 @@ function formatDateTime(dateStr: string): string {
 
 function calcProgress(
   missionProgress: UserStateSnapshot['missionProgress'],
-): number | null {
-  if (missionProgress.length === 0) return null;
+  totalActiveSlots: number,
+): { percent: number; completed: number; total: number } | null {
+  if (totalActiveSlots === 0) return null;
   const completed = missionProgress.filter((m) => m.completed).length;
-  return Math.round((completed / missionProgress.length) * 100);
+  return {
+    percent: Math.round((completed / totalActiveSlots) * 100),
+    completed,
+    total: totalActiveSlots,
+  };
 }
 
 function MissionStatusLabel({ completed, inProgress }: { completed: boolean; inProgress: boolean }): React.ReactElement {
@@ -41,7 +46,7 @@ export function UserStateView({ snapshot }: UserStateViewProps): React.ReactElem
   const [isBlocked, setIsBlocked] = useState(snapshot.user.isBlocked);
   const [showBanDialog, setShowBanDialog] = useState(false);
 
-  const progressPercent = calcProgress(snapshot.missionProgress);
+  const progress = calcProgress(snapshot.missionProgress, snapshot.totalActiveSlots);
 
   const missionList = snapshot.missionProgress;
   const currentMissionIndex = missionList.findIndex((m) => !m.completed);
@@ -104,8 +109,10 @@ export function UserStateView({ snapshot }: UserStateViewProps): React.ReactElem
         <h2 className="text-base font-semibold text-admin-input-text mb-1">
           Прогресс
         </h2>
-        {progressPercent !== null && (
-          <p className="text-sm text-admin-placeholder mb-4">{progressPercent}%</p>
+        {progress !== null && (
+          <p className="text-sm text-admin-placeholder mb-4">
+            {progress.completed} / {progress.total} миссий ({progress.percent}%)
+          </p>
         )}
 
         <div className="divide-y divide-admin-card-border">
