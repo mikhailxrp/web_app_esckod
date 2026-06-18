@@ -277,9 +277,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           };
         }
 
-        // Skip typing delay: first message, choices prompt, or last message before waiting for trigger
+        // Skip typing delay: first message, choices prompt, last message before trigger, or chat finished
         const skipTyping =
-          current.messages.length === 0 || data.currentMessage.hasChoices || data.isWaiting;
+          current.messages.length === 0 || data.currentMessage.hasChoices || data.isWaiting || data.isFinished;
 
         if (skipTyping) {
           const isFirstMessage = current.messages.length === 0;
@@ -390,8 +390,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           };
         }
 
-        // Skip typing delay for choices prompt (no text to "type")
-        if (data.currentMessage.hasChoices) {
+        // Skip typing delay for choices prompt, or when the chat is finished
+        if (data.currentMessage.hasChoices || data.isFinished) {
           return {
             version: data.version,
             finalChoice: chatType === 'MARINA' ? (s.finalChoice ?? null) : s.finalChoice,
