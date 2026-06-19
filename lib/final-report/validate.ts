@@ -3,6 +3,7 @@ import {
   type ReportFinalChoiceValue,
 } from '@/constants/reportFinalChoices';
 import { prisma } from '@/lib/prisma';
+import { isFinalChoiceQuestion } from './isFinalChoiceQuestion';
 
 const CHOICE_VALUES = new Set<ReportFinalChoiceValue>(
   REPORT_FINAL_CHOICES.map((choice) => choice.value),
@@ -17,7 +18,14 @@ export async function validateReportConfig(): Promise<{
   issues: string[];
 }> {
   const issues: string[] = [];
-  const contents = await prisma.finalReportContent.findMany();
+
+  const [contents, settings] = await Promise.all([
+    prisma.finalReportContent.findMany(),
+    prisma.appSettings.findFirst({
+      select: { finalReportQuestionId: true },
+    }),
+  ]);
+
   const contentValues = new Set(contents.map((content) => content.finalChoiceValue));
 
   for (const choice of REPORT_FINAL_CHOICES) {
@@ -35,6 +43,24 @@ export async function validateReportConfig(): Promise<{
   for (const content of contents) {
     if (content.finalChoiceValue !== content.finalChoiceValue.toUpperCase()) {
       issues.push(`NOT_UPPERCASE:${content.finalChoiceValue}`);
+    }
+  }
+
+  if (!settings?.finalReportQuestionId) {
+    issues.push('NO_FINAL_QUESTION');
+  } else {
+    const question = await prisma.finalReportQuestion.findUnique({
+      where: { id: settings.finalReportQuestionId },
+      select: { options: true },
+    });
+
+    if (!question) {
+      issues.push('FINAL_QUESTION_NOT_FOUND');
+    } else {
+      const options = question.options as string[];
+      if (!isFinalChoiceQuestion(options)) {
+        issues.push('FINAL_QUESTION_BAD_OPTIONS');
+      }
     }
   }
 

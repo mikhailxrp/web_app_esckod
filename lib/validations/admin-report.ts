@@ -73,3 +73,48 @@ export type CreateContentInput = z.input<typeof createContentSchema>;
 export type CreateContentOutput = z.infer<typeof createContentSchema>;
 export type UpdateContentInput = z.input<typeof updateContentSchema>;
 export type UpdateContentOutput = z.infer<typeof updateContentSchema>;
+
+const contentItemSchema = z.object({
+  finalChoiceValue: z.enum(['ACCUSE', 'PROTECT'], {
+    errorMap: () => ({ message: 'finalChoiceValue должен быть ACCUSE или PROTECT' }),
+  }),
+  title: z.string().trim().min(1, 'Заголовок обязателен'),
+  bodyText: z.string().trim().min(1, 'Текст концовки обязателен'),
+});
+
+export const updateHistorySchema = z.object({
+  finalReportQuestionId: z.string().cuid().nullable(),
+  contents: z
+    .array(contentItemSchema)
+    .length(2, 'Необходимо передать ровно 2 концовки'),
+});
+
+export const updateLinksSchema = z.object({
+  blocks: z
+    .array(
+      z.object({
+        blockIndex: z.union([z.literal(1), z.literal(2)]),
+        text: z.string(),
+      }),
+    )
+    .length(2, 'Необходимо передать ровно 2 блока'),
+});
+
+export const MAX_LINK_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+
+export const linkImageUploadFieldsSchema = z.object({
+  blockIndex: z
+    .string()
+    .transform(Number)
+    .pipe(z.union([z.literal(1), z.literal(2)])),
+});
+
+export const linkImageDeleteSchema = z.object({
+  blockIndex: z.union([z.literal(1), z.literal(2)]),
+  key: z.string().min(1, 'key не может быть пустым'),
+});
+
+export type UpdateHistoryInput = z.infer<typeof updateHistorySchema>;
+export type UpdateLinksInput = z.infer<typeof updateLinksSchema>;
+export type LinkImageUploadFields = z.infer<typeof linkImageUploadFieldsSchema>;
+export type LinkImageDeleteInput = z.infer<typeof linkImageDeleteSchema>;

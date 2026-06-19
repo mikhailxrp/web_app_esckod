@@ -390,6 +390,18 @@ async function seedDetectiveHint(): Promise<void> {
   console.log('Ensured DetectiveHint stub (orderIndex: 1)');
 }
 
+async function seedFinalReportLinkBlock(): Promise<void> {
+  for (const blockIndex of [1, 2]) {
+    await prisma.finalReportLinkBlock.upsert({
+      where: { blockIndex },
+      create: { blockIndex, text: '', images: [] },
+      update: {},
+    });
+  }
+
+  console.log('Ensured 2 FinalReportLinkBlock stubs (blockIndex: 1, 2)');
+}
+
 async function main(): Promise<void> {
   await seedAdminUser();
   await seedAppSettings();
@@ -398,6 +410,7 @@ async function main(): Promise<void> {
   await seedFinalReportContent();
   await seedFinalReportQuestion();
   await seedDetectiveHint();
+  await seedFinalReportLinkBlock();
 }
 
 main()

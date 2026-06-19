@@ -638,6 +638,50 @@ export function FinalReportModal({ alreadySubmitted, onClose }) {
 
 ---
 
+## Финальный вопрос (указатель)
+
+Начиная с Phase 16, финальный вопрос «Обвинить / Защитить» не определяется автоматически — он **выбирается явно** администратором и сохраняется в `AppSettings.finalReportQuestionId`.
+
+**Что это значит на практике:**
+
+- Поле `AppSettings.finalReportQuestionId String?` — FK → `FinalReportQuestion`, `onDelete: SetNull`.
+- Если `finalReportQuestionId` не заполнен или вопрос был удалён — валидатор (`GET /api/admin/report/validate`) вернёт код `NO_FINAL_QUESTION` или `FINAL_QUESTION_NOT_FOUND`.
+- Вопрос-указатель обязан проходить проверку `isFinalChoiceQuestion()` — ровно 2 варианта «Обвинить» и «Защитить». Иначе валидатор вернёт `FINAL_QUESTION_BAD_OPTIONS`.
+- Этот вопрос отображается как последний (или отдельный) в форме отчёта игрока (Phase 17).
+
+---
+
+## Ссылки (FinalReportLinkBlock)
+
+Два фиксированных блока контента для страницы результатов финального отчёта. Управляются через `/admin/report/links`.
+
+### Модель
+
+```prisma
+model FinalReportLinkBlock {
+  id         String   @id @default(cuid())
+  blockIndex Int      @unique   // 1 | 2
+  text       String   @default("")
+  images     Json     @default("[]")  // [{ url: string, key: string }]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+```
+
+### Работа с изображениями
+
+- Изображения хранятся в Beget Cloud Storage (S3) по пути `files/report-links/block-{blockIndex}/{normalizedName}`.
+- `images` в БД — JSON-массив `{ url, key }`. `url` — публичная ссылка, `key` — ключ для удаления через `deleteObject`.
+- Upload: `POST /api/admin/report/links/images` (multipart, `file` + `blockIndex`). Ограничения: MIME ∈ `ALLOWED_IMAGE_MIME`, размер ≤ 5 МБ.
+- Delete: `DELETE /api/admin/report/links/images` (`{ blockIndex, key }`). Удаляет объект из S3 и убирает запись из массива.
+- Текст блоков сохраняется отдельно через `PUT /api/admin/report/links`.
+
+### Инвариант
+
+Всегда ровно 2 записи. Создаются `seedFinalReportLinkBlock()` — upsert по `blockIndex`. Через UI не создаются и не удаляются.
+
+---
+
 ## Файлы, которые создаются
 
 ```

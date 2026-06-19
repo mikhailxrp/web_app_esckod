@@ -696,6 +696,27 @@ model FinalReportContent {
 
 ---
 
+### `FinalReportLinkBlock` — блоки ссылок финального отчёта
+
+```prisma
+model FinalReportLinkBlock {
+  id         String   @id @default(cuid())
+  blockIndex Int      @unique          // 1 | 2 — фиксированные позиции
+  text       String   @default("")     // текстовое содержимое блока
+  images     Json     @default("[]")   // [{ url: string, key: string }]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+```
+
+**Назначение:** Два фиксированных блока контента для страницы финального отчёта (Phase 17). Каждый блок содержит текст и список изображений, загруженных в Beget Cloud Storage (S3).
+
+**`images`** — JSON-массив объектов `{ url: string, key: string }`, где `url` — публичная CDN-ссылка, `key` — ключ объекта в S3 (нужен для удаления через `deleteObject`).
+
+**Инвариант:** всегда ровно 2 записи (`blockIndex: 1` и `blockIndex: 2`). Создаются сидером (`seedFinalReportLinkBlock()`), только редактируются — не создаются/удаляются через UI.
+
+---
+
 ## Модели — подсказки Детектива
 
 ### `DetectiveHint` — глобальный список подсказок
@@ -766,8 +787,11 @@ model AppSettings {
   defaultMarketingConsent  Boolean  @default(false)   // дефолт для галки согласия на маркетинг
   supportEmail             String   @default("support@example.com")  // email техподдержки
   privacyPolicyUrl         String   @default("https://example.com/privacy")  // ссылка на политику обработки данных
+  finalReportQuestionId    String?  // указатель на финальный вопрос «Обвинить / Защитить»
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
+
+  finalReportQuestion      FinalReportQuestion? @relation(fields: [finalReportQuestionId], references: [id], onDelete: SetNull)
 }
 ```
 
@@ -780,6 +804,7 @@ model AppSettings {
 | `defaultMarketingConsent` | Начальное состояние галки маркетинга в форме регистрации                                | `GET /api/settings/registration-defaults` |
 | `supportEmail`            | Email техподдержки в сообщениях об ошибках регистрации (неверный ключ, лимит активаций) | `GET /api/settings/registration-defaults` |
 | `privacyPolicyUrl`        | Ссылка на политику обработки данных (рядом с обязательной галкой согласия)              | `GET /api/settings/registration-defaults` |
+| `finalReportQuestionId`   | ID вопроса с вариантами «Обвинить / Защитить», используемого в финальном отчёте         | `GET/PUT /api/admin/report/history`, `GET /api/admin/report/validate` |
 
 ⚠️ **Юридические требования:**
 
@@ -965,7 +990,20 @@ AdminAuditLog            (аудит — без каскада, пережива
 
 ---
 
-### 7. `DetectiveHint` — минимум одна заглушка
+### 7. `FinalReportLinkBlock` — два пустых блока ссылок
+
+Создаются функцией `seedFinalReportLinkBlock()` (Phase 16 / Task 3):
+
+| `blockIndex` | `text` | `images` |
+| ------------ | ------ | -------- |
+| `1`          | `""`   | `[]`     |
+| `2`          | `""`   | `[]`     |
+
+Upsert по `blockIndex` — повторный запуск сидера безопасен.
+
+---
+
+### 8. `DetectiveHint` — минимум одна заглушка
 
 > **Статус: ⏳ ещё не в `prisma/seed.ts`.** Функция `seedDetectiveHint()` добавляется в **Phase 8 / Task 1** (вместе с CRUD подсказок). До этого момента таблица `DetectiveHint` пуста — это ожидаемо и ничего не ломает: модель не используется в фазах 0–7. Не путать с уже реализованными сидерами (`seedAdminUser`, `seedAppSettings`, `seedMissionSlots`, `seedChatGraph`, `seedFinalReportContent`).
 
