@@ -342,6 +342,40 @@ async function seedFinalReportContent(): Promise<void> {
   console.log('Created 2 FinalReportContent stubs');
 }
 
+const FINAL_REPORT_QUESTIONS: Prisma.FinalReportQuestionCreateManyInput[] = [
+  {
+    orderIndex: 1,
+    questionText: 'Кто инициировал доведение до самоубийства? (заглушка)',
+    options: ['Виктор', 'Евгений', 'Елена', 'Марина'],
+    correctOption: 0,
+  },
+  {
+    orderIndex: 2,
+    questionText: 'Какой документ стал ключевым в расследовании? (заглушка)',
+    options: ['Договор', 'Переписка', 'Аудиозапись', 'Фотография'],
+    correctOption: 1,
+  },
+  {
+    orderIndex: 3,
+    questionText: 'Где был найден решающий след? (заглушка)',
+    options: ['На сервере', 'В архиве', 'В почте', 'В мессенджере'],
+    correctOption: 2,
+  },
+];
+
+async function seedFinalReportQuestion(): Promise<void> {
+  const questionCount = await prisma.finalReportQuestion.count();
+
+  if (questionCount > 0) {
+    console.log('FinalReportQuestion already exists, skipping');
+    return;
+  }
+
+  await prisma.finalReportQuestion.createMany({ data: FINAL_REPORT_QUESTIONS });
+
+  console.log('Created 3 FinalReportQuestion stubs');
+}
+
 async function seedDetectiveHint(): Promise<void> {
   await prisma.detectiveHint.upsert({
     where: { orderIndex: 1 },
@@ -356,13 +390,27 @@ async function seedDetectiveHint(): Promise<void> {
   console.log('Ensured DetectiveHint stub (orderIndex: 1)');
 }
 
+async function seedFinalReportLinkBlock(): Promise<void> {
+  for (const blockIndex of [1, 2]) {
+    await prisma.finalReportLinkBlock.upsert({
+      where: { blockIndex },
+      create: { blockIndex, text: '', images: [] },
+      update: {},
+    });
+  }
+
+  console.log('Ensured 2 FinalReportLinkBlock stubs (blockIndex: 1, 2)');
+}
+
 async function main(): Promise<void> {
   await seedAdminUser();
   await seedAppSettings();
   await seedMissionSlots();
   await seedChatGraph();
   await seedFinalReportContent();
+  await seedFinalReportQuestion();
   await seedDetectiveHint();
+  await seedFinalReportLinkBlock();
 }
 
 main()

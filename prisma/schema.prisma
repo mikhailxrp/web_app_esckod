@@ -291,6 +291,8 @@ model FinalReportQuestion {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  appSettings   AppSettings[]
+
   @@index([orderIndex])
 }
 
@@ -337,8 +339,20 @@ model AppSettings {
   defaultMarketingConsent  Boolean  @default(false)
   supportEmail             String   @default("support@example.com")
   privacyPolicyUrl         String   @default("https://example.com/privacy")
+  finalReportQuestionId    String?
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
+
+  finalReportQuestion      FinalReportQuestion? @relation(fields: [finalReportQuestionId], references: [id], onDelete: SetNull)
+}
+
+model FinalReportLinkBlock {
+  id         String   @id @default(cuid())
+  blockIndex Int      @unique
+  text       String   @default("")
+  images     Json     @default("[]")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model AdminAuditLog {

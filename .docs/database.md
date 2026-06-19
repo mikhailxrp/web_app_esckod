@@ -678,7 +678,7 @@ model FinalReportQuestion {
 ```prisma
 model FinalReportContent {
   id                String    @id @default(cuid())
-  finalChoiceValue  String    @unique  // совпадает с value из choices финальной реплики Марины (UPPERCASE: "PROTECT", "ACCUSE")
+  finalChoiceValue  String    @unique  // UPPERCASE-ключ выбора из REPORT_FINAL_CHOICES (например, "ACCUSE", "PROTECT")
   title             String    // заголовок финального текста
   bodyText          String    // полный текст истории
   createdAt         DateTime  @default(now())
@@ -686,13 +686,34 @@ model FinalReportContent {
 }
 ```
 
-**Назначение:** Тексты двух концовок (расширяется до большего числа). По одной записи на каждый возможный финал.
+**Назначение:** Тексты концовок (по одной записи на каждый возможный выбор в форме отчёта).
 
-**Связь с чатом Марины** — через `finalChoiceValue`. При сдаче отчёта сервер ищет запись по `ChatState.finalChoice` — благодаря `@unique` найдёт ровно одну.
+**`finalChoiceValue`** — UPPERCASE-ключ выбора из `REPORT_FINAL_CHOICES` (например, `ACCUSE`, `PROTECT`). При сдаче отчёта выбор приходит в теле `POST /submit` (Phase 17). Сервер ищет запись по `finalChoiceValue` — благодаря `@unique` найдёт ровно одну.
 
-⚠️ **Инвариант:** для каждого возможного `finalChoiceValue`, который может быть установлен через чат Марины, должна существовать запись в `FinalReportContent`. Если игрок сделает выбор, для которого нет записи — `/submit` вернёт 500 «Контент финала не настроен».
+⚠️ **Инвариант:** для каждого значения из `REPORT_FINAL_CHOICES` должна существовать запись в `FinalReportContent`. Если игрок выберет вариант, для которого нет записи — `/submit` вернёт 500 «Контент финала не настроен».
 
-**Конвенция UPPERCASE:** `"PROTECT"`, `"ACCUSE"` — обязательное соответствие между `ChatScript.choices` финальной реплики Марины и `FinalReportContent.finalChoiceValue`. Админка имеет валидатор `GET /api/admin/report/validate`, который проверяет это соответствие.
+**Конвенция UPPERCASE:** `"PROTECT"`, `"ACCUSE"` — обязательное соответствие между `REPORT_FINAL_CHOICES` и `FinalReportContent.finalChoiceValue`. Админка имеет валидатор `GET /api/admin/report/validate`, который проверяет это соответствие.
+
+---
+
+### `FinalReportLinkBlock` — блоки ссылок финального отчёта
+
+```prisma
+model FinalReportLinkBlock {
+  id         String   @id @default(cuid())
+  blockIndex Int      @unique          // 1 | 2 — фиксированные позиции
+  text       String   @default("")     // текстовое содержимое блока
+  images     Json     @default("[]")   // [{ url: string, key: string }]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+```
+
+**Назначение:** Два фиксированных блока контента для страницы финального отчёта (Phase 17). Каждый блок содержит текст и список изображений, загруженных в Beget Cloud Storage (S3).
+
+**`images`** — JSON-массив объектов `{ url: string, key: string }`, где `url` — публичная CDN-ссылка, `key` — ключ объекта в S3 (нужен для удаления через `deleteObject`).
+
+**Инвариант:** всегда ровно 2 записи (`blockIndex: 1` и `blockIndex: 2`). Создаются сидером (`seedFinalReportLinkBlock()`), только редактируются — не создаются/удаляются через UI.
 
 ---
 
@@ -766,8 +787,11 @@ model AppSettings {
   defaultMarketingConsent  Boolean  @default(false)   // дефолт для галки согласия на маркетинг
   supportEmail             String   @default("support@example.com")  // email техподдержки
   privacyPolicyUrl         String   @default("https://example.com/privacy")  // ссылка на политику обработки данных
+  finalReportQuestionId    String?  // указатель на финальный вопрос «Обвинить / Защитить»
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
+
+  finalReportQuestion      FinalReportQuestion? @relation(fields: [finalReportQuestionId], references: [id], onDelete: SetNull)
 }
 ```
 
@@ -780,6 +804,7 @@ model AppSettings {
 | `defaultMarketingConsent` | Начальное состояние галки маркетинга в форме регистрации                                | `GET /api/settings/registration-defaults` |
 | `supportEmail`            | Email техподдержки в сообщениях об ошибках регистрации (неверный ключ, лимит активаций) | `GET /api/settings/registration-defaults` |
 | `privacyPolicyUrl`        | Ссылка на политику обработки данных (рядом с обязательной галкой согласия)              | `GET /api/settings/registration-defaults` |
+| `finalReportQuestionId`   | ID вопроса с вариантами «Обвинить / Защитить», используемого в финальном отчёте         | `GET/PUT /api/admin/report/history`, `GET /api/admin/report/validate` |
 
 ⚠️ **Юридические требования:**
 
@@ -961,11 +986,24 @@ AdminAuditLog            (аудит — без каскада, пережива
 | `PROTECT`          | "Защита"           | "Заглушка финала: защитить Марину" |
 | `ACCUSE`           | "Обвинение"        | "Заглушка финала: обвинить Марину" |
 
-Реальные тексты загружаются админом через UI админки. Значения `PROTECT`/`ACCUSE` должны **совпадать** с `value` в choices `marina_final_choice`.
+Реальные тексты загружаются админом через UI админки. Значения `PROTECT`/`ACCUSE` должны **совпадать** с `REPORT_FINAL_CHOICES` в `constants/reportFinalChoices.ts`.
 
 ---
 
-### 7. `DetectiveHint` — минимум одна заглушка
+### 7. `FinalReportLinkBlock` — два пустых блока ссылок
+
+Создаются функцией `seedFinalReportLinkBlock()` (Phase 16 / Task 3):
+
+| `blockIndex` | `text` | `images` |
+| ------------ | ------ | -------- |
+| `1`          | `""`   | `[]`     |
+| `2`          | `""`   | `[]`     |
+
+Upsert по `blockIndex` — повторный запуск сидера безопасен.
+
+---
+
+### 8. `DetectiveHint` — минимум одна заглушка
 
 > **Статус: ⏳ ещё не в `prisma/seed.ts`.** Функция `seedDetectiveHint()` добавляется в **Phase 8 / Task 1** (вместе с CRUD подсказок). До этого момента таблица `DetectiveHint` пуста — это ожидаемо и ничего не ломает: модель не используется в фазах 0–7. Не путать с уже реализованными сидерами (`seedAdminUser`, `seedAppSettings`, `seedMissionSlots`, `seedChatGraph`, `seedFinalReportContent`).
 
