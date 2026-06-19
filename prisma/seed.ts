@@ -342,6 +342,40 @@ async function seedFinalReportContent(): Promise<void> {
   console.log('Created 2 FinalReportContent stubs');
 }
 
+const FINAL_REPORT_QUESTIONS: Prisma.FinalReportQuestionCreateManyInput[] = [
+  {
+    orderIndex: 1,
+    questionText: 'Кто инициировал доведение до самоубийства? (заглушка)',
+    options: ['Виктор', 'Евгений', 'Елена', 'Марина'],
+    correctOption: 0,
+  },
+  {
+    orderIndex: 2,
+    questionText: 'Какой документ стал ключевым в расследовании? (заглушка)',
+    options: ['Договор', 'Переписка', 'Аудиозапись', 'Фотография'],
+    correctOption: 1,
+  },
+  {
+    orderIndex: 3,
+    questionText: 'Где был найден решающий след? (заглушка)',
+    options: ['На сервере', 'В архиве', 'В почте', 'В мессенджере'],
+    correctOption: 2,
+  },
+];
+
+async function seedFinalReportQuestion(): Promise<void> {
+  const questionCount = await prisma.finalReportQuestion.count();
+
+  if (questionCount > 0) {
+    console.log('FinalReportQuestion already exists, skipping');
+    return;
+  }
+
+  await prisma.finalReportQuestion.createMany({ data: FINAL_REPORT_QUESTIONS });
+
+  console.log('Created 3 FinalReportQuestion stubs');
+}
+
 async function seedDetectiveHint(): Promise<void> {
   await prisma.detectiveHint.upsert({
     where: { orderIndex: 1 },
@@ -362,6 +396,7 @@ async function main(): Promise<void> {
   await seedMissionSlots();
   await seedChatGraph();
   await seedFinalReportContent();
+  await seedFinalReportQuestion();
   await seedDetectiveHint();
 }
 

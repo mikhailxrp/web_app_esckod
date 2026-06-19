@@ -678,7 +678,7 @@ model FinalReportQuestion {
 ```prisma
 model FinalReportContent {
   id                String    @id @default(cuid())
-  finalChoiceValue  String    @unique  // совпадает с value из choices финальной реплики Марины (UPPERCASE: "PROTECT", "ACCUSE")
+  finalChoiceValue  String    @unique  // UPPERCASE-ключ выбора из REPORT_FINAL_CHOICES (например, "ACCUSE", "PROTECT")
   title             String    // заголовок финального текста
   bodyText          String    // полный текст истории
   createdAt         DateTime  @default(now())
@@ -686,13 +686,13 @@ model FinalReportContent {
 }
 ```
 
-**Назначение:** Тексты двух концовок (расширяется до большего числа). По одной записи на каждый возможный финал.
+**Назначение:** Тексты концовок (по одной записи на каждый возможный выбор в форме отчёта).
 
-**Связь с чатом Марины** — через `finalChoiceValue`. При сдаче отчёта сервер ищет запись по `ChatState.finalChoice` — благодаря `@unique` найдёт ровно одну.
+**`finalChoiceValue`** — UPPERCASE-ключ выбора из `REPORT_FINAL_CHOICES` (например, `ACCUSE`, `PROTECT`). При сдаче отчёта выбор приходит в теле `POST /submit` (Phase 17). Сервер ищет запись по `finalChoiceValue` — благодаря `@unique` найдёт ровно одну.
 
-⚠️ **Инвариант:** для каждого возможного `finalChoiceValue`, который может быть установлен через чат Марины, должна существовать запись в `FinalReportContent`. Если игрок сделает выбор, для которого нет записи — `/submit` вернёт 500 «Контент финала не настроен».
+⚠️ **Инвариант:** для каждого значения из `REPORT_FINAL_CHOICES` должна существовать запись в `FinalReportContent`. Если игрок выберет вариант, для которого нет записи — `/submit` вернёт 500 «Контент финала не настроен».
 
-**Конвенция UPPERCASE:** `"PROTECT"`, `"ACCUSE"` — обязательное соответствие между `ChatScript.choices` финальной реплики Марины и `FinalReportContent.finalChoiceValue`. Админка имеет валидатор `GET /api/admin/report/validate`, который проверяет это соответствие.
+**Конвенция UPPERCASE:** `"PROTECT"`, `"ACCUSE"` — обязательное соответствие между `REPORT_FINAL_CHOICES` и `FinalReportContent.finalChoiceValue`. Админка имеет валидатор `GET /api/admin/report/validate`, который проверяет это соответствие.
 
 ---
 
@@ -961,7 +961,7 @@ AdminAuditLog            (аудит — без каскада, пережива
 | `PROTECT`          | "Защита"           | "Заглушка финала: защитить Марину" |
 | `ACCUSE`           | "Обвинение"        | "Заглушка финала: обвинить Марину" |
 
-Реальные тексты загружаются админом через UI админки. Значения `PROTECT`/`ACCUSE` должны **совпадать** с `value` в choices `marina_final_choice`.
+Реальные тексты загружаются админом через UI админки. Значения `PROTECT`/`ACCUSE` должны **совпадать** с `REPORT_FINAL_CHOICES` в `constants/reportFinalChoices.ts`.
 
 ---
 
