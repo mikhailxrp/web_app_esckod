@@ -59,8 +59,13 @@ const NAV_ENTRIES: NavEntry[] = [
   { label: 'Файлы РДП', href: '/admin/files', icon: <FileText size={16} /> },
   {
     label: 'Финальный отчет',
-    href: '/admin/report',
     icon: <ClipboardList size={16} />,
+    basePath: '/admin/report',
+    children: [
+      { label: 'Вопросы', href: '/admin/report' },
+      { label: 'История', href: '/admin/report/history' },
+      { label: 'Ссылки', href: '/admin/report/links' },
+    ],
   },
   {
     label: 'Администраторы',
