@@ -1,17 +1,17 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Check, RefreshCw, Upload, Trash2, Loader2 } from 'lucide-react';
+import { Check, RefreshCw, Upload, Trash2, Loader2, Plus } from 'lucide-react';
 import type { LinkBlock, LinkImage } from '@/types/admin-report';
 
 const formSchema = z.object({
   blocks: z.array(
     z.object({
-      blockIndex: z.union([z.literal(1), z.literal(2)]),
+      id: z.string(),
       text: z.string(),
     }),
   ),
@@ -25,31 +25,30 @@ interface LinksFormProps {
 
 type ToastState = { type: 'success' | 'error'; message: string } | null;
 
-const inputBase =
-  'w-full px-4 py-2.5 rounded-lg bg-admin-input-bg text-admin-input-text text-sm border focus:outline-none placeholder:text-admin-placeholder transition-colors';
-
 const textareaBase =
   'w-full px-4 py-3 rounded-lg bg-admin-input-bg text-admin-input-text text-sm border border-transparent focus:outline-none focus:border-admin-accent placeholder:text-admin-placeholder transition-colors resize-none';
 
 export function LinksForm({ initialBlocks }: LinksFormProps): React.ReactElement {
   const [blocks, setBlocks] = useState<LinkBlock[]>(initialBlocks);
   const [toast, setToast] = useState<ToastState>(null);
-  const [uploadingBlock, setUploadingBlock] = useState<number | null>(null);
-  const [deletingKey, setDeletingKey] = useState<string | null>(null);
-  const fileInputRefs = [useRef<HTMLInputElement>(null), useRef<HTMLInputElement>(null)];
+  const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
+  const [deletingImageKey, setDeletingImageKey] = useState<string | null>(null);
+  const [deletingBlockId, setDeletingBlockId] = useState<string | null>(null);
+  const [addingBlock, setAddingBlock] = useState(false);
+
+  const fileInputMapRef = useRef<Map<string, HTMLInputElement | null>>(new Map());
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
+    getValues,
     formState: { isSubmitting, isDirty },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      blocks: initialBlocks.map((b) => ({
-        blockIndex: b.blockIndex as 1 | 2,
-        text: b.text,
-      })),
+      blocks: initialBlocks.map((b) => ({ id: b.id, text: b.text })),
     },
   });
 
@@ -71,20 +70,14 @@ export function LinksForm({ initialBlocks }: LinksFormProps): React.ReactElement
       if (!res.ok) {
         showToast(
           'error',
-          (json as { message?: string }).message ??
-            'Не удалось сохранить. Попробуйте ещё раз.',
+          (json as { message?: string }).message ?? 'Не удалось сохранить. Попробуйте ещё раз.',
         );
         return;
       }
 
       const updated = json as LinkBlock[];
       setBlocks(updated);
-      reset({
-        blocks: updated.map((b) => ({
-          blockIndex: b.blockIndex as 1 | 2,
-          text: b.text,
-        })),
-      });
+      reset({ blocks: updated.map((b) => ({ id: b.id, text: b.text })) });
       showToast('success', 'Ссылки сохранены.');
     } catch {
       showToast('error', 'Не удалось сохранить. Попробуйте ещё раз.');
@@ -92,23 +85,66 @@ export function LinksForm({ initialBlocks }: LinksFormProps): React.ReactElement
   };
 
   const handleReset = (): void => {
-    reset({
-      blocks: blocks.map((b) => ({
-        blockIndex: b.blockIndex as 1 | 2,
-        text: b.text,
-      })),
-    });
+    reset({ blocks: blocks.map((b) => ({ id: b.id, text: b.text })) });
   };
 
-  const handleFileChange = async (
-    blockIndex: 1 | 2,
-    file: File,
-  ): Promise<void> => {
-    setUploadingBlock(blockIndex);
+  const handleAddBlock = async (): Promise<void> => {
+    setAddingBlock(true);
+    try {
+      const res = await fetch('/api/admin/report/links', { method: 'POST' });
+      const json = await res.json();
+
+      if (!res.ok) {
+        showToast('error', (json as { message?: string }).message ?? 'Не удалось добавить блок.');
+        return;
+      }
+
+      const newBlock = json as LinkBlock;
+      setBlocks((prev) => [...prev, newBlock]);
+
+      const current = getValues('blocks');
+      setValue('blocks', [...current, { id: newBlock.id, text: newBlock.text }], {
+        shouldDirty: false,
+      });
+    } catch {
+      showToast('error', 'Не удалось добавить блок.');
+    } finally {
+      setAddingBlock(false);
+    }
+  };
+
+  const handleDeleteBlock = async (blockId: string): Promise<void> => {
+    setDeletingBlockId(blockId);
+    try {
+      const res = await fetch(`/api/admin/report/links/${blockId}`, { method: 'DELETE' });
+
+      if (!res.ok && res.status !== 204) {
+        const json = await res.json().catch(() => ({}));
+        showToast('error', (json as { message?: string }).message ?? 'Не удалось удалить блок.');
+        return;
+      }
+
+      setBlocks((prev) => prev.filter((b) => b.id !== blockId));
+
+      const current = getValues('blocks');
+      setValue(
+        'blocks',
+        current.filter((b) => b.id !== blockId),
+        { shouldDirty: false },
+      );
+    } catch {
+      showToast('error', 'Не удалось удалить блок.');
+    } finally {
+      setDeletingBlockId(null);
+    }
+  };
+
+  const handleFileChange = async (blockId: string, file: File): Promise<void> => {
+    setUploadingBlockId(blockId);
 
     try {
       const formData = new FormData();
-      formData.append('blockIndex', String(blockIndex));
+      formData.append('blockId', blockId);
       formData.append('file', file);
 
       const res = await fetch('/api/admin/report/links/images', {
@@ -127,32 +163,24 @@ export function LinksForm({ initialBlocks }: LinksFormProps): React.ReactElement
       }
 
       const updated = json as LinkBlock;
-      setBlocks((prev) =>
-        prev.map((b) => (b.blockIndex === blockIndex ? updated : b)),
-      );
+      setBlocks((prev) => prev.map((b) => (b.id === blockId ? updated : b)));
     } catch {
       showToast('error', 'Не удалось загрузить изображение.');
     } finally {
-      setUploadingBlock(null);
-      const refIdx = blockIndex - 1;
-      const ref = fileInputRefs[refIdx];
-      if (ref?.current) {
-        ref.current.value = '';
-      }
+      setUploadingBlockId(null);
+      const input = fileInputMapRef.current.get(blockId);
+      if (input) input.value = '';
     }
   };
 
-  const handleDeleteImage = async (
-    blockIndex: 1 | 2,
-    key: string,
-  ): Promise<void> => {
-    setDeletingKey(key);
+  const handleDeleteImage = async (blockId: string, key: string): Promise<void> => {
+    setDeletingImageKey(key);
 
     try {
       const res = await fetch('/api/admin/report/links/images', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ blockIndex, key }),
+        body: JSON.stringify({ blockId, key }),
       });
 
       const json = await res.json();
@@ -166,50 +194,89 @@ export function LinksForm({ initialBlocks }: LinksFormProps): React.ReactElement
       }
 
       const updated = json as LinkBlock;
-      setBlocks((prev) =>
-        prev.map((b) => (b.blockIndex === blockIndex ? updated : b)),
-      );
+      setBlocks((prev) => prev.map((b) => (b.id === blockId ? updated : b)));
     } catch {
       showToast('error', 'Не удалось удалить изображение.');
     } finally {
-      setDeletingKey(null);
+      setDeletingImageKey(null);
     }
   };
+
+  const setFileInputRef = useCallback(
+    (blockId: string) => (el: HTMLInputElement | null) => {
+      fileInputMapRef.current.set(blockId, el);
+    },
+    [],
+  );
 
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="bg-white rounded-xl shadow-admin-card border border-admin-card-border p-8 max-w-4xl">
-        <h2 className="text-base font-semibold text-admin-input-text mb-6">
-          Управление ссылками
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-base font-semibold text-admin-input-text">Управление ссылками</h2>
+          <button
+            type="button"
+            onClick={() => void handleAddBlock()}
+            disabled={addingBlock}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm text-white bg-admin-accent hover:bg-admin-accent-hover transition-colors disabled:opacity-50"
+          >
+            {addingBlock ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Plus size={14} />
+            )}
+            Добавить блок
+          </button>
+        </div>
+
+        {blocks.length === 0 && (
+          <p className="text-sm text-admin-placeholder text-center py-8">
+            Блоки ещё не добавлены. Нажмите «Добавить блок».
+          </p>
+        )}
 
         <div className="space-y-8">
-          {blocks.map((block, index) => {
-            const blockIndex = block.blockIndex as 1 | 2;
-            const refIdx = blockIndex - 1;
+          {blocks.map((block, index) => (
+            <div key={block.id} className="border border-admin-card-border rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-medium text-admin-label">
+                  Блок {index + 1}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void handleDeleteBlock(block.id)}
+                  disabled={deletingBlockId === block.id}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-red-500 border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-50"
+                  aria-label={`Удалить блок ${index + 1}`}
+                >
+                  {deletingBlockId === block.id ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={12} />
+                  )}
+                  Удалить блок
+                </button>
+              </div>
 
-            return (
-              <div key={block.id} className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-6">
                 {/* Текст блока */}
                 <div>
                   <label className="text-sm text-admin-label block mb-1.5">
-                    Текст блок {blockIndex}
+                    Текст блока
                   </label>
+                  <input type="hidden" {...register(`blocks.${index}.id`)} />
                   <textarea
                     {...register(`blocks.${index}.text`)}
                     rows={8}
                     className={textareaBase}
-                    placeholder={`Текст для блока ${blockIndex}`}
+                    placeholder="Текст для блока"
                   />
                 </div>
 
                 {/* Файлы блока */}
                 <div>
-                  <p className="text-sm text-admin-label mb-1.5">
-                    Файлы (блок {blockIndex})
-                  </p>
+                  <p className="text-sm text-admin-label mb-1.5">Файлы блока</p>
 
-                  {/* Загруженные изображения */}
                   {block.images.length > 0 && (
                     <div className="space-y-2 mb-3">
                       {block.images.map((img: LinkImage) => (
@@ -231,12 +298,12 @@ export function LinksForm({ initialBlocks }: LinksFormProps): React.ReactElement
                           </span>
                           <button
                             type="button"
-                            onClick={() => void handleDeleteImage(blockIndex, img.key)}
-                            disabled={deletingKey === img.key}
+                            onClick={() => void handleDeleteImage(block.id, img.key)}
+                            disabled={deletingImageKey === img.key}
                             className="shrink-0 text-red-400 hover:text-red-600 transition-colors disabled:opacity-50"
                             aria-label="Удалить изображение"
                           >
-                            {deletingKey === img.key ? (
+                            {deletingImageKey === img.key ? (
                               <Loader2 size={14} className="animate-spin" />
                             ) : (
                               <Trash2 size={14} />
@@ -247,50 +314,44 @@ export function LinksForm({ initialBlocks }: LinksFormProps): React.ReactElement
                     </div>
                   )}
 
-                  {/* Дропзона */}
                   <div
                     className="border-2 border-dashed border-admin-accent/40 rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-admin-accent/70 transition-colors"
-                    onClick={() => fileInputRefs[refIdx]?.current?.click()}
+                    onClick={() => fileInputMapRef.current.get(block.id)?.click()}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
-                        fileInputRefs[refIdx]?.current?.click();
+                        fileInputMapRef.current.get(block.id)?.click();
                       }
                     }}
                     role="button"
                     tabIndex={0}
-                    aria-label={`Загрузить изображение для блока ${blockIndex}`}
+                    aria-label={`Загрузить изображение для блока ${index + 1}`}
                   >
-                    {uploadingBlock === blockIndex ? (
+                    {uploadingBlockId === block.id ? (
                       <Loader2 size={24} className="text-admin-accent animate-spin" />
                     ) : (
                       <Upload size={24} className="text-admin-accent" />
                     )}
                     <p className="text-sm text-admin-accent text-center">
-                      <span className="underline">Выберите изображение</span>{' '}
-                      или перетащите
+                      <span className="underline">Выберите изображение</span> или перетащите
                     </p>
-                    <p className="text-xs text-admin-placeholder">
-                      JPG, PNG до 5 МБ
-                    </p>
+                    <p className="text-xs text-admin-placeholder">JPG, PNG до 5 МБ</p>
                   </div>
 
                   <input
-                    ref={fileInputRefs[refIdx]}
+                    ref={setFileInputRef(block.id)}
                     type="file"
                     accept="image/jpeg,image/png"
                     className="hidden"
                     aria-hidden="true"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) {
-                        void handleFileChange(blockIndex, file);
-                      }
+                      if (file) void handleFileChange(block.id, file);
                     }}
                   />
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -304,32 +365,32 @@ export function LinksForm({ initialBlocks }: LinksFormProps): React.ReactElement
               : 'bg-red-50 border border-red-200 text-red-800',
           ].join(' ')}
         >
-          {toast.type === 'success' && (
-            <Check size={15} className="shrink-0 text-green-600" />
-          )}
+          {toast.type === 'success' && <Check size={15} className="shrink-0 text-green-600" />}
           {toast.message}
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-center gap-3 mt-6">
-        <button
-          type="button"
-          onClick={handleReset}
-          disabled={!isDirty || isSubmitting}
-          className="flex items-center gap-2 px-6 py-2 rounded-lg text-sm text-admin-input-text border border-admin-card-border hover:bg-gray-100 transition-colors disabled:opacity-40"
-        >
-          <RefreshCw size={14} />
-          Отменить
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting || !isDirty}
-          className="px-6 py-2 rounded-lg text-sm text-white bg-admin-accent hover:bg-admin-accent-hover transition-colors disabled:opacity-50"
-        >
-          {isSubmitting ? 'Сохранение...' : 'Сохранить'}
-        </button>
-      </div>
+      {blocks.length > 0 && (
+        <div className="flex items-center justify-center gap-3 mt-6">
+          <button
+            type="button"
+            onClick={handleReset}
+            disabled={!isDirty || isSubmitting}
+            className="flex items-center gap-2 px-6 py-2 rounded-lg text-sm text-admin-input-text border border-admin-card-border hover:bg-gray-100 transition-colors disabled:opacity-40"
+          >
+            <RefreshCw size={14} />
+            Отменить
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting || !isDirty}
+            className="px-6 py-2 rounded-lg text-sm text-white bg-admin-accent hover:bg-admin-accent-hover transition-colors disabled:opacity-50"
+          >
+            {isSubmitting ? 'Сохранение...' : 'Сохранить'}
+          </button>
+        </div>
+      )}
     </form>
   );
 }

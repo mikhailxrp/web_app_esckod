@@ -1,16 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { isFinalChoiceQuestion } from '@/lib/final-report/isFinalChoiceQuestion';
+import { REPORT_FINAL_CHOICES } from '@/constants/reportFinalChoices';
 import type { QuestionListItem } from '@/types/admin-report';
 
 const OPTION_LABELS = ['Вариант 1', 'Вариант 2', 'Вариант 3', 'Вариант 4'] as const;
 
 const questionFormSchema = z
   .object({
+    isFinalQuestion: z.boolean(),
     questionText: z.string().trim().min(1, 'Текст вопроса обязателен'),
     option1: z.string(),
     option2: z.string(),
@@ -19,6 +21,10 @@ const questionFormSchema = z
     correctOption: z.coerce.number().int().min(0).max(3),
   })
   .superRefine((data, ctx) => {
+    if (data.isFinalQuestion) {
+      return;
+    }
+
     const options = [data.option1, data.option2, data.option3, data.option4]
       .map((option) => option.trim())
       .filter(Boolean);
@@ -47,6 +53,14 @@ function formValuesToPayload(values: QuestionFormValues): {
   options: string[];
   correctOption: number;
 } {
+  if (values.isFinalQuestion) {
+    return {
+      questionText: values.questionText.trim(),
+      options: REPORT_FINAL_CHOICES.map((c) => c.label),
+      correctOption: 0,
+    };
+  }
+
   const rawOptions = [values.option1, values.option2, values.option3, values.option4];
   // Сохраняем оригинальные индексы перед фильтрацией, чтобы правильно
   // перемапить correctOption после удаления пустых вариантов.
@@ -63,12 +77,14 @@ function formValuesToPayload(values: QuestionFormValues): {
 }
 
 function questionToDefaultValues(question: QuestionListItem): QuestionFormValues {
+  const isFinal = isFinalChoiceQuestion(question.options);
   return {
+    isFinalQuestion: isFinal,
     questionText: question.questionText,
-    option1: question.options[0] ?? '',
-    option2: question.options[1] ?? '',
-    option3: question.options[2] ?? '',
-    option4: question.options[3] ?? '',
+    option1: isFinal ? '' : (question.options[0] ?? ''),
+    option2: isFinal ? '' : (question.options[1] ?? ''),
+    option3: isFinal ? '' : (question.options[2] ?? ''),
+    option4: isFinal ? '' : (question.options[3] ?? ''),
     correctOption: question.correctOption,
   };
 }
@@ -111,10 +127,13 @@ function CreateQuestionForm({
     register,
     handleSubmit,
     setError,
+    control,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<QuestionFormValues>({
     resolver: zodResolver(questionFormSchema),
     defaultValues: {
+      isFinalQuestion: false,
       questionText: '',
       option1: '',
       option2: '',
@@ -123,6 +142,19 @@ function CreateQuestionForm({
       correctOption: 0,
     },
   });
+
+  const isFinalQuestion = useWatch({ control, name: 'isFinalQuestion' });
+
+  function handleFinalToggle(value: boolean): void {
+    setValue('isFinalQuestion', value);
+    if (value) {
+      setValue('option1', '');
+      setValue('option2', '');
+      setValue('option3', '');
+      setValue('option4', '');
+      setValue('correctOption', 0);
+    }
+  }
 
   async function onSubmit(values: QuestionFormValues): Promise<void> {
     const payload = formValuesToPayload(values);
@@ -172,7 +204,12 @@ function CreateQuestionForm({
         </div>
       }
     >
-      <QuestionFields register={register} errors={errors} />
+      <QuestionFields
+        register={register}
+        errors={errors}
+        isFinalQuestion={isFinalQuestion}
+        onFinalToggle={handleFinalToggle}
+      />
     </FormCard>
   );
 }
@@ -182,7 +219,6 @@ function EditQuestionForm({
   onSaved,
   onDeleted,
 }: EditProps): React.ReactElement {
-  const isFinal = isFinalChoiceQuestion(question.options);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const {
@@ -190,15 +226,30 @@ function EditQuestionForm({
     handleSubmit,
     setError,
     reset,
+    control,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<QuestionFormValues>({
     resolver: zodResolver(questionFormSchema),
     defaultValues: questionToDefaultValues(question),
   });
 
+  const isFinalQuestion = useWatch({ control, name: 'isFinalQuestion' });
+
   useEffect(() => {
     reset(questionToDefaultValues(question));
   }, [question, reset]);
+
+  function handleFinalToggle(value: boolean): void {
+    setValue('isFinalQuestion', value);
+    if (value) {
+      setValue('option1', '');
+      setValue('option2', '');
+      setValue('option3', '');
+      setValue('option4', '');
+      setValue('correctOption', 0);
+    }
+  }
 
   async function onSubmit(values: QuestionFormValues): Promise<void> {
     const payload = formValuesToPayload(values);
@@ -223,7 +274,7 @@ function EditQuestionForm({
   }
 
   async function handleDelete(): Promise<void> {
-    if (isFinal) return;
+    if (isFinalQuestion) return;
 
     if (!window.confirm('Удалить этот вопрос?')) return;
 
@@ -257,7 +308,7 @@ function EditQuestionForm({
       rootError={errors.root?.message}
       footer={
         <div className="flex items-center justify-between gap-4">
-          {isFinal ? (
+          {isFinalQuestion ? (
             <p className="text-sm text-semantic-error">Финальный вопрос нельзя удалить</p>
           ) : (
             <span />
@@ -266,7 +317,7 @@ function EditQuestionForm({
             <OutlineButton type="submit" disabled={busy}>
               {isSubmitting ? 'Сохранение…' : 'Сохранить'}
             </OutlineButton>
-            {!isFinal && (
+            {!isFinalQuestion && (
               <DangerButton type="button" onClick={() => void handleDelete()} disabled={busy}>
                 {isDeleting ? 'Удаление…' : 'Удалить'}
               </DangerButton>
@@ -275,7 +326,12 @@ function EditQuestionForm({
         </div>
       }
     >
-      <QuestionFields register={register} errors={errors} />
+      <QuestionFields
+        register={register}
+        errors={errors}
+        isFinalQuestion={isFinalQuestion}
+        onFinalToggle={handleFinalToggle}
+      />
     </FormCard>
   );
 }
@@ -315,9 +371,22 @@ function FormCard({
 interface QuestionFieldsProps {
   register: ReturnType<typeof useForm<QuestionFormValues>>['register'];
   errors: ReturnType<typeof useForm<QuestionFormValues>>['formState']['errors'];
+  isFinalQuestion: boolean;
+  onFinalToggle: (value: boolean) => void;
 }
 
-function QuestionFields({ register, errors }: QuestionFieldsProps): React.ReactElement {
+const RADIO_CLASS =
+  'h-4 w-4 cursor-pointer accent-admin-accent';
+
+const FIXED_OPTION_CLASS =
+  'rounded-lg border border-admin-card-border bg-admin-input-bg px-3 py-2.5 text-sm text-admin-placeholder select-none';
+
+function QuestionFields({
+  register,
+  errors,
+  isFinalQuestion,
+  onFinalToggle,
+}: QuestionFieldsProps): React.ReactElement {
   const optionFields = [
     { name: 'option1' as const, label: 'Вариант 1', id: 'question-option-1' },
     { name: 'option2' as const, label: 'Вариант 2', id: 'question-option-2' },
@@ -327,6 +396,35 @@ function QuestionFields({ register, errors }: QuestionFieldsProps): React.ReactE
 
   return (
     <>
+      <div>
+        <p className="mb-2 block text-sm text-admin-label">Тип вопроса</p>
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="radio"
+              className={RADIO_CLASS}
+              checked={!isFinalQuestion}
+              onChange={() => onFinalToggle(false)}
+            />
+            <span className="text-sm text-admin-input-text">Обычный</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="radio"
+              className={RADIO_CLASS}
+              checked={isFinalQuestion}
+              onChange={() => onFinalToggle(true)}
+            />
+            <span className="text-sm text-admin-input-text">
+              Финальный{' '}
+              <span className="text-admin-label">
+                ({REPORT_FINAL_CHOICES.map((c) => c.label).join(' / ')})
+              </span>
+            </span>
+          </label>
+        </div>
+      </div>
+
       <div>
         <label htmlFor="question-text" className="mb-1 block text-sm text-admin-label">
           Вопрос
@@ -343,63 +441,81 @@ function QuestionFields({ register, errors }: QuestionFieldsProps): React.ReactE
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {optionFields.map((field) => (
-          <div key={field.id}>
-            <label htmlFor={field.id} className="mb-1 block text-sm text-admin-label">
-              {field.label}
+      {isFinalQuestion ? (
+        <div>
+          <p className="mb-2 block text-sm text-admin-label">Варианты ответа</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {REPORT_FINAL_CHOICES.map((choice) => (
+              <div key={choice.value} className={FIXED_OPTION_CLASS}>
+                {choice.label}
+              </div>
+            ))}
+          </div>
+          <p className="mt-1.5 text-xs text-admin-placeholder">
+            Варианты фиксированы для финального вопроса
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {optionFields.map((field) => (
+              <div key={field.id}>
+                <label htmlFor={field.id} className="mb-1 block text-sm text-admin-label">
+                  {field.label}
+                </label>
+                <input
+                  {...register(field.name)}
+                  id={field.id}
+                  type="text"
+                  placeholder="Пример"
+                  className={[
+                    INPUT_CLASS,
+                    errors[field.name] ? INPUT_ERROR_CLASS : '',
+                  ].join(' ')}
+                />
+                {errors[field.name] && (
+                  <p className="mt-1 text-xs text-red-500">{errors[field.name]?.message}</p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <label htmlFor="question-correct" className="mb-1 block text-sm text-admin-label">
+              Верный ответ
             </label>
-            <input
-              {...register(field.name)}
-              id={field.id}
-              type="text"
-              placeholder="Пример"
-              className={[
-                INPUT_CLASS,
-                errors[field.name] ? INPUT_ERROR_CLASS : '',
-              ].join(' ')}
-            />
-            {errors[field.name] && (
-              <p className="mt-1 text-xs text-red-500">{errors[field.name]?.message}</p>
+            <div className="relative">
+              <select
+                {...register('correctOption')}
+                id="question-correct"
+                className={[
+                  INPUT_CLASS,
+                  'appearance-none pr-10',
+                  errors.correctOption ? INPUT_ERROR_CLASS : '',
+                ].join(' ')}
+              >
+                {OPTION_LABELS.map((label, index) => (
+                  <option key={label} value={index}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+              <span
+                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-admin-label"
+                aria-hidden="true"
+              >
+                ▾
+              </span>
+            </div>
+            {errors.correctOption && (
+              <p className="mt-1 text-xs text-red-500">{errors.correctOption.message}</p>
+            )}
+            {errors.option1 && !errors.correctOption && (
+              <p className="mt-1 text-xs text-red-500">{errors.option1.message}</p>
             )}
           </div>
-        ))}
-      </div>
-
-      <div>
-        <label htmlFor="question-correct" className="mb-1 block text-sm text-admin-label">
-          Верный ответ
-        </label>
-        <div className="relative">
-          <select
-            {...register('correctOption')}
-            id="question-correct"
-            className={[
-              INPUT_CLASS,
-              'appearance-none pr-10',
-              errors.correctOption ? INPUT_ERROR_CLASS : '',
-            ].join(' ')}
-          >
-            {OPTION_LABELS.map((label, index) => (
-              <option key={label} value={index}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <span
-            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-admin-label"
-            aria-hidden="true"
-          >
-            ▾
-          </span>
-        </div>
-        {errors.correctOption && (
-          <p className="mt-1 text-xs text-red-500">{errors.correctOption.message}</p>
-        )}
-        {errors.option1 && !errors.correctOption && (
-          <p className="mt-1 text-xs text-red-500">{errors.option1.message}</p>
-        )}
-      </div>
+        </>
+      )}
     </>
   );
 }

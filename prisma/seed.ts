@@ -391,15 +391,19 @@ async function seedDetectiveHint(): Promise<void> {
 }
 
 async function seedFinalReportLinkBlock(): Promise<void> {
-  for (const blockIndex of [1, 2]) {
-    await prisma.finalReportLinkBlock.upsert({
-      where: { blockIndex },
-      create: { blockIndex, text: '', images: [] },
-      update: {},
-    });
-  }
+  const count = await prisma.finalReportLinkBlock.count();
 
-  console.log('Ensured 2 FinalReportLinkBlock stubs (blockIndex: 1, 2)');
+  if (count === 0) {
+    await prisma.finalReportLinkBlock.createMany({
+      data: [
+        { blockIndex: 1, text: '', images: [] },
+        { blockIndex: 2, text: '', images: [] },
+      ],
+    });
+    console.log('Created 2 FinalReportLinkBlock stubs');
+  } else {
+    console.log(`FinalReportLinkBlock already seeded (${count} blocks, skipped)`);
+  }
 }
 
 async function main(): Promise<void> {

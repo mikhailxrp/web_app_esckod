@@ -213,6 +213,7 @@ function QuestionRow({
   onError,
 }: QuestionRowProps): React.ReactElement {
   const cells = [0, 1, 2, 3].map((index) => question.options[index] ?? '');
+  const isFinal = isFinalChoiceQuestion(question.options);
 
   return (
     <tr className="border-b border-admin-card-border last:border-b-0">
@@ -221,7 +222,7 @@ function QuestionRow({
       {cells.map((text, index) => (
         <td key={index} className="px-4 py-3 text-admin-input-text">
           <div className="flex items-center gap-2">
-            {question.correctOption === index && text.trim().length > 0 && (
+            {!isFinal && question.correctOption === index && text.trim().length > 0 && (
               <CorrectOptionMark />
             )}
             <span>{text}</span>

@@ -348,7 +348,7 @@ model AppSettings {
 
 model FinalReportLinkBlock {
   id         String   @id @default(cuid())
-  blockIndex Int      @unique
+  blockIndex Int      @default(0)
   text       String   @default("")
   images     Json     @default("[]")
   createdAt  DateTime @default(now())

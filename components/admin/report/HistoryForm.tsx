@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useRef, useState } from 'react';
+import { useForm, useWatch, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Check, RefreshCw, Info } from 'lucide-react';
+import { Bold, Check, RefreshCw, Info } from 'lucide-react';
 import { REPORT_FINAL_CHOICES } from '@/constants/reportFinalChoices';
 import { isFinalChoiceQuestion } from '@/lib/final-report/isFinalChoiceQuestion';
 import type { HistoryData, QuestionListItem } from '@/types/admin-report';
@@ -34,6 +34,74 @@ const inputBase =
 const textareaBase =
   'w-full px-4 py-3 rounded-lg bg-admin-input-bg text-admin-input-text text-sm border border-transparent focus:outline-none focus:border-admin-accent placeholder:text-admin-placeholder transition-colors resize-none';
 
+interface BoldTextareaProps {
+  id?: string;
+  value: string;
+  onChange: (value: string) => void;
+  rows?: number;
+  placeholder?: string;
+  hasError?: boolean;
+}
+
+function BoldTextarea({
+  id,
+  value,
+  onChange,
+  rows = 6,
+  placeholder,
+  hasError,
+}: BoldTextareaProps): React.ReactElement {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  function applyBold(): void {
+    const el = ref.current;
+    if (!el) return;
+
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const newValue = `${value.slice(0, start)}**${value.slice(start, end)}**${value.slice(end)}`;
+
+    onChange(newValue);
+
+    requestAnimationFrame(() => {
+      el.focus();
+      if (start === end) {
+        el.setSelectionRange(start + 2, start + 2);
+      } else {
+        el.setSelectionRange(start + 2, end + 2);
+      }
+    });
+  }
+
+  return (
+    <div>
+      <div className="mb-1.5 flex gap-1">
+        <button
+          type="button"
+          onClick={applyBold}
+          title="Жирный текст (**текст**)"
+          className="inline-flex items-center gap-1 rounded border border-admin-card-border bg-white px-2 py-0.5 text-xs text-admin-input-text transition-colors hover:bg-admin-input-bg"
+        >
+          <Bold size={11} strokeWidth={2.5} />
+          <span className="font-semibold">Ж</span>
+        </button>
+      </div>
+      <textarea
+        ref={ref}
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={rows}
+        placeholder={placeholder}
+        className={[
+          textareaBase,
+          hasError ? 'border-red-400' : '',
+        ].join(' ')}
+      />
+    </div>
+  );
+}
+
 function buildDefaultValues(data: HistoryData): FormValues {
   const contentsMap = new Map(
     data.contents.map((c) => [c.finalChoiceValue, c]),
@@ -50,15 +118,6 @@ function buildDefaultValues(data: HistoryData): FormValues {
       };
     }),
   };
-}
-
-function getFinalQuestionLabel(
-  questionId: string | null,
-  questions: QuestionListItem[],
-): string {
-  if (!questionId) return '';
-  const q = questions.find((q) => q.id === questionId);
-  return q ? `Вопрос ${q.orderIndex}: ${q.questionText}` : '';
 }
 
 export function HistoryForm({ initialData }: HistoryFormProps): React.ReactElement {
@@ -115,6 +174,7 @@ export function HistoryForm({ initialData }: HistoryFormProps): React.ReactEleme
       setData(updated);
       reset(buildDefaultValues(updated));
       showToast('success', 'История сохранена.');
+      window.dispatchEvent(new CustomEvent('report-config-saved'));
     } catch {
       showToast('error', 'Не удалось сохранить. Попробуйте ещё раз.');
     }
@@ -221,19 +281,25 @@ export function HistoryForm({ initialData }: HistoryFormProps): React.ReactEleme
             </div>
 
             <div>
-              <label className="text-sm text-admin-label block mb-1.5">
+              <label
+                htmlFor={`history-body-${choice.value}`}
+                className="text-sm text-admin-label block mb-1.5"
+              >
                 Текст истории {index + 1}
               </label>
-              <textarea
-                {...register(`contents.${index}.bodyText`)}
-                rows={6}
-                className={[
-                  textareaBase,
-                  errors.contents?.[index]?.bodyText
-                    ? 'border-red-400'
-                    : '',
-                ].join(' ')}
-                placeholder={`Текст концовки для варианта «${choice.label}»`}
+              <Controller
+                control={control}
+                name={`contents.${index}.bodyText`}
+                render={({ field }) => (
+                  <BoldTextarea
+                    id={`history-body-${choice.value}`}
+                    value={field.value}
+                    onChange={field.onChange}
+                    rows={6}
+                    placeholder={`Текст концовки для варианта «${choice.label}»`}
+                    hasError={!!errors.contents?.[index]?.bodyText}
+                  />
+                )}
               />
               {errors.contents?.[index]?.bodyText && (
                 <p className="mt-1 text-xs text-red-500">
