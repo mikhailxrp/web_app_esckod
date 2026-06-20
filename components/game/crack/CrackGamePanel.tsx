@@ -10,6 +10,7 @@ import { CrackCompletedView } from "@/components/game/crack/CrackCompletedView";
 import { CrackHintButton } from "@/components/game/crack/CrackHintButton";
 import { CrackSkipButton } from "@/components/game/crack/CrackSkipButton";
 import { CrackWordInput } from "@/components/game/crack/CrackWordInput";
+import GameLoader from "@/components/ui/GameLoader";
 import { toast } from "@/components/ui/Toast";
 import { fetchWithVersion } from "@/lib/api/fetchWithVersion";
 import { useChatStore } from "@/store/chatStore";
@@ -350,12 +351,7 @@ export function CrackGamePanel({
       <div className="flex">
         {view.phase === "loading" && (
           <div className="flex flex-1 items-center justify-center px-6 py-8">
-            <p
-              className="font-mono text-game-sm text-content-muted"
-              role="status"
-            >
-              Загрузка…
-            </p>
+            <GameLoader />
           </div>
         )}
 

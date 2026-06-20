@@ -21,7 +21,7 @@ export async function GET(): Promise<NextResponse> {
       );
     }
 
-    const [questions, settings] = await Promise.all([
+    const [questions, settings, progress] = await Promise.all([
       prisma.finalReportQuestion.findMany({
         orderBy: { orderIndex: 'asc' },
         select: {
@@ -34,11 +34,16 @@ export async function GET(): Promise<NextResponse> {
       prisma.appSettings.findFirst({
         select: { finalReportQuestionId: true },
       }),
+      prisma.gameProgress.findUnique({
+        where: { userId: session.user.id },
+        select: { version: true },
+      }),
     ]);
 
     return NextResponse.json({
       questions,
       finalReportQuestionId: settings?.finalReportQuestionId ?? null,
+      version: progress?.version ?? 0,
     });
   } catch (error) {
     console.error('[GET /api/final-report/questions]', error);

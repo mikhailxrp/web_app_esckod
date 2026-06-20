@@ -10,6 +10,7 @@ import { PdfViewer } from '@/components/game/rdp/PdfViewer';
 import { SessionLostModal } from '@/components/game/rdp/SessionLostModal';
 import { SessionTerminatedModal } from '@/components/game/rdp/SessionTerminatedModal';
 import { fetchWithVersion } from '@/lib/api/fetchWithVersion';
+import GameLoader from '@/components/ui/GameLoader';
 import { toast } from '@/components/ui/Toast';
 import { useChatStore } from '@/store/chatStore';
 import type {
@@ -296,9 +297,7 @@ export function WindowsSimulation({
       {/* Loading state */}
       {stage.phase === 'loading' ? (
         <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-          <p className="font-mono text-game-sm text-white drop-shadow" role="status">
-            Загрузка файлов…
-          </p>
+          <GameLoader />
         </div>
       ) : null}
 

@@ -11,6 +11,8 @@ import { DetectiveHintsButton } from "@/components/game/hints/DetectiveHintsButt
 import { CrackGamePanel } from "@/components/game/crack/CrackGamePanel";
 import { DecipherGamePanel } from "@/components/game/decipher/DecipherGamePanel";
 import { RdpGamePanel } from "@/components/game/rdp/RdpGamePanel";
+import { FinalReportButton } from "@/components/game/report/FinalReportButton";
+import { FinalReportView } from "@/components/game/report/FinalReportView";
 import { useChatStore } from "@/store/chatStore";
 import type { RdpConnectResult } from "@/types/rdp";
 
@@ -30,6 +32,8 @@ export function DashboardClient({
   const [activeCrackSlotKey, setActiveCrackSlotKey] = useState<string | null>(null);
   const [activeDecipherSlotKey, setActiveDecipherSlotKey] = useState<string | null>(null);
   const [activeRdpConnect, setActiveRdpConnect] = useState<RdpConnectResult | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportAlreadySubmitted, setReportAlreadySubmitted] = useState(false);
 
   useEffect(() => {
     void refresh();
@@ -51,65 +55,81 @@ export function DashboardClient({
         </div>
       </div>
 
-      {/* Main grid: left column + right sidebar */}
-      <div className="flex flex-1 gap-6">
-        {/* Left column: missions section + operation history */}
-        <div className="flex min-w-0 flex-1 flex-col gap-6">
-          {/* Missions section — shows game panel when a mission is active */}
-          <section aria-label="Миссии">
-            {activeCrackSlotKey ? (
-              <CrackGamePanel
-                slotKey={activeCrackSlotKey}
-                onClose={() => setActiveCrackSlotKey(null)}
-              />
-            ) : activeDecipherSlotKey ? (
-              <DecipherGamePanel
-                slotKey={activeDecipherSlotKey}
-                onClose={() => setActiveDecipherSlotKey(null)}
-              />
-            ) : activeRdpConnect ? (
-              <RdpGamePanel
-                connectResult={activeRdpConnect}
-                onClose={() => setActiveRdpConnect(null)}
-              />
-            ) : (
-              <div className="rounded-game-lg border border-border p-4">
-                {visibleMissions.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-4 2xl:grid-cols-3">
-                    {visibleMissions.map((type) => (
-                      <MissionCard
-                        key={type}
-                        missionType={type}
-                        onCrackLaunched={setActiveCrackSlotKey}
-                        onDecipherLaunched={setActiveDecipherSlotKey}
-                        onRdpLaunched={setActiveRdpConnect}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-10 text-center" role="status">
-                    <p className="font-mono text-game-sm text-content-muted">
-                      Нет активных миссий
-                    </p>
-                  </div>
-                )}
-              </div>
+      {reportOpen ? (
+        <FinalReportView
+          alreadySubmitted={reportAlreadySubmitted}
+          onClose={() => setReportOpen(false)}
+        />
+      ) : (
+        /* Main grid: left column + right sidebar */
+        <div className="flex flex-1 gap-6">
+          {/* Left column: missions section + operation history */}
+          <div className="flex min-w-0 flex-1 flex-col gap-6">
+            {/* Missions section — shows game panel when a mission is active */}
+            <section aria-label="Миссии">
+              {activeCrackSlotKey ? (
+                <CrackGamePanel
+                  slotKey={activeCrackSlotKey}
+                  onClose={() => setActiveCrackSlotKey(null)}
+                />
+              ) : activeDecipherSlotKey ? (
+                <DecipherGamePanel
+                  slotKey={activeDecipherSlotKey}
+                  onClose={() => setActiveDecipherSlotKey(null)}
+                />
+              ) : activeRdpConnect ? (
+                <RdpGamePanel
+                  connectResult={activeRdpConnect}
+                  onClose={() => setActiveRdpConnect(null)}
+                />
+              ) : (
+                <div className="rounded-game-lg border border-border p-4">
+                  {visibleMissions.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-4 2xl:grid-cols-3">
+                      {visibleMissions.map((type) => (
+                        <MissionCard
+                          key={type}
+                          missionType={type}
+                          onCrackLaunched={setActiveCrackSlotKey}
+                          onDecipherLaunched={setActiveDecipherSlotKey}
+                          onRdpLaunched={setActiveRdpConnect}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="py-10 text-center" role="status">
+                      <p className="font-mono text-game-sm text-content-muted">
+                        Нет активных миссий
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+
+            <OperationHistory />
+          </div>
+
+          {/* Right sidebar: chat panels */}
+          <aside
+            className="flex w-[320px] flex-shrink-0 flex-col gap-3 2xl:w-[455px]"
+            aria-label="Чат-панели"
+          >
+            <ChatPanel chatType="DETECTIVE" />
+            {marinaVisible && (
+              <>
+                <ChatPanel chatType="MARINA" />
+                <FinalReportButton
+                  onOpen={(alreadySubmitted) => {
+                    setReportAlreadySubmitted(alreadySubmitted);
+                    setReportOpen(true);
+                  }}
+                />
+              </>
             )}
-          </section>
-
-          <OperationHistory />
+          </aside>
         </div>
-
-        {/* Right sidebar: chat panels */}
-        <aside
-          className="flex w-[320px] flex-shrink-0 flex-col gap-3 2xl:w-[455px]"
-          aria-label="Чат-панели"
-        >
-          <ChatPanel chatType="DETECTIVE" />
-          {marinaVisible && <ChatPanel chatType="MARINA" />}
-        </aside>
-      </div>
-
+      )}
     </div>
   );
 }

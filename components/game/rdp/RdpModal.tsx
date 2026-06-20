@@ -8,6 +8,7 @@ import { PipesPuzzle } from '@/components/game/rdp/PipesPuzzle';
 import { RdpCompletedView } from '@/components/game/rdp/RdpCompletedView';
 import { RdpHintButton } from '@/components/game/rdp/RdpHintButton';
 import { WindowsSimulation } from '@/components/game/rdp/WindowsSimulation';
+import GameLoader from '@/components/ui/GameLoader';
 import { toast } from '@/components/ui/Toast';
 import type { PuzzleField } from '@/lib/rdp/types';
 import { useChatStore } from '@/store/chatStore';
@@ -223,9 +224,7 @@ export function RdpModal({ connectResult, onClose }: RdpModalProps): ReactElemen
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {stage.phase === 'loading' && (
             <div className="flex min-h-[300px] items-center justify-center">
-              <p className="font-mono text-game-sm text-content-muted" role="status">
-                Установка соединения…
-              </p>
+              <GameLoader />
             </div>
           )}
 
