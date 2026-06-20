@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 
 interface ValidationResult {
@@ -56,6 +56,12 @@ export function ReportValidatorBanner({
       setIsRefreshing(false);
     }
   }, []);
+
+  useEffect(() => {
+    const handler = (): void => void refresh();
+    window.addEventListener('report-config-saved', handler);
+    return () => window.removeEventListener('report-config-saved', handler);
+  }, [refresh]);
 
   if (validation.isValid) {
     return (

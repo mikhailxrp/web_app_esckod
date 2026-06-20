@@ -45,6 +45,27 @@ export async function GET(): Promise<NextResponse> {
   return NextResponse.json(blocks.map(serializeLinkBlock));
 }
 
+export async function POST(): Promise<NextResponse> {
+  const session = await auth();
+
+  if (!session || session.user.type !== 'ADMIN') {
+    return forbiddenResponse();
+  }
+
+  const last = await prisma.finalReportLinkBlock.findFirst({
+    orderBy: { blockIndex: 'desc' },
+    select: { blockIndex: true },
+  });
+
+  const nextIndex = (last?.blockIndex ?? 0) + 1;
+
+  const block = await prisma.finalReportLinkBlock.create({
+    data: { blockIndex: nextIndex, text: '', images: [] },
+  });
+
+  return NextResponse.json(serializeLinkBlock(block), { status: 201 });
+}
+
 export async function PUT(request: Request): Promise<NextResponse> {
   const session = await auth();
 
@@ -70,10 +91,9 @@ export async function PUT(request: Request): Promise<NextResponse> {
 
   await prisma.$transaction(
     blocks.map((block) =>
-      prisma.finalReportLinkBlock.upsert({
-        where: { blockIndex: block.blockIndex },
-        create: { blockIndex: block.blockIndex, text: block.text, images: [] },
-        update: { text: block.text },
+      prisma.finalReportLinkBlock.update({
+        where: { id: block.id },
+        data: { text: block.text },
       }),
     ),
   );

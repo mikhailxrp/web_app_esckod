@@ -40,8 +40,8 @@ function serializeLinkBlock(block: {
   };
 }
 
-function buildLinkImageKey(blockIndex: number, name: string): string {
-  return `files/report-links/block-${blockIndex}/${name}`;
+function buildLinkImageKey(blockId: string, name: string): string {
+  return `files/report-links/${blockId}/${name}`;
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -59,17 +59,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return validationErrorResponse('Неверный формат запроса');
   }
 
-  const blockIndexRaw = formData.get('blockIndex');
+  const blockIdRaw = formData.get('blockId');
 
   const fieldsParsed = linkImageUploadFieldsSchema.safeParse({
-    blockIndex: typeof blockIndexRaw === 'string' ? blockIndexRaw : undefined,
+    blockId: typeof blockIdRaw === 'string' ? blockIdRaw : undefined,
   });
 
   if (!fieldsParsed.success) {
     return validationErrorResponse(fieldsParsed.error.errors[0]?.message);
   }
 
-  const { blockIndex } = fieldsParsed.data;
+  const { blockId } = fieldsParsed.data;
 
   const file = formData.get('file');
 
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const block = await prisma.finalReportLinkBlock.findUnique({
-    where: { blockIndex },
+    where: { id: blockId },
   });
 
   if (!block) {
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   const normalizedName = normalizeFilename(file.name);
-  const key = buildLinkImageKey(blockIndex, normalizedName);
+  const key = buildLinkImageKey(blockId, normalizedName);
 
   const arrayBuffer = await file.arrayBuffer();
   const body = Buffer.from(arrayBuffer);
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const nextImages = [...existingImages, newImage] as unknown as import('@prisma/client').Prisma.InputJsonValue;
 
   const updated = await prisma.finalReportLinkBlock.update({
-    where: { blockIndex },
+    where: { id: blockId },
     data: { images: nextImages },
   });
 
@@ -152,10 +152,10 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
     return validationErrorResponse(parsed.error.errors[0]?.message);
   }
 
-  const { blockIndex, key } = parsed.data;
+  const { blockId, key } = parsed.data;
 
   const block = await prisma.finalReportLinkBlock.findUnique({
-    where: { blockIndex },
+    where: { id: blockId },
   });
 
   if (!block) {
@@ -181,7 +181,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
   const filteredJson = filtered as unknown as import('@prisma/client').Prisma.InputJsonValue;
 
   const updated = await prisma.finalReportLinkBlock.update({
-    where: { blockIndex },
+    where: { id: blockId },
     data: { images: filteredJson },
   });
 

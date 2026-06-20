@@ -90,27 +90,22 @@ export const updateHistorySchema = z.object({
 });
 
 export const updateLinksSchema = z.object({
-  blocks: z
-    .array(
-      z.object({
-        blockIndex: z.union([z.literal(1), z.literal(2)]),
-        text: z.string(),
-      }),
-    )
-    .length(2, 'Необходимо передать ровно 2 блока'),
+  blocks: z.array(
+    z.object({
+      id: z.string().cuid('Некорректный id блока'),
+      text: z.string(),
+    }),
+  ),
 });
 
 export const MAX_LINK_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 
 export const linkImageUploadFieldsSchema = z.object({
-  blockIndex: z
-    .string()
-    .transform(Number)
-    .pipe(z.union([z.literal(1), z.literal(2)])),
+  blockId: z.string().cuid('Некорректный blockId'),
 });
 
 export const linkImageDeleteSchema = z.object({
-  blockIndex: z.union([z.literal(1), z.literal(2)]),
+  blockId: z.string().cuid('Некорректный blockId'),
   key: z.string().min(1, 'key не может быть пустым'),
 });
 
