@@ -9,6 +9,7 @@ import { CrackCompletedView } from '@/components/game/crack/CrackCompletedView';
 import { CrackHintButton } from '@/components/game/crack/CrackHintButton';
 import { CrackSkipButton } from '@/components/game/crack/CrackSkipButton';
 import { WordGrid } from '@/components/game/crack/WordGrid';
+import GameLoader from '@/components/ui/GameLoader';
 import { toast } from '@/components/ui/Toast';
 import { fetchWithVersion } from '@/lib/api/fetchWithVersion';
 import { useChatStore } from '@/store/chatStore';
@@ -327,9 +328,9 @@ export function CrackModal({ slotKey, onClose }: CrackModalProps): ReactElement 
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {view.phase === 'loading' && (
-            <p className="font-mono text-game-sm text-content-muted" role="status">
-              Загрузка…
-            </p>
+            <div className="flex items-center justify-center py-8">
+              <GameLoader />
+            </div>
           )}
 
           {view.phase === 'error' && (

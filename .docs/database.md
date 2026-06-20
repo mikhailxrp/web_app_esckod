@@ -173,10 +173,12 @@ model GameProgress {
   id                String    @id @default(cuid())
   userId            String    @unique
 
-  marinaTriggered   Boolean   @default(false)  // появился чат Марины (единственный источник правды)
-  finalReportDone   Boolean   @default(false)
-  finalScore        Int?      // процент правильных ответов
-  version           Int       @default(0)  // optimistic locking — см. .docs/modules/concurrency.md
+  marinaTriggered      Boolean   @default(false)  // появился чат Марины (единственный источник правды)
+  finalReportDone      Boolean   @default(false)
+  finalScore           Int?      // процент правильных ответов (только контрольные вопросы)
+  finalReportChoice    String?   // UPPERCASE: ACCUSE | PROTECT — выбор концовки
+  finalReportAnswers   Json?     // снапшот [{ questionText, selectedLabel, isCorrect, isFinalQuestion }]
+  version              Int       @default(0)  // optimistic locking — см. .docs/modules/concurrency.md
 
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -191,7 +193,7 @@ model GameProgress {
 - Сервер устанавливает `marinaTriggered = true` в `POST /api/missions/rdp/[slotKey]/file-viewed` для слотов с `rdpScenario === 2`, в момент автоматической активации триггера (когда игрок просмотрел все файлы слота). См. `.docs/modules/missions-rdp.md` → раздел «Шаг 4 — сюжетный триггер».
 - Клиент при загрузке через `GET /api/progress` получает `marinaTriggered` и решает, рендерить ли чат Марины.
 
-**При перезапуске игры:** UPDATE на дефолты (`marinaTriggered=false`, `finalReportDone=false`, `finalScore=null`).
+**При перезапуске игры:** UPDATE на дефолты (`marinaTriggered=false`, `finalReportDone=false`, `finalScore=null`, `finalReportChoice=null`, `finalReportAnswers=null`).
 
 ---
 
@@ -1108,6 +1110,8 @@ await prisma.$transaction(async (tx) => {
       marinaTriggered: false,
       finalReportDone: false,
       finalScore: null,
+      finalReportChoice: null,
+      finalReportAnswers: null,
     },
   });
 
