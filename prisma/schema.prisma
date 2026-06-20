@@ -97,10 +97,12 @@ model GameProgress {
   id                String    @id @default(cuid())
   userId            String    @unique
 
-  marinaTriggered   Boolean   @default(false)
-  finalReportDone   Boolean   @default(false)
-  finalScore        Int?
-  version           Int       @default(0)
+  marinaTriggered      Boolean   @default(false)
+  finalReportDone      Boolean   @default(false)
+  finalScore           Int?
+  finalReportChoice    String?
+  finalReportAnswers   Json?
+  version              Int       @default(0)
 
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

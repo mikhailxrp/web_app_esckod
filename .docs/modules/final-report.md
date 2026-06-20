@@ -24,9 +24,9 @@
 ## Цели модуля
 
 После завершения этого модуля:
-- На главном экране есть кнопка «Финальный отчёт» — заблокирована до завершения чата Детектива
-- При `ChatState.detectiveFinished === true` — кнопка разблокируется
-- Игрок открывает модалку отчёта, видит вопросы с radio-кнопками и выбор «Обвинить / Защитить»
+- Под панелью чата «Анонима» (MARINA) появляется кнопка «Финальный отчёт» — **скрыта** (нет в DOM) до `detectiveFinished`
+- При `ChatState.detectiveFinished === true` — кнопка появляется в DOM
+- Игрок открывает экран отчёта (замена основной области dashboard, без модалки), видит вопросы с radio-кнопками и финальный вопрос «Обвинить / Защитить»
 - Сдаёт отчёт → сервер проверяет ответы на вопросы, считает процент правильных (выбор концовки на процент не влияет)
 - Игрок видит результат + текст концовки, зависящий от `finalChoice` в теле `POST /submit` (`PROTECT` / `ACCUSE`)
 - Повторная сдача отчёта **запрещена** — только просмотр результата
@@ -34,7 +34,7 @@
 
 **Не входит в модуль:**
 - Тексты вопросов и концовок — заглушки в сидере, финальные от заказчика через админку
-- Дизайн модалки — верстается на Tailwind по ходу фазы
+- Дизайн экрана отчёта — верстается на Tailwind по ходу фазы
 - Админка для CRUD вопросов и контентов концовок — `admin.md`
 - Расчёт баланса концовок (PROTECT/ACCUSE — нарративный выбор, не «правильный/неправильный»)
 
@@ -51,15 +51,15 @@
 - Выбор «Обвинить / Защитить» перенесён в форму отчёта — не нужно ждать чат Марины
 - Миссии и чат Марины **не блокируют** доступ к отчёту
 
-### 2. Выбор концовки — внутри формы отчёта
+### 2. Выбор концовки — финальный вопрос-указатель в форме отчёта
 
-Игрок выбирает «Обвинить» или «Защитить» radio-кнопками в модалке отчёта. Значения фиксированы в `constants/reportFinalChoices.ts` (`REPORT_FINAL_CHOICES`). Выбор передаётся в `POST /submit` как `finalChoice`.
+Игрок отвечает на финальный вопрос-указатель (`AppSettings.finalReportQuestionId`) с вариантами «Обвинить / Защитить». Ответ маппится в `finalChoice` по лейблу (через `isFinalChoiceQuestion`). Значения фиксированы в `constants/reportFinalChoices.ts` (`REPORT_FINAL_CHOICES`). При submit сохраняется в `GameProgress.finalReportChoice`.
 
 **Не используется:** `ChatState.finalChoice` (legacy-поле в БД, миграция не планируется).
 
 ### 3. Процент — только по контрольным вопросам
 
-`GameProgress.finalScore` считается исключительно по `FinalReportQuestion`. Выбор Обвинить/Защитить — нарративный, на процент не влияет.
+`GameProgress.finalScore` считается исключительно по контрольным `FinalReportQuestion` (финальный вопрос-указатель **исключён**). Выбор Обвинить/Защитить — нарративный, на процент не влияет.
 
 ### 4. `correctOption` НИКОГДА не возвращается клиенту
 
@@ -81,8 +81,8 @@
 
 | Эндпоинт | Когда используется | Что возвращает |
 |---|---|---|
-| `GET /availability` | Постоянно — клиент проверяет, можно ли открыть отчёт | `{ available: bool, reasonsBlocked?: string[] }` |
-| `GET /questions` | При открытии модалки отчёта | Массив вопросов БЕЗ `correctOption` |
+| `GET /availability` | Постоянно — клиент проверяет, можно ли открыть отчёт | `{ available: bool, alreadySubmitted: bool, reasonsBlocked?: string[] }` |
+| `GET /questions` | При открытии экрана отчёта | Массив вопросов БЕЗ `correctOption` + `finalReportQuestionId` |
 | `POST /submit` | После заполнения всех вопросов | Результат + текст финала |
 | `GET /result` | Просмотр уже сданного отчёта | Тот же результат, что вернул `/submit` |
 
@@ -203,13 +203,22 @@ async function submitReport(userId: string, body: SubmitBody) {
     return error(400, 'INCOMPLETE_ANSWERS');
   }
 
-  // 5. Валидация selectedOption per-question + подсчёт правильных ответов
+  // 5. Валидация selectedOption per-question + подсчёт правильных (без финального вопроса-указателя)
+  const settings = await prisma.appSettings.findFirst({
+    select: { finalReportQuestionId: true },
+  });
+  const finalQuestionId = settings?.finalReportQuestionId;
+
   let correctCount = 0;
+  let controlCount = 0;
+  const answerSnapshot: Array<{ questionText: string; selectedLabel: string; isCorrect: boolean }> = [];
+
   for (const q of questions) {
     const userAnswer = answers.find(a => a.questionId === q.id);
     if (!userAnswer) continue;
 
     const options = q.options as string[];
+    const isFinalQuestion = q.id === finalQuestionId;
 
     if (userAnswer.selectedOption < 0 || userAnswer.selectedOption >= options.length) {
       return error(400, 'INVALID_OPTION_INDEX', {
@@ -219,11 +228,19 @@ async function submitReport(userId: string, body: SubmitBody) {
       });
     }
 
-    if (userAnswer.selectedOption === q.correctOption) {
-      correctCount++;
+    const isCorrect = userAnswer.selectedOption === q.correctOption;
+    answerSnapshot.push({
+      questionText: q.questionText,
+      selectedLabel: options[userAnswer.selectedOption],
+      isCorrect,
+    });
+
+    if (!isFinalQuestion) {
+      controlCount++;
+      if (isCorrect) correctCount++;
     }
   }
-  const percent = Math.round((correctCount / questions.length) * 100);
+  const percent = controlCount > 0 ? Math.round((correctCount / controlCount) * 100) : 0;
 
   // 6. Получить контент концовки по выбору из тела запроса
   const content = await prisma.finalReportContent.findUnique({
@@ -233,27 +250,26 @@ async function submitReport(userId: string, body: SubmitBody) {
     return error(500, 'FINAL_CONTENT_MISSING', { finalChoice });
   }
 
-  // 7. Транзакция: пометить отчёт сданным + сохранить выбор + лог
-  // (механизм хранения finalChoice для /result — реализуется в Phase 17)
-  await prisma.$transaction([
-    prisma.gameProgress.update({
-      where: { userId },
-      data: { finalReportDone: true, finalScore: percent },
-    }),
-    prisma.operationLog.create({
-      data: {
-        userId,
-        type: 'SUCCESS',
-        message: renderLogMessage('final_report_submitted', { percent: percent.toString() }),
-      },
-    }),
-  ]);
+  // 7. Транзакция: optimistic locking + сохранение выбора и снапшота + лог
+  const updated = await prisma.gameProgress.update({
+    where: { userId, version: body.expectedVersion },
+    data: {
+      finalReportDone: true,
+      finalScore: percent,
+      finalReportChoice: finalChoice,
+      finalReportAnswers: answerSnapshot,
+      version: { increment: 1 },
+    },
+  });
+  // Если count === 0 → HTTP 409 VERSION_CONFLICT
+
+  await writeLog({ userId, templateKey: 'final_report_submitted', params: { percent: percent.toString() } });
 
   return {
     success: true,
     score: {
       correctCount,
-      totalCount: questions.length,
+      totalCount: controlCount,
       percent,
     },
     finalContent: {
@@ -261,6 +277,7 @@ async function submitReport(userId: string, body: SubmitBody) {
       bodyText: content.bodyText,
       finalChoiceValue: content.finalChoiceValue,
     },
+    version: updated.version,
   };
 }
 ```
@@ -288,6 +305,9 @@ async function submitReport(userId: string, body: SubmitBody) {
 - `INCOMPLETE_ANSWERS` — не все вопросы отвечены
 - `INVALID_OPTION_INDEX` — `selectedOption` вышел за пределы `0..options.length-1` для конкретного вопроса
 - `INVALID_FINAL_CHOICE` — `finalChoice` не из `REPORT_FINAL_CHOICES`
+
+**Response 409:**
+- `VERSION_CONFLICT` — `expectedVersion` не совпадает с текущей `GameProgress.version`
 
 **Response 500:**
 - `FINAL_CONTENT_MISSING` — для `finalChoice` нет соответствующего `FinalReportContent` (расхождение конфигурации)
@@ -386,15 +406,19 @@ export async function validateReportConfig() {
 async function getResult(userId: string) {
   const progress = await prisma.gameProgress.findUnique({
     where: { userId },
-    select: { finalReportDone: true, finalScore: true },
+    select: {
+      finalReportDone: true,
+      finalScore: true,
+      finalReportChoice: true,
+      finalReportAnswers: true,
+    },
   });
 
   if (!progress?.finalReportDone) {
     return error(400, 'NOT_SUBMITTED');
   }
 
-  // finalChoice читается из сохранённого при submit значения (Phase 17)
-  const savedFinalChoice = await getSavedFinalChoice(userId);
+  const savedFinalChoice = progress.finalReportChoice;
   if (!savedFinalChoice) {
     return error(500, 'NO_FINAL_CHOICE');
   }
@@ -406,14 +430,21 @@ async function getResult(userId: string) {
     return error(500, 'FINAL_CONTENT_MISSING', { finalChoice: savedFinalChoice });
   }
 
-  // Подсчитать correctCount и totalCount по всем вопросам — нужно для отображения «X из Y»
-  // Но мы не сохраняли answers — только finalScore (процент).
-  // Решение: считать из totalCount (актуального числа вопросов) и process backwards:
-  // correctCount = round(totalCount * finalScore / 100)
-  // Если админ изменил число вопросов после сдачи отчёта — backwards-расчёт может дать
-  // некорректный correctCount, но finalScore остаётся правильным (он сохранён).
-  const totalCount = await prisma.finalReportQuestion.count();
-  const correctCount = Math.round((totalCount * (progress.finalScore ?? 0)) / 100);
+  // Снапшот ответов — иммунен к последующим правкам вопросов админом
+  const answers = progress.finalReportAnswers as Array<{
+    questionText: string;
+    selectedLabel: string;
+    isCorrect: boolean;
+  }>;
+
+  const controlAnswers = answers.filter(a => /* не финальный вопрос — определяется по isFinalChoiceQuestion при submit */);
+  const correctCount = controlAnswers.filter(a => a.isCorrect).length;
+  const totalCount = controlAnswers.length;
+
+  const linkBlocks = await prisma.finalReportLinkBlock.findMany({
+    orderBy: { blockIndex: 'asc' },
+    select: { blockIndex: true, text: true, images: true },
+  });
 
   return {
     score: {
@@ -421,11 +452,13 @@ async function getResult(userId: string) {
       totalCount,
       percent: progress.finalScore,
     },
+    answers,
     finalContent: {
       title: content.title,
       bodyText: content.bodyText,
       finalChoiceValue: content.finalChoiceValue,
     },
+    linkBlocks,
   };
 }
 ```
@@ -435,18 +468,16 @@ async function getResult(userId: string) {
 **Response 400:**
 - `NOT_SUBMITTED` — отчёт ещё не сдан, нечего показывать
 
-⚠️ **Edge case:** если админ удаляет/добавляет вопросы после сдачи отчёта — `correctCount` может быть некорректным (рассчитывается обратным процентом). Для полной точности нужно сохранять ответы игрока в БД (например, в `GameProgress.metadata.answers`). На MVP — оставляем простой подход, расхождение приемлемо.
-
 ---
 
 ## API-эндпоинты
 
-| Метод | Путь | Назначение | Auth |
-|---|---|---|---|
-| GET | `/api/final-report/availability` | Проверить, доступен ли отчёт | Player |
-| GET | `/api/final-report/questions` | Получить список вопросов | Player |
-| POST | `/api/final-report/submit` | Сдать отчёт | Player |
-| GET | `/api/final-report/result` | Просмотр сданного отчёта | Player |
+| Метод | Путь | Назначение | Auth | Response |
+|---|---|---|---|---|
+| GET | `/api/final-report/availability` | Проверить, доступен ли отчёт | Player | `{ available, alreadySubmitted, reasonsBlocked? }` |
+| GET | `/api/final-report/questions` | Получить список вопросов | Player | `{ questions, finalReportQuestionId }` |
+| POST | `/api/final-report/submit` | Сдать отчёт | Player | `{ score, finalContent, version }` |
+| GET | `/api/final-report/result` | Просмотр сданного отчёта | Player | `{ score, answers, finalContent, linkBlocks }` |
 
 ### `GET /api/final-report/questions`
 
@@ -494,21 +525,19 @@ async function getQuestions(userId: string) {
 
 ## UI отчёта
 
-### Кнопка на dashboard
+### Кнопка под чатом «Анонима»
 
-Постоянно видна в одном из углов dashboard. По умолчанию **заблокирована** (visually disabled). Клиент дёргает `GET /availability` при загрузке dashboard и периодически (например, после каждого `/api/chat/state`).
+Размещается в `DashboardClient.tsx` **под** `<ChatPanel chatType="MARINA" />`. До `detectiveFinished` — **нет в DOM** (`return null`). Клиент дёргает `GET /availability` при загрузке dashboard и после изменения состояния чата.
 
-При выполнении триггера — кнопка разблокируется, начинает мигать или подсвечиваться (визуальный сигнал).
+При `available || alreadySubmitted` — кнопка появляется в DOM. Клик открывает экран отчёта (callback в `DashboardClient`).
 
 ```tsx
 // components/game/report/FinalReportButton.tsx
 'use client';
-import { useEffect, useState } from 'react';
 
-export function FinalReportButton() {
+export function FinalReportButton({ onOpen }: { onOpen: () => void }) {
   const [available, setAvailable] = useState(false);
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
-  const [open, setOpen] = useState(false);
 
   const checkAvailability = async () => {
     const res = await fetch('/api/final-report/availability');
@@ -517,124 +546,46 @@ export function FinalReportButton() {
     setAlreadySubmitted(data.alreadySubmitted);
   };
 
-  useEffect(() => {
-    checkAvailability();
-    // Опционально: реагировать на события (например, после успеха миссии или choice)
-  }, []);
+  useEffect(() => { checkAvailability(); }, []);
 
   if (!available && !alreadySubmitted) {
-    return (
-      <button disabled className="opacity-50" title="Завершите чат с Детективом">
-        Финальный отчёт (заблокировано)
-      </button>
-    );
+    return null; // скрыта — нет в DOM
   }
 
   return (
-    <>
-      <button onClick={() => setOpen(true)} className="...">
-        {alreadySubmitted ? 'Просмотр результата' : 'Финальный отчёт'}
-      </button>
-      {open && <FinalReportModal alreadySubmitted={alreadySubmitted} onClose={() => setOpen(false)} />}
-    </>
+    <button onClick={onOpen} className="...">
+      {alreadySubmitted ? 'Просмотр результата' : 'Финальный отчёт'}
+    </button>
   );
 }
 ```
 
-### Модалка отчёта
+### Экран отчёта (без модалки)
+
+`FinalReportView` заменяет основную область dashboard (миссии / история / сайдбар чатов). `StatusBar` сверху сохраняется.
 
 Два режима:
-- **Сдача отчёта:** список вопросов с radio-кнопками, блок выбора «Обвинить / Защитить» (`REPORT_FINAL_CHOICES`), кнопка «Сдать». При сабмите — `/submit` с `finalChoice` + `answers`, после ответа — переход к экрану результата.
-- **Просмотр результата:** дёргает `/result`, показывает результат + текст концовки.
+- **Сдача отчёта:** контрольные вопросы + отдельный блок финального вопроса-указателя, кнопка «Отправить отчёт». Submit с `expectedVersion` (optimistic locking).
+- **Просмотр результата:** `/result`, экран с пер-вопросными пометками, блоками ссылок, концовкой. «ПЕРЕИГРАТЬ» закрывает экран (реальный рестарт — Phase 19).
 
 ```tsx
-// components/game/report/FinalReportModal.tsx
+// components/game/report/FinalReportView.tsx
 'use client';
-import { useEffect, useState } from 'react';
-import { ReportQuestion } from './ReportQuestion';
-import { ReportResult } from './ReportResult';
 
-export function FinalReportModal({ alreadySubmitted, onClose }) {
-  const [stage, setStage] = useState<'questions' | 'result' | 'loading'>('loading');
-  const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState<Record<string, number>>({});
-  const [finalChoice, setFinalChoice] = useState<string | null>(null);
-  const [result, setResult] = useState(null);
-
-  useEffect(() => {
-    if (alreadySubmitted) {
-      fetch('/api/final-report/result')
-        .then(r => r.json())
-        .then(data => { setResult(data); setStage('result'); });
-    } else {
-      fetch('/api/final-report/questions')
-        .then(r => r.json())
-        .then(data => { setQuestions(data.questions); setStage('questions'); });
-    }
-  }, []);
-
-  const handleSubmit = async () => {
-    const submitData = {
-      finalChoice,
-      answers: Object.entries(answers).map(([questionId, selectedOption]) => ({
-        questionId,
-        selectedOption,
-      })),
-    };
-    const res = await fetch('/api/final-report/submit', {
-      method: 'POST',
-      body: JSON.stringify(submitData),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setResult(data);
-      setStage('result');
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[10000] bg-black/80 flex items-center justify-center">
-      <div className="bg-card max-w-2xl p-6">
-        {stage === 'loading' && <Spinner />}
-
-        {stage === 'questions' && (
-          <>
-            <h2>Финальный отчёт</h2>
-            {questions.map(q => (
-              <ReportQuestion
-                key={q.id}
-                question={q}
-                value={answers[q.id]}
-                onChange={(opt) => setAnswers({ ...answers, [q.id]: opt })}
-              />
-            ))}
-            <button
-              onClick={handleSubmit}
-              disabled={
-                Object.keys(answers).length !== questions.length || finalChoice === null
-              }
-            >
-              Сдать отчёт
-            </button>
-          </>
-        )}
-
-        {stage === 'result' && result && (
-          <ReportResult result={result} onClose={onClose} />
-        )}
-      </div>
-    </div>
-  );
+export function FinalReportView({ alreadySubmitted, onClose }: Props) {
+  const [stage, setStage] = useState<'loading' | 'questions' | 'result'>('loading');
+  // ... fetch /questions или /result, submit с expectedVersion, обработка 409
 }
 ```
 
 ### Компонент ReportResult
 
 Показывает:
-- Процент правильных ответов: «Вы ответили правильно на X из Y вопросов (Z%)»
-- Заголовок финала (`finalContent.title`)
-- Текст финала (`finalContent.bodyText`)
-- Кнопка «Закрыть»
+- Процент: «Вы ответили правильно на X из Y вопросов (Z%)» — только контрольные
+- Список ответов из снапшота `finalReportAnswers` с пометками верно/неверно
+- Два блока ссылок (`FinalReportLinkBlock`) с изображениями через `next/image`
+- Заголовок и текст концовки (`finalContent.title`, `finalContent.bodyText`)
+- Кнопка «ПЕРЕИГРАТЬ» — закрывает экран отчёта
 
 ---
 
@@ -696,15 +647,20 @@ app/
 components/
 └── game/
     └── report/
-        ├── FinalReportButton.tsx                # Client Component, кнопка на dashboard
-        ├── FinalReportModal.tsx                 # Client Component, главная модалка
-        ├── ReportQuestion.tsx                   # Client Component, один вопрос с radio
-        └── ReportResult.tsx                     # Client Component, результат + текст финала
+        ├── FinalReportButton.tsx                # Client — кнопка под чатом «Анонима»
+        ├── FinalReportView.tsx                  # Client — экран отчёта (без модалки)
+        ├── ReportQuestion.tsx                   # Client — один вопрос с radio
+        └── ReportResult.tsx                     # Client — результат + ссылки + концовка
 
 lib/
 ├── final-report/
 │   ├── availability.ts                          # checkAvailability(userId)
+│   ├── submit.ts                                # submitReport(userId, body) — Task 2
+│   ├── result.ts                                # getResult(userId) — Task 2
+│   ├── isFinalChoiceQuestion.ts                 # проверка финального вопроса-указателя
 │   └── validate.ts                              # validateReportConfig() — для админки
+├── validations/
+│   └── final-report.ts                          # submitSchema + SubmitBody
 
 constants/
 └── reportFinalChoices.ts                        # REPORT_FINAL_CHOICES — источник правды
@@ -728,15 +684,15 @@ constants/
 
 7. **Логирование результата** — пишется ОДИН лог `final_report_submitted` с процентом. Текст шаблона: `"Финальный отчёт сдан. Результат: {percent}%"`.
 
-8. **При перезапуске игры** — `GameProgress.finalReportDone` и `finalScore` обнуляются (UPDATE на дефолты). Игрок может сдать заново. См. `restart.md`.
+8. **При перезапуске игры** — `GameProgress.finalReportDone`, `finalScore`, `finalReportChoice`, `finalReportAnswers` обнуляются (UPDATE на дефолты). Игрок может сдать заново. См. `restart.md`.
 
-9. **`correctCount` в `/result` — приближённый**, рассчитывается обратно из процента. Это намеренное упрощение MVP. Если заказчик попросит точные цифры — нужно сохранять ответы игрока в `GameProgress.metadata`.
-
-10. **Валидатор связности `/api/admin/report/validate`** — обязательный инструмент для админки. Сверяет `FinalReportContent` с `REPORT_FINAL_CHOICES` (без обращения к чату). Запускается:
+9. **Валидатор связности `/api/admin/report/validate`** — обязательный инструмент для админки. Сверяет `FinalReportContent` с `REPORT_FINAL_CHOICES` (без обращения к чату). Запускается:
     - При входе в админский раздел `report` (баннер-предупреждение)
     - После любого изменения `FinalReportContent`
 
-11. **Никогда не возвращать клиенту:** `correctOption` в игровом API `/questions`. `/submit` принимает `expectedVersion` в теле, возвращает обновлённую `version` в ответе. При несовпадении — HTTP 409. Двойная защита: `version` + бизнес-флаг `finalReportDone` (запрет повторной отправки). См. `.docs/modules/concurrency.md`.
+10. **Никогда не возвращать клиенту:** `correctOption` в игровом API `/questions`. `/submit` принимает `expectedVersion` в теле, возвращает обновлённую `version` в ответе. При несовпадении — HTTP 409. Двойная защита: `version` + бизнес-флаг `finalReportDone` (запрет повторной отправки). См. `.docs/modules/concurrency.md`.
+
+11. **Снапшот ответов** — `GameProgress.finalReportAnswers` сохраняется при submit. `/result` читает снапшот, а не пересчитывает из текущих вопросов в БД.
 
 ---
 
@@ -748,5 +704,5 @@ constants/
 - **`logs.md`** — используется шаблон `final_report_submitted` с параметром `percent`.
 - **`chats.md`** — `ChatState.detectiveFinished` — триггер доступности отчёта. `ChatState.finalChoice` — legacy, не используется модулем отчёта.
 - **`onboarding.md`** — кнопка «Финальный отчёт» имеет `data-onboarding-id` (если решим включить в онбординг — пока нет, см. `onboarding.md`).
-- **`restart.md`** — UPDATE `GameProgress`: `finalReportDone=false`, `finalScore=null`. ChatState тоже обнуляется.
+- **`restart.md`** — UPDATE `GameProgress`: `finalReportDone=false`, `finalScore=null`, `finalReportChoice=null`, `finalReportAnswers=null`. ChatState тоже обнуляется.
 - **`admin.md`** — раздел report: CRUD вопросов, CRUD контентов концовок, валидатор связности.

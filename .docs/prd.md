@@ -477,13 +477,13 @@ Singleton-таблица. Хранит: `defaultMarketingConsent` (дефолт 
 
 ### Фаза 17 — Финальный отчёт: игровая часть
 
-**Цель:** После выполнения двойного триггера игрок сдаёт отчёт, видит результат и текст концовки.
+**Цель:** После завершения чата Детектива (`detectiveFinished`) игрок сдаёт отчёт, видит результат и текст концовки.
 
 Что должно работать:
 
 - GET /api/final-report/availability, GET /questions, POST /submit, GET /result
-- FinalReport + ReportQuestion
-- Двойной триггер (все активные миссии пройдены + finalChoice зафиксирован)
+- FinalReportView + ReportQuestion + ReportResult
+- Одиночный триггер `detectiveFinished`
 - Защита от повторной сдачи
 
 ### Фаза 18 — Онбординг
