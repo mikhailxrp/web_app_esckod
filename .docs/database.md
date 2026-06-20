@@ -177,7 +177,7 @@ model GameProgress {
   finalReportDone      Boolean   @default(false)
   finalScore           Int?      // процент правильных ответов (только контрольные вопросы)
   finalReportChoice    String?   // UPPERCASE: ACCUSE | PROTECT — выбор концовки
-  finalReportAnswers   Json?     // снапшот [{ questionText, selectedLabel, isCorrect }]
+  finalReportAnswers   Json?     // снапшот [{ questionText, selectedLabel, isCorrect, isFinalQuestion }]
   version              Int       @default(0)  // optimistic locking — см. .docs/modules/concurrency.md
 
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)

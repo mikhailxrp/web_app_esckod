@@ -211,7 +211,7 @@ async function submitReport(userId: string, body: SubmitBody) {
 
   let correctCount = 0;
   let controlCount = 0;
-  const answerSnapshot: Array<{ questionText: string; selectedLabel: string; isCorrect: boolean }> = [];
+  const answerSnapshot: Array<{ questionText: string; selectedLabel: string; isCorrect: boolean; isFinalQuestion: boolean }> = [];
 
   for (const q of questions) {
     const userAnswer = answers.find(a => a.questionId === q.id);
@@ -233,6 +233,7 @@ async function submitReport(userId: string, body: SubmitBody) {
       questionText: q.questionText,
       selectedLabel: options[userAnswer.selectedOption],
       isCorrect,
+      isFinalQuestion,
     });
 
     if (!isFinalQuestion) {
@@ -263,7 +264,7 @@ async function submitReport(userId: string, body: SubmitBody) {
   });
   // Если count === 0 → HTTP 409 VERSION_CONFLICT
 
-  await writeLog({ userId, templateKey: 'final_report_submitted', params: { percent: percent.toString() } });
+  await writeLog({ userId, templateKey: 'final_report_submitted', params: { percent: percent.toString() }, type: LogType.SUCCESS });
 
   return {
     success: true,
@@ -437,7 +438,7 @@ async function getResult(userId: string) {
     isCorrect: boolean;
   }>;
 
-  const controlAnswers = answers.filter(a => /* не финальный вопрос — определяется по isFinalChoiceQuestion при submit */);
+  const controlAnswers = answers.filter(a => !a.isFinalQuestion);
   const correctCount = controlAnswers.filter(a => a.isCorrect).length;
   const totalCount = controlAnswers.length;
 
