@@ -126,6 +126,8 @@ await prisma.$transaction([
 
 ## Логика показа
 
+**Первое сообщение Детектива ← завершение онбординга:** `POST /api/onboarding/complete` → клиент вызывает `chatStore.refresh()` → `GET /api/chat/state` → `getChatState(userId, true)` → `ensureChatStarted('DETECTIVE')` → первая реплика.
+
 ### Условие показа
 
 Онбординг показывается, если **все** условия выполнены:

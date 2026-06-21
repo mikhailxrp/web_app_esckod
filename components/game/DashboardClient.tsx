@@ -21,11 +21,13 @@ const MISSION_ORDER: MissionType[] = ["CRACK", "DECIPHER", "RDP"];
 interface DashboardClientProps {
   activeMissionTypes: MissionType[];
   playerLogin: string;
+  onboardingDone: boolean;
 }
 
 export function DashboardClient({
   activeMissionTypes,
   playerLogin,
+  onboardingDone,
 }: DashboardClientProps): React.ReactElement {
   const refresh = useChatStore((s) => s.refresh);
   const marinaVisible = useChatStore((s) => s.marina.isVisible);
@@ -36,8 +38,14 @@ export function DashboardClient({
   const [reportAlreadySubmitted, setReportAlreadySubmitted] = useState(false);
 
   useEffect(() => {
+    if (onboardingDone) {
+      void refresh();
+    }
+  }, [refresh, onboardingDone]);
+
+  const handleOnboardingComplete = (): void => {
     void refresh();
-  }, [refresh]);
+  };
 
   const visibleMissions = MISSION_ORDER.filter((type) =>
     activeMissionTypes.includes(type),

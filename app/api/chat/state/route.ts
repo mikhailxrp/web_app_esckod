@@ -13,11 +13,11 @@ export async function GET(): Promise<NextResponse> {
   }
 
   try {
-    const state = await getChatState(session.user.id);
     const user = await prisma.user.findUniqueOrThrow({
       where: { id: session.user.id },
-      select: { email: true },
+      select: { email: true, onboardingDone: true },
     });
+    const state = await getChatState(session.user.id, user.onboardingDone);
     const vars = { email: user.email };
 
     return NextResponse.json({
