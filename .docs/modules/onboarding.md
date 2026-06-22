@@ -91,36 +91,44 @@ export const ONBOARDING_TARGETS = {
 ## Интеграция в DashboardClient
 
 ```ts
-// Новый стейт
+// Стейт сцены и текущего шага
 const [demoScene, setDemoScene] = useState<OnboardingScene | null>(null);
+const [currentStepId, setCurrentStepId] = useState<number>(1);
+const [onboardingActive, setOnboardingActive] = useState(!onboardingDone);
+
+// Payload текущего шага — достаём из реестра по ID
+const currentStepPayload = ONBOARDING_STEPS.find(
+  (s) => s.id === currentStepId,
+)?.demoPayload;
 
 // Рендер тура
-{!onboardingDone && (
+{onboardingActive && (
   <OnboardingController
+    playerLogin={playerLogin}
     onSceneChange={setDemoScene}
+    onStepChange={setCurrentStepId}   // per-step demo-состояние
     onComplete={handleOnboardingComplete}
   />
 )}
 
 // Показываем demo-панель когда сцена активна (не 'base' и не 'chat-final')
 const showDemoPanel =
-  !onboardingDone &&
+  onboardingActive &&
   demoScene !== null &&
   demoScene !== 'base' &&
   demoScene !== 'chat-final';
 ```
 
-Когда `showDemoPanel === true`, секция миссий показывает соответствующую demo-панель вместо боевых панелей:
+Когда `showDemoPanel === true`, секция миссий показывает соответствующую demo-панель вместо боевых панелей. `currentStepPayload` передаётся в панель как `demoState` — панель рендерит строго скриптовое состояние этого шага:
 
 | `demoScene` | Что рендерится |
 |---|---|
-| `'crack-launch'` | `<MissionCard missionType="CRACK" demo />` |
-| `'crack-game'` / `'crack-done'` | `<CrackGamePanel demo demoState={...} onClose={() => {}} />` |
-| `'decipher-launch'` | `<MissionCard missionType="DECIPHER" demo />` |
-| `'decipher-game'` / `'decipher-done'` | `<DecipherGamePanel demo demoState={...} onClose={() => {}} />` |
-| `'rdp-launch'` | `<MissionCard missionType="RDP" demo />` |
-| `'rdp-game'` | `<RdpGamePanel connectResult={DEMO_RDP_CONNECT_RESULT} demo demoState={...} onClose={() => {}} />` |
+| `'crack-launch'` / `'crack-game'` / `'crack-done'` | `<CrackGamePanel demo demoState={currentStepPayload?.crackDemo} onClose={() => {}} />` |
+| `'decipher-launch'` / `'decipher-game'` / `'decipher-done'` | `<DecipherGamePanel demo demoState={currentStepPayload?.decipherDemo} onClose={() => {}} />` |
+| `'rdp-launch'` / `'rdp-game'` | `<RdpGamePanel connectResult={DEMO_RDP_CONNECT_RESULT} demo demoState={currentStepPayload?.rdpDemo} onClose={() => {}} />` |
 | `'base'` / `null` / `'chat-final'` | Обычный dashboard |
+
+Шаг 10: `currentStepPayload?.demoLogEntries` передаётся в `<OperationHistory demoEntries={...} />` — показывает бутафорские записи, не дёргая API.
 
 ---
 
@@ -140,11 +148,87 @@ interface XxxGamePanelProps {
 - `useEffect` с `loadState()` пропускается (`if (demo) return`)
 - `view` / `stage` остаётся в `{ phase: 'loading' }` — панель показывает заглушку
 - Реальные API (`/api/missions/*`, `/api/logs/*`, `/api/progress/*`) **не вызываются**
-- `demoState` используется в Таске 3 для инициализации скриптовых состояний
+- Второй `useEffect` подхватывает `demoState` и инициализирует скриптовое состояние
 
 `MissionCard` при `demo === true`:
 - Кнопка «Открыть» вызывает `onDemoStart?.()` вместо открытия модала
 - Форма запуска (`/api/missions/*/launch`) не вызывается
+
+---
+
+## Типы demo-состояний (types/onboarding.ts)
+
+```ts
+// Фазы demo-панели взломщика
+type CrackDemoPhase = 'launch' | 'playing' | 'completed';
+
+interface CrackDemoAttempt {
+  word: string;
+  positions: LetterStatus[];
+}
+
+interface CrackDemoState {
+  slotKey: string;
+  phase: CrackDemoPhase;
+  attempts?: CrackDemoAttempt[];
+  wordleSpotlight?: 'word-list' | 'attempt-panel';
+  inputWord?: string;           // значение поля «Ключ» (шаг 8)
+  resultPassword?: string;      // пароль на экране «Доступ предоставлен»
+  targetUrl?: string;
+  targetEmail?: string;
+  passwordCopied?: boolean;     // показать «скопировано» (шаг 10)
+}
+
+// Фазы demo-панели дешифратора
+type DecipherDemoPhase = 'launch' | 'playing' | 'completed';
+
+interface DecipherDemoState {
+  slotKey: string;
+  phase?: DecipherDemoPhase;
+  encryptedWord?: string;       // шифр (шаги 13–15)
+  cipherKey?: string;
+  folderName?: string;
+  playfairTable?: string[][];   // если не указана — вычисляется из cipherKey
+  inputWord?: string;           // значение поля «Расшифрованное слово»
+  folderPath?: string;          // путь к папке (шаг 16)
+  folderPassword?: string;      // пароль папки (шаг 16)
+  passwordCopied?: boolean;
+}
+
+// Фазы demo-панели RDP
+type RdpDemoPhase = 'launch' | 'puzzle';
+
+interface RdpDemoState {
+  phase?: RdpDemoPhase;
+  puzzleField?: PuzzleField;    // если не указано — берётся DEMO_RDP_PUZZLE_FIELD
+}
+
+// Бутафорская запись «Истории действий» (шаг 10)
+interface OnboardingDemoLogEntry {
+  id: string;
+  type: 'SUCCESS' | 'ERROR' | 'INFO';
+  message: string;
+  createdAt: string;
+}
+
+// Контейнер payload одного шага
+interface DemoPayload {
+  crackDemo?: CrackDemoState;
+  decipherDemo?: DecipherDemoState;
+  rdpDemo?: RdpDemoState;
+  demoLogEntries?: OnboardingDemoLogEntry[];
+}
+```
+
+### Механизм per-step payload
+
+1. `OnboardingController` принимает `onStepChange?: (stepId: number) => void` и вызывает его при каждой смене шага.
+2. `DashboardClient` хранит `currentStepId` в стейте и обновляет его через `onStepChange`.
+3. `currentStepPayload = ONBOARDING_STEPS.find(s => s.id === currentStepId)?.demoPayload` — достаём payload текущего шага из реестра.
+4. `currentStepPayload` передаётся в активную demo-панель как `demoState`.
+5. Внутри панели второй `useEffect([demo, demoState])` перерисовывает `view` / `stage` при каждой смене шага — без обращений к API.
+
+Это позволяет одной сцене (например, `crack-game`) показывать разные состояния доски на шагах 5, 6, 7, 8 без перемонтирования компонента.
 
 ---
 

@@ -103,6 +103,7 @@ export function OnboardingTooltip({
   playerLogin,
   onNext,
   targetRect,
+  isLastStep,
 }: OnboardingTooltipProps): React.ReactElement {
   const stepNumber = currentIndex + 1;
   const resolvedText = resolveText(step.text, playerLogin);
@@ -134,7 +135,10 @@ export function OnboardingTooltip({
       bubbleTailOffset={step.bubbleTailOffset}
       bubbleShiftX={step.bubbleShiftX}
       bubbleShiftY={step.bubbleShiftY}
+      bubbleFontSize={step.bubbleFontSize}
+      bubbleLineHeight={step.bubbleLineHeight}
       targetRect={targetRect}
+      isLastStep={isLastStep}
       onNext={onNext}
     />
   );

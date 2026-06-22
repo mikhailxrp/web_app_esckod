@@ -3,6 +3,7 @@
 import type { BubbleAnchor, TooltipPlacement } from "@/types/onboarding";
 
 const BUBBLE_FONT_SIZE = 14;
+const BUBBLE_LINE_HEIGHT_RATIO = 1.625;
 const BUBBLE_BUTTON_RADIUS = 14;
 const BUBBLE_BUTTON_BG = "#44DFD7";
 const BUBBLE_BG = "rgba(255, 255, 255, 0.30)";
@@ -24,7 +25,10 @@ interface OnboardingBubbleProps {
   bubbleTailOffset?: number;
   bubbleShiftX?: number;
   bubbleShiftY?: number;
+  bubbleFontSize?: number;
+  bubbleLineHeight?: number;
   targetRect: DOMRect | null;
+  isLastStep?: boolean;
   onNext: () => void;
 }
 
@@ -241,9 +245,15 @@ export function OnboardingBubble({
   bubbleTailOffset,
   bubbleShiftX,
   bubbleShiftY,
+  bubbleFontSize,
+  bubbleLineHeight,
   targetRect,
+  isLastStep = false,
   onNext,
 }: OnboardingBubbleProps): React.ReactElement {
+  const fontSize = bubbleFontSize ?? BUBBLE_FONT_SIZE;
+  const lineHeight =
+    bubbleLineHeight ?? Math.round(fontSize * BUBBLE_LINE_HEIGHT_RATIO);
   const layout: BubbleLayout = {
     tailSize: bubbleTailSize ?? BUBBLE_TAIL_SIZE,
     tailOffset: bubbleTailOffset ?? BUBBLE_TAIL_OFFSET,
@@ -278,8 +288,8 @@ export function OnboardingBubble({
         }}
       >
         <p
-          className="mb-3 whitespace-pre-line text-left leading-relaxed"
-          style={{ fontSize: `${BUBBLE_FONT_SIZE}px`, color: "#ffffff" }}
+          className="mb-3 whitespace-pre-line text-left"
+          style={{ fontSize: `${fontSize}px`, lineHeight: `${lineHeight}px`, color: "#ffffff" }}
         >
           {text}
         </p>
@@ -289,12 +299,12 @@ export function OnboardingBubble({
           onClick={onNext}
           className="px-5 py-1.5 font-bold text-bg-primary transition-opacity hover:opacity-80"
           style={{
-            fontSize: `${BUBBLE_FONT_SIZE}px`,
+            fontSize: `${fontSize}px`,
             backgroundColor: BUBBLE_BUTTON_BG,
             borderRadius: `${BUBBLE_BUTTON_RADIUS}px`,
           }}
         >
-          далее
+          {isLastStep ? 'завершить инструктаж' : 'далее'}
         </button>
 
         {placement !== "center" && (

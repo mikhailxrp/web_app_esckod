@@ -6,6 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { ReactElement } from 'react';
 
+import { ONBOARDING_TARGETS } from '@/constants/onboardingSteps';
+
 const decipherAttemptSchema = z.object({
   decryptedWord: z.string().min(1).max(50),
 });
@@ -83,6 +85,7 @@ export function DecipherInput({
         type="submit"
         disabled={isDisabled}
         aria-busy={isLoading}
+        data-onboarding-id={ONBOARDING_TARGETS.DECIPHER_CONFIRM}
         className="mt-1 h-input-height w-full rounded-game-full bg-accent font-mono text-game-sm uppercase tracking-game-wide text-content-inverse transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         Подтвердить

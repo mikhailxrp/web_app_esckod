@@ -20,6 +20,8 @@ import type {
   RdpScenario,
 } from '@/types/rdp';
 import type { RdpDemoState } from '@/types/onboarding';
+import { ONBOARDING_TARGETS } from '@/constants/onboardingSteps';
+import { DEMO_RDP_INSTRUCTION_HINT, DEMO_RDP_PUZZLE_FIELD } from '@/constants/rdpOnboardingDemo';
 
 // ─── Типы стадий ─────────────────────────────────────────────────────────────
 
@@ -50,7 +52,12 @@ interface RdpGamePanelProps {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function RdpGamePanel({ connectResult, onClose, demo = false }: RdpGamePanelProps): ReactElement {
+export function RdpGamePanel({
+  connectResult,
+  onClose,
+  demo = false,
+  demoState,
+}: RdpGamePanelProps): ReactElement {
   const { slotKey, displayName, rdpScenario, isCompleted, hintText } = connectResult;
 
   const [stage, setStage] = useState<Stage>(
@@ -119,6 +126,20 @@ export function RdpGamePanel({ connectResult, onClose, demo = false }: RdpGamePa
     }
   }, [isCompleted, loadState, demo]);
 
+  // Demo: инициализируем пазл из demoState (не обращаемся к API)
+  useEffect(() => {
+    if (!demo || demoState?.phase !== 'puzzle') return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setStage({
+      phase: 'puzzle',
+      data: {
+        field: demoState.puzzleField ?? DEMO_RDP_PUZZLE_FIELD,
+        version: 0,
+        canSkip: false,
+      },
+    });
+  }, [demo, demoState]);
+
   const handleSolved = useCallback(async (): Promise<void> => {
     setStage({ phase: 'files' });
     await refreshLogs();
@@ -160,9 +181,11 @@ export function RdpGamePanel({ connectResult, onClose, demo = false }: RdpGamePa
   }, [refreshLogs, refreshChat]);
 
   const activeHintText =
-    stage.phase === 'puzzle' || stage.phase === 'loading' || stage.phase === 'error'
-      ? hintText
-      : null;
+    demo && demoState?.phase === 'puzzle'
+      ? DEMO_RDP_INSTRUCTION_HINT
+      : stage.phase === 'puzzle' || stage.phase === 'loading' || stage.phase === 'error'
+        ? hintText
+        : null;
 
   // Close (X) is hidden during files stage for scenario 1 until first folder is unlocked
   const showCloseButton =
@@ -172,6 +195,7 @@ export function RdpGamePanel({ connectResult, onClose, demo = false }: RdpGamePa
     <article
       className="relative flex flex-col overflow-hidden rounded-game-lg border border-border bg-[rgba(255,255,255,0.08)] shadow-game-card"
       aria-label="Удалённый доступ"
+      data-onboarding-id={ONBOARDING_TARGETS.RDP_MISSION_CARD}
     >
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-border px-5 py-3">
@@ -251,7 +275,34 @@ export function RdpGamePanel({ connectResult, onClose, demo = false }: RdpGamePa
 
       {/* Body — no inner padding for files stage (desktop fills the area) */}
       <div className={stage.phase === 'files' ? '' : 'p-6'}>
-        {stage.phase === 'loading' ? (
+        {demo && demoState?.phase === 'launch' ? (
+          <div className="flex min-h-[360px] flex-1 items-center justify-center px-6 py-8">
+            <div className="mx-auto flex w-full max-w-[420px] flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <span className="font-mono text-game-base text-content-secondary">
+                  IP адрес
+                </span>
+                <input
+                  readOnly
+                  value=""
+                  aria-label="IP адрес"
+                  data-onboarding-id={ONBOARDING_TARGETS.RDP_FORM}
+                  className="h-input-height w-full rounded-game-lg border border-border bg-bg-input px-4 font-mono text-game-base text-content-primary focus:outline-none"
+                />
+              </div>
+              <button
+                type="button"
+                disabled
+                className="mt-2 h-input-height w-full rounded-game-full bg-accent font-mono text-game-sm uppercase tracking-game-wide text-content-inverse disabled:opacity-80"
+              >
+                Начать
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {stage.phase === 'loading' &&
+        !(demo && (demoState?.phase === 'launch' || demoState?.phase === 'puzzle')) ? (
           <div className="flex min-h-[300px] items-center justify-center">
             <GameLoader />
           </div>
@@ -283,6 +334,7 @@ export function RdpGamePanel({ connectResult, onClose, demo = false }: RdpGamePa
             onSolved={handleSolved}
             onSkip={handleSkip}
             onLoadState={loadState}
+            demo={demo}
           />
         ) : null}
 

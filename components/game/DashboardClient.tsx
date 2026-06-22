@@ -14,8 +14,9 @@ import { RdpGamePanel } from "@/components/game/rdp/RdpGamePanel";
 import { FinalReportButton } from "@/components/game/report/FinalReportButton";
 import { FinalReportView } from "@/components/game/report/FinalReportView";
 import { OnboardingController } from "@/components/game/onboarding/OnboardingController";
+import { ONBOARDING_STEPS } from "@/constants/onboardingSteps";
 import { useChatStore } from "@/store/chatStore";
-import type { OnboardingScene } from "@/types/onboarding";
+import type { DemoPayload, OnboardingScene } from "@/types/onboarding";
 import type { RdpConnectResult } from "@/types/rdp";
 
 const MISSION_ORDER: MissionType[] = ["CRACK", "DECIPHER", "RDP"];
@@ -30,55 +31,47 @@ const DEMO_RDP_CONNECT_RESULT: RdpConnectResult = {
   hintText: null,
 };
 
-function renderDemoMissionsContent(demoScene: OnboardingScene): React.ReactNode {
+function renderDemoMissionsContent(
+  demoScene: OnboardingScene,
+  demoPayload: DemoPayload | undefined,
+): React.ReactNode {
   switch (demoScene) {
     case "crack-launch":
-      return (
-        <div className="rounded-game-lg border border-border p-4">
-          <div className="grid grid-cols-1 gap-4 2xl:grid-cols-3">
-            <MissionCard missionType="CRACK" demo />
-          </div>
-        </div>
-      );
-
     case "crack-game":
     case "crack-done":
       return (
         <CrackGamePanel
           slotKey="__demo_crack__"
           demo
-          demoState={{ slotKey: "__demo_crack__" }}
+          demoState={
+            demoPayload?.crackDemo ?? { slotKey: "__demo_crack__", phase: "launch" }
+          }
           onClose={() => {}}
         />
       );
 
     case "decipher-launch":
-      return (
-        <div className="rounded-game-lg border border-border p-4">
-          <div className="grid grid-cols-1 gap-4 2xl:grid-cols-3">
-            <MissionCard missionType="DECIPHER" demo />
-          </div>
-        </div>
-      );
-
     case "decipher-game":
     case "decipher-done":
       return (
         <DecipherGamePanel
           slotKey="__demo_decipher__"
           demo
-          demoState={{ slotKey: "__demo_decipher__" }}
+          demoState={
+            demoPayload?.decipherDemo ?? { slotKey: "__demo_decipher__", phase: "launch" }
+          }
           onClose={() => {}}
         />
       );
 
     case "rdp-launch":
       return (
-        <div className="rounded-game-lg border border-border p-4">
-          <div className="grid grid-cols-1 gap-4 2xl:grid-cols-3">
-            <MissionCard missionType="RDP" demo />
-          </div>
-        </div>
+        <RdpGamePanel
+          connectResult={DEMO_RDP_CONNECT_RESULT}
+          demo
+          demoState={demoPayload?.rdpDemo ?? { phase: "launch" }}
+          onClose={() => {}}
+        />
       );
 
     case "rdp-game":
@@ -86,7 +79,7 @@ function renderDemoMissionsContent(demoScene: OnboardingScene): React.ReactNode 
         <RdpGamePanel
           connectResult={DEMO_RDP_CONNECT_RESULT}
           demo
-          demoState={{ connectResult: "pending" }}
+          demoState={demoPayload?.rdpDemo ?? { phase: "puzzle" }}
           onClose={() => {}}
         />
       );
@@ -115,6 +108,9 @@ export function DashboardClient({
   const [reportOpen, setReportOpen] = useState(false);
   const [reportAlreadySubmitted, setReportAlreadySubmitted] = useState(false);
   const [demoScene, setDemoScene] = useState<OnboardingScene | null>(null);
+  const [currentStepId, setCurrentStepId] = useState<number>(1);
+  // Локальный флаг — становится false сразу при завершении тура (до следующего SSR)
+  const [onboardingActive, setOnboardingActive] = useState(!onboardingDone);
 
   useEffect(() => {
     if (onboardingDone) {
@@ -123,6 +119,7 @@ export function DashboardClient({
   }, [refresh, onboardingDone]);
 
   const handleOnboardingComplete = (): void => {
+    setOnboardingActive(false);
     void refresh();
   };
 
@@ -132,18 +129,23 @@ export function DashboardClient({
 
   // Показываем demo-панель когда сцена активна (не 'base' и не 'chat-final')
   const showDemoPanel =
-    !onboardingDone &&
+    onboardingActive &&
     demoScene !== null &&
     demoScene !== "base" &&
     demoScene !== "chat-final";
 
+  const currentStepPayload = ONBOARDING_STEPS.find(
+    (s) => s.id === currentStepId,
+  )?.demoPayload;
+
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[1440px] flex-col gap-6 px-11 py-6">
       {/* Онбординг-тур — рендерится поверх через fixed positioning */}
-      {!onboardingDone && (
+      {onboardingActive && (
         <OnboardingController
           playerLogin={playerLogin}
           onSceneChange={setDemoScene}
+          onStepChange={setCurrentStepId}
           onComplete={handleOnboardingComplete}
         />
       )}
@@ -175,7 +177,7 @@ export function DashboardClient({
             {/* Missions section — shows game panel when a mission is active */}
             <section aria-label="Миссии" data-onboarding-id="mission-tiles">
               {showDemoPanel ? (
-                renderDemoMissionsContent(demoScene)
+                renderDemoMissionsContent(demoScene, currentStepPayload)
               ) : activeCrackSlotKey ? (
                 <CrackGamePanel
                   slotKey={activeCrackSlotKey}
@@ -202,6 +204,7 @@ export function DashboardClient({
                           onCrackLaunched={setActiveCrackSlotKey}
                           onDecipherLaunched={setActiveDecipherSlotKey}
                           onRdpLaunched={setActiveRdpConnect}
+                          demo={onboardingActive}
                         />
                       ))}
                     </div>
@@ -217,7 +220,7 @@ export function DashboardClient({
             </section>
 
             <div data-onboarding-id="operation-history">
-              <OperationHistory />
+              <OperationHistory demoEntries={currentStepPayload?.demoLogEntries} />
             </div>
           </div>
 
@@ -227,7 +230,10 @@ export function DashboardClient({
             aria-label="Чат-панели"
           >
             <div data-onboarding-id="chat-detective">
-              <ChatPanel chatType="DETECTIVE" />
+              <ChatPanel
+                chatType="DETECTIVE"
+                demoTyping={onboardingActive && currentStepId === 22}
+              />
             </div>
             {marinaVisible && (
               <>

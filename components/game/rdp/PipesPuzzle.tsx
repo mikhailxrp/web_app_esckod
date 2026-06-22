@@ -13,6 +13,7 @@ import { computePuzzleProgress, isLocallySolved } from '@/lib/rdp/connectivity';
 import type { PuzzleField, TileRotation } from '@/lib/rdp/types';
 import { fetchWithVersion } from '@/lib/api/fetchWithVersion';
 import { useLogStore } from '@/store/logStore';
+import { ONBOARDING_TARGETS } from '@/constants/onboardingSteps';
 import type {
   RdpCheckPuzzleResult,
   RdpRotateResult,
@@ -35,6 +36,8 @@ interface PipesPuzzleProps {
   onSolved: () => Promise<void>;
   onSkip: () => Promise<boolean>;
   onLoadState: () => Promise<void>;
+  /** Режим демонстрации в онбординге — без API */
+  demo?: boolean;
 }
 
 export function PipesPuzzle({
@@ -47,6 +50,7 @@ export function PipesPuzzle({
   onSolved,
   onSkip,
   onLoadState,
+  demo = false,
 }: PipesPuzzleProps): ReactElement {
   const [field, setField] = useState<PuzzleField>(initialField);
   const [version, setVersion] = useState(initialVersion);
@@ -65,14 +69,18 @@ export function PipesPuzzle({
       const tile = field.tiles.find((t) => t.id === tileId);
       if (!tile || tile.isLocked) return;
 
-      setBusy(true);
-
-      // Оптимистичный поворот +90°
       const newRotation = ((tile.rotation + 90) % 360) as TileRotation;
       const optimisticField: PuzzleField = {
         ...field,
         tiles: field.tiles.map((t) => (t.id === tileId ? { ...t, rotation: newRotation } : t)),
       };
+
+      if (demo) {
+        setField(optimisticField);
+        return;
+      }
+
+      setBusy(true);
       setField(optimisticField);
 
       try {
@@ -84,7 +92,6 @@ export function PipesPuzzle({
         if (res.status === 409) return;
 
         if (!res.ok) {
-          // Откат оптимистичного обновления
           setField(field);
           toast.error('Не удалось повернуть плитку.');
           return;
@@ -94,7 +101,6 @@ export function PipesPuzzle({
         setField(result.puzzleField);
         setVersion(result.version);
 
-        // Авто-проверка при локальной связности
         if (isLocallySolved(result.puzzleField) && !checkingRef.current) {
           checkingRef.current = true;
           try {
@@ -128,7 +134,7 @@ export function PipesPuzzle({
         setBusy(false);
       }
     },
-    [busy, field, version, slotKey, onSolved, onLoadState],
+    [busy, field, version, slotKey, onSolved, onLoadState, demo],
   );
 
   const handleTimerExpire = useCallback((): void => {
@@ -213,6 +219,7 @@ export function PipesPuzzle({
       <div className="flex justify-center">
         <div
           className="grid gap-1"
+          data-onboarding-id={ONBOARDING_TARGETS.RDP_PUZZLE}
           style={{
             gridTemplateColumns: `repeat(${field.gridSize}, 64px)`,
             gridTemplateRows: `repeat(${field.gridSize}, 64px)`,

@@ -8,6 +8,8 @@ import { OnboardingTooltip } from './OnboardingTooltip';
 interface OnboardingControllerProps {
   playerLogin: string;
   onSceneChange: (scene: OnboardingScene) => void;
+  /** Вызывается при каждой смене шага — передаёт step.id для per-step demo-состояния */
+  onStepChange?: (stepId: number) => void;
   onComplete: () => void;
 }
 
@@ -16,6 +18,7 @@ const TOTAL = ONBOARDING_STEPS.length;
 export function OnboardingController({
   playerLogin,
   onSceneChange,
+  onStepChange,
   onComplete,
 }: OnboardingControllerProps): React.ReactElement {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -37,12 +40,13 @@ export function OnboardingController({
 
   useEffect(() => {
     onSceneChange(step.scene);
+    onStepChange?.(step.id);
     // Небольшая задержка для случаев когда сцена меняется и DOM перерисовывается
     const timeout = setTimeout(() => {
       updateTargetRect();
     }, 80);
     return () => clearTimeout(timeout);
-  }, [step, onSceneChange, updateTargetRect]);
+  }, [step, onSceneChange, onStepChange, updateTargetRect]);
 
   /** Пересчёт при ресайзе/скролле */
   useEffect(() => {

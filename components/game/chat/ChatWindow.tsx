@@ -10,6 +10,8 @@ import type { ChatAuthor, ChatType } from '@/types/chat';
 
 interface ChatWindowProps {
   chatType: ChatType;
+  /** Demo «Детектив печатает…» в онбординге (шаг 22) */
+  demoTyping?: boolean;
 }
 
 const TYPING_AUTHOR_LABEL: Partial<Record<ChatAuthor, string>> = {
@@ -18,7 +20,7 @@ const TYPING_AUTHOR_LABEL: Partial<Record<ChatAuthor, string>> = {
   ANONYMOUS: 'Аноним',
 };
 
-export function ChatWindow({ chatType }: ChatWindowProps): React.ReactElement {
+export function ChatWindow({ chatType, demoTyping = false }: ChatWindowProps): React.ReactElement {
   const slot = useChatStore((s) =>
     chatType === 'DETECTIVE' ? s.detective : s.marina,
   );
@@ -27,9 +29,9 @@ export function ChatWindow({ chatType }: ChatWindowProps): React.ReactElement {
   // Scroll to bottom when new messages appear or typing indicator shows
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [slot.messages.length, slot.isTyping]);
+  }, [slot.messages.length, slot.isTyping, demoTyping]);
 
-  if (slot.status === 'loading' && slot.messages.length === 0) {
+  if (slot.status === 'loading' && slot.messages.length === 0 && !demoTyping) {
     return (
       <div className="flex flex-1 items-center justify-center py-8" role="status" aria-label="Загрузка чата">
         <span
@@ -67,13 +69,18 @@ export function ChatWindow({ chatType }: ChatWindowProps): React.ReactElement {
     slot.messages.length > 0;
 
   const typingAuthor = slot.pendingMessage?.author;
-  const typingLabel = typingAuthor ? (TYPING_AUTHOR_LABEL[typingAuthor] ?? null) : null;
+  const typingLabel = demoTyping
+    ? 'Детектив'
+    : typingAuthor
+      ? (TYPING_AUTHOR_LABEL[typingAuthor] ?? null)
+      : null;
+  const showTyping = demoTyping || slot.isTyping;
 
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-hidden">
       {/* Message feed */}
       <div className="chat-scrollbar flex flex-1 flex-col gap-3 overflow-y-auto pr-1">
-        {slot.messages.length === 0 ? (
+        {slot.messages.length === 0 && !showTyping ? (
           <p className="py-4 text-center font-mono text-game-sm text-content-muted" role="status">
             Нет сообщений
           </p>
@@ -93,7 +100,7 @@ export function ChatWindow({ chatType }: ChatWindowProps): React.ReactElement {
         )}
 
         {/* Typing indicator */}
-        {slot.isTyping && typingLabel && (
+        {showTyping && typingLabel && (
           <div
             className="flex flex-col gap-1"
             role="status"

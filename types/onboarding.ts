@@ -1,3 +1,5 @@
+import type { LetterStatus } from '@/types/crack';
+
 export type OnboardingScene =
   | 'base'
   | 'crack-launch'
@@ -40,26 +42,84 @@ export interface OnboardingStep {
   bubbleTailOffset?: number;
   /** Сдвиг пузырька вместе с хвостиком по горизонтали (px). Отрицательный — влево */
   bubbleShiftX?: number;
-  /** Сдвиг пузырька вместе с хвостиком по вертикали (px). Положительный — вниз */
+  /** Сдвиг пузырька вместе с хвостиком по вертикали (px). Отрицательный — вниз */
   bubbleShiftY?: number;
+  /** Размер шрифта текста и кнопки внутри пузырька (px). По умолчанию — 14 */
+  bubbleFontSize?: number;
+  /** Межстрочный интервал текста внутри пузырька (px). По умолчанию — fontSize × 1.625 */
+  bubbleLineHeight?: number;
   demoPayload?: DemoPayload;
 }
 
 /** Демо-состояния передаются в панели через DashboardClient (TASK-2) */
+export interface OnboardingDemoLogEntry {
+  id: string;
+  type: 'SUCCESS' | 'ERROR' | 'INFO';
+  message: string;
+  createdAt: string;
+}
+
 export interface DemoPayload {
   crackDemo?: CrackDemoState;
   decipherDemo?: DecipherDemoState;
   rdpDemo?: RdpDemoState;
+  /** Бутафорские записи «Истории действий» (шаг 10) */
+  demoLogEntries?: OnboardingDemoLogEntry[];
+}
+
+/** Фаза демо-панели взломщика — задаёт, что рендерить в demo-режиме */
+export type CrackDemoPhase = 'launch' | 'playing' | 'completed';
+
+export interface CrackDemoAttempt {
+  word: string;
+  positions: LetterStatus[];
 }
 
 export interface CrackDemoState {
   slotKey: string;
+  phase: CrackDemoPhase;
+  /** Список попыток для demo playing (шаги 5–8) */
+  attempts?: CrackDemoAttempt[];
+  /** Какая часть доски подсвечивается: список слов (шаг 5) или панель попыток (шаги 6–8) */
+  wordleSpotlight?: 'word-list' | 'attempt-panel';
+  /** Значение поля «Ключ» в demo playing (шаг 8) */
+  inputWord?: string;
+  /** Данные экрана «Доступ предоставлен» в demo completed (шаги 9–10) */
+  resultPassword?: string;
+  targetUrl?: string;
+  targetEmail?: string;
+  /** Показать «скопировано» на экране completed (шаг 10) */
+  passwordCopied?: boolean;
 }
+
+/** Фаза демо-панели дешифратора */
+export type DecipherDemoPhase = 'launch' | 'playing' | 'completed';
 
 export interface DecipherDemoState {
   slotKey: string;
+  phase?: DecipherDemoPhase;
+  /** Demo playing: зашифрованное слово (шаги 13–15) */
+  encryptedWord?: string;
+  cipherKey?: string;
+  folderName?: string;
+  playfairTable?: string[][];
+  /** Значение поля «Расшифрованное слово» */
+  inputWord?: string;
+  /** Demo completed: путь к папке (шаг 16) */
+  folderPath?: string;
+  /** Demo completed: пароль папки (шаг 16) */
+  folderPassword?: string;
+  /** Показать «скопировано» на экране completed (шаг 16) */
+  passwordCopied?: boolean;
 }
 
+import type { PuzzleField } from '@/lib/rdp/types';
+
+export type RdpDemoPhase = 'launch' | 'puzzle';
+
 export interface RdpDemoState {
-  connectResult: 'pending' | 'success';
+  /** Фаза демо-панели RDP: форма IP (шаг 18) или пазл (шаги 19–20) */
+  phase?: RdpDemoPhase;
+  /** Demo puzzle: скриптовое поле (шаги 19–20) */
+  puzzleField?: PuzzleField;
 }

@@ -4,14 +4,24 @@ import { useEffect } from 'react';
 import Image from 'next/image';
 import { LogEntry } from '@/components/game/operation-log/LogEntry';
 import { useLogStore } from '@/store/logStore';
+import type { OperationLogEntry } from '@/store/logStore';
 
-export function OperationHistory(): React.ReactElement {
-  const logs = useLogStore((state) => state.logs);
+interface OperationHistoryProps {
+  /** Бутафорские записи в demo — не вызывает API */
+  demoEntries?: OperationLogEntry[];
+}
+
+export function OperationHistory({
+  demoEntries,
+}: OperationHistoryProps): React.ReactElement {
+  const storeLogs = useLogStore((state) => state.logs);
   const refreshLogs = useLogStore((state) => state.refreshLogs);
+  const logs = demoEntries ?? storeLogs;
 
   useEffect(() => {
+    if (demoEntries) return;
     void refreshLogs();
-  }, [refreshLogs]);
+  }, [refreshLogs, demoEntries]);
 
   return (
     <section
