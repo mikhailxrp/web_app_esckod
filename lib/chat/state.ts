@@ -66,6 +66,15 @@ async function resolveChatSlot(
   isVisible: boolean,
 ): Promise<ChatSlotState> {
   if (!isVisible) {
+    if (chatType === 'DETECTIVE') {
+      return {
+        currentMessage: null,
+        isWaiting: false,
+        isFinished: false,
+        isVisible: true,
+      };
+    }
+
     return {
       currentMessage: null,
       isWaiting: false,
@@ -107,7 +116,10 @@ async function resolveChatSlot(
   return buildSlotFromMessageId(messageId, true);
 }
 
-export async function getChatState(userId: string): Promise<GetChatStateResult> {
+export async function getChatState(
+  userId: string,
+  onboardingDone: boolean = true,
+): Promise<GetChatStateResult> {
   const progress = await prisma.gameProgress.findUnique({
     where: { userId },
     select: { marinaTriggered: true },
@@ -115,7 +127,7 @@ export async function getChatState(userId: string): Promise<GetChatStateResult> 
 
   const marinaTriggered = progress?.marinaTriggered ?? false;
 
-  const detective = await resolveChatSlot(userId, 'DETECTIVE', true);
+  const detective = await resolveChatSlot(userId, 'DETECTIVE', onboardingDone);
   const marina = await resolveChatSlot(userId, 'MARINA', marinaTriggered);
 
   const freshState = await prisma.chatState.findUniqueOrThrow({

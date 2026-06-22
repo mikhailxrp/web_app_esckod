@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Image from 'next/image';
 import type { ReactElement } from 'react';
 
+import { ONBOARDING_TARGETS } from '@/constants/onboardingSteps';
+
 interface RdpHintButtonProps {
   hintText: string | null;
 }
@@ -22,6 +24,7 @@ export function RdpHintButton({ hintText }: RdpHintButtonProps): ReactElement | 
         onClick={() => setOpen((v) => !v)}
         aria-label="Правила миссии"
         aria-expanded={open}
+        data-onboarding-id={ONBOARDING_TARGETS.RDP_INSTRUCTION_BUTTON}
         className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
       >
         <Image src="/assets/icons/info.svg" alt="" width={16} height={16} aria-hidden="true" />

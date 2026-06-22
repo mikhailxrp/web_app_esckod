@@ -11,6 +11,7 @@ import { DecipherSkipButton } from '@/components/game/decipher/DecipherSkipButto
 import { PlayfairTable } from '@/components/game/decipher/PlayfairTable';
 import { VigenereView } from '@/components/game/decipher/VigenereView';
 import { toast } from '@/components/ui/Toast';
+import { buildPlayfairTable } from '@/lib/decipher/playfair';
 import { useChatStore } from '@/store/chatStore';
 import { useLogStore } from '@/store/logStore';
 import type {
@@ -19,6 +20,8 @@ import type {
   DecipherState,
 } from '@/types/decipher';
 import type { CipherType } from '@prisma/client';
+import { ONBOARDING_TARGETS } from '@/constants/onboardingSteps';
+import type { DecipherDemoState } from '@/types/onboarding';
 
 interface PlayingState {
   cipherType: CipherType;
@@ -46,9 +49,17 @@ type View =
 interface DecipherGamePanelProps {
   slotKey: string;
   onClose: () => void;
+  /** Режим демонстрации в онбординге — не вызывает реальный API */
+  demo?: boolean;
+  demoState?: DecipherDemoState;
 }
 
-export function DecipherGamePanel({ slotKey, onClose }: DecipherGamePanelProps): ReactElement {
+export function DecipherGamePanel({
+  slotKey,
+  onClose,
+  demo = false,
+  demoState,
+}: DecipherGamePanelProps): ReactElement {
   const [view, setView] = useState<View>({ phase: 'loading' });
   const [busy, setBusy] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -100,9 +111,44 @@ export function DecipherGamePanel({ slotKey, onClose }: DecipherGamePanelProps):
   }, [slotKey]);
 
   useEffect(() => {
+    if (demo) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadState();
-  }, [loadState]);
+  }, [loadState, demo]);
+
+  // Demo: инициализируем view из demoState (не обращаемся к API)
+  useEffect(() => {
+    if (!demo || !demoState) return;
+    if (demoState.phase === 'launch') return;
+    if (demoState.phase === 'playing') {
+      const cipherKey = demoState.cipherKey ?? 'КЛЮЧ';
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setInputValue(demoState.inputWord ?? '');
+      setView({
+        phase: 'playing',
+        data: {
+          cipherType: 'PLAYFAIR',
+          encryptedWord: demoState.encryptedWord ?? 'ЛМОПРС',
+          cipherKey,
+          folderName: demoState.folderName ?? 'File_name.zip',
+          playfairTable:
+            demoState.playfairTable ?? buildPlayfairTable(cipherKey),
+          hintText: null,
+          canSkip: false,
+        },
+      });
+    } else if (demoState.phase === 'completed') {
+      setInputValue('');
+      setView({
+        phase: 'completed',
+        data: {
+          folderPath: demoState.folderPath ?? 'PXGUDKXAXA',
+          folderPassword: demoState.folderPassword ?? 'РАКЕТА',
+          hintText: null,
+        },
+      });
+    }
+  }, [demo, demoState]);
 
   const completeMission = useCallback(
     async (hintText: string | null): Promise<void> => {
@@ -140,7 +186,7 @@ export function DecipherGamePanel({ slotKey, onClose }: DecipherGamePanelProps):
 
   const handleSubmit = useCallback(
     async (decryptedWord: string): Promise<void> => {
-      if (busy || view.phase !== 'playing') return;
+      if (demo || busy || view.phase !== 'playing') return;
 
       const playing = view.data;
       setBusy(true);
@@ -177,11 +223,11 @@ export function DecipherGamePanel({ slotKey, onClose }: DecipherGamePanelProps):
         setBusy(false);
       }
     },
-    [busy, view, slotKey, completeMission],
+    [busy, view, slotKey, completeMission, demo],
   );
 
   const handleSkip = useCallback(async (): Promise<boolean> => {
-    if (view.phase !== 'playing') return false;
+    if (demo || view.phase !== 'playing') return false;
     const playing = view.data;
 
     try {
@@ -212,7 +258,7 @@ export function DecipherGamePanel({ slotKey, onClose }: DecipherGamePanelProps):
       toast.error('Ошибка соединения.');
       return false;
     }
-  }, [view, slotKey, refreshLogs, refreshChat]);
+  }, [view, slotKey, refreshLogs, refreshChat, demo]);
 
   const hintText =
     view.phase === 'playing'
@@ -225,6 +271,7 @@ export function DecipherGamePanel({ slotKey, onClose }: DecipherGamePanelProps):
     <article
       className="relative flex flex-col overflow-hidden rounded-game-lg border border-border bg-[rgba(255,255,255,0.08)] pb-6 shadow-game-card"
       aria-label="Дешифратор"
+      data-onboarding-id={ONBOARDING_TARGETS.DECIPHER_MISSION_CARD}
     >
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-border px-5 py-3">
@@ -269,7 +316,45 @@ export function DecipherGamePanel({ slotKey, onClose }: DecipherGamePanelProps):
 
       {/* Body */}
       <div className="flex min-h-[360px]">
-        {view.phase === 'loading' && (
+        {/* Demo: launch phase — форма запуска без реального API */}
+        {demo && demoState?.phase === 'launch' && (
+          <div className="flex flex-1 items-center justify-center px-6 py-8">
+            <div className="mx-auto flex w-full max-w-[420px] flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <span className="font-mono text-game-base text-content-secondary">
+                  Ссылка / путь
+                </span>
+                <input
+                  readOnly
+                  value=""
+                  aria-label="Ссылка или путь к папке"
+                  data-onboarding-id={ONBOARDING_TARGETS.DECIPHER_FORM}
+                  className="h-input-height w-full rounded-game-lg border border-border bg-bg-input px-4 font-mono text-game-base text-content-primary focus:outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <span className="font-mono text-game-base text-content-secondary">
+                  Ключ
+                </span>
+                <input
+                  readOnly
+                  value=""
+                  aria-label="Ключ шифрования"
+                  className="h-input-height w-full rounded-game-lg border border-border bg-bg-input px-4 font-mono text-game-base text-content-primary focus:outline-none"
+                />
+              </div>
+              <button
+                type="button"
+                disabled
+                className="mt-2 h-input-height w-full rounded-game-full bg-accent font-mono text-game-sm uppercase tracking-game-wide text-content-inverse disabled:opacity-80"
+              >
+                Начать
+              </button>
+            </div>
+          </div>
+        )}
+
+        {view.phase === 'loading' && !(demo && demoState?.phase === 'launch') && (
           <div
             className="flex flex-1 flex-col items-center justify-center gap-5 px-6 py-8"
             role="status"
@@ -306,10 +391,14 @@ export function DecipherGamePanel({ slotKey, onClose }: DecipherGamePanelProps):
         )}
 
         {view.phase === 'completed' && (
-          <div className="flex flex-1 items-center justify-center px-6 py-8">
+          <div
+            className="flex flex-1 items-center justify-center px-6 py-8"
+            data-onboarding-id={ONBOARDING_TARGETS.DECIPHER_RESULT}
+          >
             <DecipherCompletedView
               folderPath={view.data.folderPath}
               folderPassword={view.data.folderPassword}
+              initialCopied={demo && (demoState?.passwordCopied ?? false)}
             />
           </div>
         )}
@@ -377,7 +466,10 @@ export function DecipherGamePanel({ slotKey, onClose }: DecipherGamePanelProps):
             </div>
 
             {/* Right column */}
-            <div className="flex flex-1 items-center justify-center p-6">
+            <div
+              className="flex flex-1 items-center justify-center p-6"
+              data-onboarding-id={ONBOARDING_TARGETS.DECIPHER_TABLE}
+            >
               {view.data.cipherType === 'PLAYFAIR' && view.data.playfairTable ? (
                 <PlayfairTable
                   table={view.data.playfairTable}

@@ -15,10 +15,16 @@ export default async function DashboardPage(): Promise<React.ReactElement> {
   const activeMissionTypes: MissionType[] = slots.map((s) => s.missionType);
   const playerLogin = session?.user?.name ?? session?.user?.email ?? 'АГЕНТ';
 
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id: session!.user.id },
+    select: { onboardingDone: true },
+  });
+
   return (
     <DashboardClient
       activeMissionTypes={activeMissionTypes}
       playerLogin={playerLogin}
+      onboardingDone={user.onboardingDone}
     />
   );
 }

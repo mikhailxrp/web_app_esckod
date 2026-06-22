@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import type { ReactElement } from 'react';
 
 interface DecipherCompletedViewProps {
   folderPath: string | null;
   folderPassword: string | null;
+  initialCopied?: boolean;
 }
 
 const FIELD_CLASS =
@@ -15,8 +16,13 @@ const FIELD_CLASS =
 export function DecipherCompletedView({
   folderPath,
   folderPassword,
+  initialCopied = false,
 }: DecipherCompletedViewProps): ReactElement {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(initialCopied);
+
+  useEffect(() => {
+    setCopied(initialCopied);
+  }, [initialCopied]);
 
   const handleCopy = async (): Promise<void> => {
     if (!folderPassword) return;

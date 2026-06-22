@@ -640,6 +640,9 @@ export function TranscriptToggle({ text, messageId }: { text: string; messageId:
 
 **Query parameters:** нет
 
+**Гейт Детектива по `onboardingDone`:**  
+Если `onboardingDone === false` — `resolveChatSlot('DETECTIVE')` возвращает `{ currentMessage: null, isVisible: true }`, не вызывая `ensureChatStarted`. Первый старт чата происходит через колбэк завершения онбординга → `chatStore.refresh()`.
+
 **Алгоритм:**
 
 ```typescript

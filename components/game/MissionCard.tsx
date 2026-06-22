@@ -13,8 +13,15 @@ import {
   type DecipherLaunchInput,
   type RdpLaunchInput,
 } from "@/lib/validations/missions";
+import { ONBOARDING_TARGETS } from "@/constants/onboardingSteps";
 import { useLogStore } from "@/store/logStore";
 import type { RdpConnectResult } from "@/types/rdp";
+
+const MISSION_ONBOARDING_ID: Record<MissionType, string> = {
+  CRACK: ONBOARDING_TARGETS.CRACK_MISSION_CARD,
+  DECIPHER: ONBOARDING_TARGETS.DECIPHER_MISSION_CARD,
+  RDP: ONBOARDING_TARGETS.RDP_MISSION_CARD,
+};
 
 // ─── Static config per mission type ──────────────────────────────────────────
 
@@ -457,6 +464,10 @@ interface MissionCardProps {
   onCrackLaunched?: (slotKey: string) => void;
   onDecipherLaunched?: (slotKey: string) => void;
   onRdpLaunched?: (data: RdpConnectResult) => void;
+  /** Режим демонстрации в онбординге — не вызывает реальный API */
+  demo?: boolean;
+  /** Вызывается при клике «Открыть» в demo-режиме вместо открытия модала */
+  onDemoStart?: () => void;
 }
 
 export function MissionCard({
@@ -464,6 +475,8 @@ export function MissionCard({
   onCrackLaunched,
   onDecipherLaunched,
   onRdpLaunched,
+  demo = false,
+  onDemoStart,
 }: MissionCardProps): React.ReactElement {
   const [isOpen, setIsOpen] = useState(false);
   const config = MISSION_CONFIG[missionType];
@@ -479,9 +492,20 @@ export function MissionCard({
     onRdpLaunched?.(data);
   };
 
+  const handleOpenClick = (): void => {
+    if (demo) {
+      onDemoStart?.();
+    } else {
+      setIsOpen(true);
+    }
+  };
+
   return (
     <>
-      <article className="flex min-h-[200px] flex-col rounded-game-xl border border-white bg-[rgba(255,255,255,0.08)] backdrop-blur-sm 2xl:min-h-[380px]">
+      <article
+        className="flex min-h-[200px] flex-col rounded-game-xl border border-white bg-[rgba(255,255,255,0.08)] backdrop-blur-sm 2xl:min-h-[380px]"
+        data-onboarding-id={MISSION_ONBOARDING_ID[missionType]}
+      >
         {/* Card header */}
         <div className="border-b border-white/30 px-4 pb-3 pt-4">
           <span className="font-mono text-game-lg text-accent">
@@ -504,9 +528,9 @@ export function MissionCard({
         <div className="flex justify-center px-4 pb-8 pt-2">
           <button
             type="button"
-            onClick={() => setIsOpen(true)}
+            onClick={handleOpenClick}
             className="h-input-height w-[170px] rounded-[10px] border border-accent font-mono text-game-sm uppercase tracking-game-wide text-accent transition-colors hover:bg-accent/10"
-            aria-haspopup="dialog"
+            aria-haspopup={demo ? undefined : "dialog"}
           >
             Открыть
           </button>

@@ -9,6 +9,8 @@ import type { ChatType } from '@/types/chat';
 
 interface ChatPanelProps {
   chatType: ChatType;
+  /** Demo «Детектив печатает…» в онбординге (шаг 22) */
+  demoTyping?: boolean;
 }
 
 const CHAT_LABEL: Record<ChatType, string> = {
@@ -16,7 +18,7 @@ const CHAT_LABEL: Record<ChatType, string> = {
   MARINA: 'Аноним',
 };
 
-export function ChatPanel({ chatType }: ChatPanelProps): React.ReactElement {
+export function ChatPanel({ chatType, demoTyping = false }: ChatPanelProps): React.ReactElement {
   const [isOpen, setIsOpen] = useState(chatType !== 'MARINA');
 
   const slot = useChatStore((s) =>
@@ -109,7 +111,7 @@ export function ChatPanel({ chatType }: ChatPanelProps): React.ReactElement {
           id={`chat-window-${chatType}`}
           className="flex h-[420px] flex-col p-3"
         >
-          <ChatWindow chatType={chatType} />
+          <ChatWindow chatType={chatType} demoTyping={demoTyping} />
         </div>
       )}
     </div>

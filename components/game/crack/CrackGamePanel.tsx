@@ -21,6 +21,13 @@ import type {
   CrackCompleteResult,
   CrackState,
 } from "@/types/crack";
+import { ONBOARDING_TARGETS } from "@/constants/onboardingSteps";
+import type { CrackDemoState } from "@/types/onboarding";
+
+/** Базовые данные демо-сессии взломщика (нейтральные, не раскрывают целевое слово) */
+const DEMO_WORD_LIST = ["ПИЛОТ", "ПЕСНЯ", "ПЛИТА", "МЫШКА", "КАРТА"];
+const DEMO_TARGET_URL = "example.ru";
+const DEMO_TARGET_EMAIL = "PETROV@CORP.RU";
 
 interface PlayingState {
   wordList: string[];
@@ -58,11 +65,16 @@ type View =
 interface CrackGamePanelProps {
   slotKey: string;
   onClose: () => void;
+  /** Режим демонстрации в онбординге — не вызывает реальный API */
+  demo?: boolean;
+  demoState?: CrackDemoState;
 }
 
 export function CrackGamePanel({
   slotKey,
   onClose,
+  demo = false,
+  demoState,
 }: CrackGamePanelProps): ReactElement {
   const [view, setView] = useState<View>({ phase: "loading" });
   const [busy, setBusy] = useState(false);
@@ -117,9 +129,45 @@ export function CrackGamePanel({
   }, [slotKey]);
 
   useEffect(() => {
+    if (demo) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadState();
-  }, [loadState]);
+  }, [loadState, demo]);
+
+  // Demo: инициализируем view из demoState (не обращаемся к API)
+  useEffect(() => {
+    if (!demo || !demoState) return;
+    if (demoState.phase === "launch") return; // launch рендерит свой блок
+    if (demoState.phase === "playing") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setInputWord(demoState.inputWord ?? "");
+      setView({
+        phase: "playing",
+        data: {
+          wordList: DEMO_WORD_LIST,
+          attempts: demoState.attempts ?? [],
+          attemptsUsed: demoState.attempts?.length ?? 0,
+          maxAttempts: 6,
+          version: 0,
+          canSkip: false,
+          hintText: null,
+          targetUrl: DEMO_TARGET_URL,
+          targetEmail: DEMO_TARGET_EMAIL,
+        },
+      });
+    } else if (demoState.phase === "completed") {
+      setInputWord("");
+      setView({
+        phase: "completed",
+        data: {
+          resultPassword: demoState.resultPassword ?? "ПИЛОТ",
+          targetUrl: demoState.targetUrl ?? DEMO_TARGET_URL,
+          targetEmail: demoState.targetEmail ?? DEMO_TARGET_EMAIL,
+          hintText: null,
+        },
+      });
+    }
+  }, [demo, demoState]);
 
   const completeMission = useCallback(
     async (playing: PlayingState): Promise<void> => {
@@ -299,10 +347,15 @@ export function CrackGamePanel({
           ? view.data.hintText
           : null;
 
+  const wordleSpotlight =
+    demo && demoState?.wordleSpotlight ? demoState.wordleSpotlight : "word-list";
+  const isAttemptPanelSpotlight = wordleSpotlight === "attempt-panel";
+
   return (
     <article
       className="relative flex flex-col overflow-hidden rounded-game-lg border border-border bg-[rgba(255,255,255,0.08)] pb-6 shadow-game-card"
       aria-label="Взломщик"
+      data-onboarding-id={ONBOARDING_TARGETS.CRACK_MISSION_CARD}
     >
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-border px-5 py-3">
@@ -349,7 +402,45 @@ export function CrackGamePanel({
 
       {/* Body */}
       <div className="flex">
-        {view.phase === "loading" && (
+        {/* Demo: launch phase — форма запуска без реального API */}
+        {demo && demoState?.phase === "launch" && (
+          <div className="flex flex-1 items-center justify-center px-6 py-8">
+            <div className="mx-auto flex w-full max-w-[420px] flex-col gap-5">
+              <div className="flex flex-col gap-2">
+                <span className="font-mono text-game-base text-content-secondary">
+                  Ссылка
+                </span>
+                <input
+                  readOnly
+                  value=""
+                  aria-label="Ссылка на сайт"
+                  data-onboarding-id={ONBOARDING_TARGETS.CRACK_FORM}
+                  className="h-input-height w-full rounded-game-lg border border-border bg-bg-input px-4 font-mono text-game-base text-content-primary focus:outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <span className="font-mono text-game-base text-content-secondary">
+                  Почта
+                </span>
+                <input
+                  readOnly
+                  value=""
+                  aria-label="Почта"
+                  className="h-input-height w-full rounded-game-lg border border-border bg-bg-input px-4 font-mono text-game-base text-content-primary focus:outline-none"
+                />
+              </div>
+              <button
+                type="button"
+                disabled
+                className="mt-2 h-input-height w-full rounded-game-full bg-accent font-mono text-game-sm uppercase tracking-game-wide text-content-inverse disabled:opacity-80"
+              >
+                Начать
+              </button>
+            </div>
+          </div>
+        )}
+
+        {view.phase === "loading" && !(demo && demoState?.phase === "launch") && (
           <div className="flex flex-1 items-center justify-center px-6 py-8">
             <GameLoader />
           </div>
@@ -367,11 +458,15 @@ export function CrackGamePanel({
         )}
 
         {view.phase === "completed" && (
-          <div className="flex flex-1 items-center justify-center px-6 py-8">
+          <div
+            className="flex flex-1 items-center justify-center px-6 py-8"
+            data-onboarding-id={ONBOARDING_TARGETS.CRACK_RESULT}
+          >
             <CrackCompletedView
               resultPassword={view.data.resultPassword}
               targetUrl={view.data.targetUrl}
               targetEmail={view.data.targetEmail}
+              initialCopied={demo && (demoState?.passwordCopied ?? false)}
             />
           </div>
         )}
@@ -423,7 +518,14 @@ export function CrackGamePanel({
         {view.phase === "playing" && (
           <>
             {/* Left column: input + attempt history */}
-            <div className="flex w-[240px] shrink-0 flex-col gap-5 border-r border-border px-5 py-5">
+            <div
+              className="flex w-[240px] shrink-0 flex-col gap-5 border-r border-border px-5 py-5"
+              data-onboarding-id={
+                demo && isAttemptPanelSpotlight
+                  ? ONBOARDING_TARGETS.CRACK_WORDLE_BOARD
+                  : undefined
+              }
+            >
               <CrackWordInput
                 value={inputWord}
                 onChange={setInputWord}
@@ -447,8 +549,15 @@ export function CrackGamePanel({
               ) : null}
             </div>
 
-            {/* Right column: cipher text */}
-            <div className="w-0 flex-1 p-5">
+            {/* Right column: cipher text (word list) */}
+            <div
+              className="w-0 flex-1 p-5"
+              data-onboarding-id={
+                demo && !isAttemptPanelSpotlight
+                  ? ONBOARDING_TARGETS.CRACK_WORDLE_BOARD
+                  : undefined
+              }
+            >
               <CrackCipherText
                 words={view.data.wordList}
                 onWordClick={setInputWord}
