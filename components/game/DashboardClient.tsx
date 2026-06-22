@@ -177,7 +177,9 @@ export function DashboardClient({
             {/* Missions section — shows game panel when a mission is active */}
             <section aria-label="Миссии" data-onboarding-id="mission-tiles">
               {showDemoPanel ? (
-                renderDemoMissionsContent(demoScene, currentStepPayload)
+                <div key={demoScene} className="animate-fade-in">
+                  {renderDemoMissionsContent(demoScene, currentStepPayload)}
+                </div>
               ) : activeCrackSlotKey ? (
                 <CrackGamePanel
                   slotKey={activeCrackSlotKey}
@@ -232,7 +234,7 @@ export function DashboardClient({
             <div data-onboarding-id="chat-detective">
               <ChatPanel
                 chatType="DETECTIVE"
-                demoTyping={onboardingActive && currentStepId === 21}
+                demoTyping={onboardingActive && currentStepId === 22}
               />
             </div>
             {marinaVisible && (

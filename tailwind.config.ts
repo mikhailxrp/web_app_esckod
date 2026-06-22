@@ -221,6 +221,12 @@ const config: Config = {
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
 
+        // Плавное появление (панели демо-миссий в онбординге)
+        "fade-in": {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+
         // Fade-out для loader
         "fade-out": {
           "0%": { opacity: "1" },
@@ -267,6 +273,7 @@ const config: Config = {
         blink: "blink 1s step-end infinite",
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
         "slide-in": "slide-in 0.2s ease forwards",
+        "fade-in": "fade-in 0.25s ease forwards",
         "fade-out": "fade-out 0.4s ease forwards",
         "modal-backdrop": "modal-backdrop 0.2s ease forwards",
         "modal-panel":

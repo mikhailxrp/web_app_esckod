@@ -92,7 +92,7 @@ function MissionTilesOverlayStep({
           onClick={onNext}
           className="px-8 py-2.5 font-bold text-bg-primary transition-opacity hover:opacity-80"
           style={{
-            fontSize: "20px",
+            fontSize: "14px",
             backgroundColor: "#44DFD7",
             borderRadius: "50px",
           }}
