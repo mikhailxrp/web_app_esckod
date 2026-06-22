@@ -296,7 +296,7 @@ export function DecipherGamePanel({
         </div>
 
         <div className="flex items-center gap-2">
-          <DecipherHintButton hintText={hintText} />
+          <DecipherHintButton hintText={hintText} disabled={demo} />
           <button
             type="button"
             onClick={onClose}

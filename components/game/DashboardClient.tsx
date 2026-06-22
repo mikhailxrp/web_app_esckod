@@ -158,7 +158,7 @@ export function DashboardClient({
 
         <div className="flex items-center gap-3">
           <div data-onboarding-id="hints-button">
-            <DetectiveHintsButton />
+            <DetectiveHintsButton disabled={onboardingActive} />
           </div>
           <LogoutButton />
         </div>

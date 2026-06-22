@@ -6,9 +6,10 @@ import type { ReactElement } from 'react';
 
 interface DecipherHintButtonProps {
   hintText: string | null;
+  disabled?: boolean;
 }
 
-export function DecipherHintButton({ hintText }: DecipherHintButtonProps): ReactElement {
+export function DecipherHintButton({ hintText, disabled = false }: DecipherHintButtonProps): ReactElement {
   const [open, setOpen] = useState(false);
 
   return (
@@ -16,11 +17,12 @@ export function DecipherHintButton({ hintText }: DecipherHintButtonProps): React
       <button
         type="button"
         onClick={() => {
-          if (hintText) setOpen((v) => !v);
+          if (hintText && !disabled) setOpen((v) => !v);
         }}
         aria-label="Правила миссии"
         aria-expanded={open}
-        className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
+        disabled={disabled}
+        className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Image src="/assets/icons/info.svg" alt="" width={16} height={16} aria-hidden="true" />
       </button>
