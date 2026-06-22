@@ -223,7 +223,7 @@ export function RdpGamePanel({
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <RdpHintButton hintText={activeHintText} />
+          <RdpHintButton hintText={activeHintText} disabled={demo} />
 
           {/* Minimize button — available during files stage; progress is preserved on server */}
           {stage.phase === 'files' ? (

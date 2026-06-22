@@ -8,9 +8,10 @@ import { ONBOARDING_TARGETS } from '@/constants/onboardingSteps';
 
 interface RdpHintButtonProps {
   hintText: string | null;
+  disabled?: boolean;
 }
 
-export function RdpHintButton({ hintText }: RdpHintButtonProps): ReactElement | null {
+export function RdpHintButton({ hintText, disabled = false }: RdpHintButtonProps): ReactElement | null {
   const [open, setOpen] = useState(false);
 
   if (!hintText) {
@@ -21,11 +22,12 @@ export function RdpHintButton({ hintText }: RdpHintButtonProps): ReactElement | 
     <div className="relative">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => { if (!disabled) setOpen((v) => !v); }}
         aria-label="Правила миссии"
         aria-expanded={open}
+        disabled={disabled}
         data-onboarding-id={ONBOARDING_TARGETS.RDP_INSTRUCTION_BUTTON}
-        className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
+        className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Image src="/assets/icons/info.svg" alt="" width={16} height={16} aria-hidden="true" />
       </button>

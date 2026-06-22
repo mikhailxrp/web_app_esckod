@@ -382,7 +382,7 @@ export function CrackGamePanel({
         </div>
 
         <div className="flex items-center gap-2">
-          {hintText ? <CrackHintButton hintText={hintText} /> : null}
+          {hintText ? <CrackHintButton hintText={hintText} disabled={demo} /> : null}
           <button
             type="button"
             onClick={onClose}
