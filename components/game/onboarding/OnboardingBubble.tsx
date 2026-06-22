@@ -14,6 +14,8 @@ const BUBBLE_TAIL_OFFSET = 24;
 const BUBBLE_MAX_WIDTH = 340;
 
 
+const BUBBLE_TRANSITION = 'opacity 150ms ease-in-out';
+
 interface OnboardingBubbleProps {
   stepNumber: number;
   text: string;
@@ -29,6 +31,7 @@ interface OnboardingBubbleProps {
   bubbleLineHeight?: number;
   targetRect: DOMRect | null;
   isLastStep?: boolean;
+  isVisible?: boolean;
   onNext: () => void;
 }
 
@@ -250,6 +253,7 @@ export function OnboardingBubble({
   bubbleLineHeight,
   targetRect,
   isLastStep = false,
+  isVisible = true,
   onNext,
 }: OnboardingBubbleProps): React.ReactElement {
   const fontSize = bubbleFontSize ?? BUBBLE_FONT_SIZE;
@@ -277,7 +281,11 @@ export function OnboardingBubble({
       aria-label={`Инструктаж, шаг ${stepNumber}`}
       aria-modal="true"
       className="font-mono"
-      style={positionStyle}
+      style={{
+        ...positionStyle,
+        opacity: isVisible ? 1 : 0,
+        transition: BUBBLE_TRANSITION,
+      }}
     >
       <div
         className="relative rounded-game-lg"

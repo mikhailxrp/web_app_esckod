@@ -14,6 +14,7 @@ interface OnboardingTooltipProps {
   onBack: () => void;
   targetRect: DOMRect | null;
   isLastStep: boolean;
+  isVisible: boolean;
 }
 
 const MISSION_TILES_OVERLAY_TEXT_SIZE_STEP_1 = 20;
@@ -45,18 +46,22 @@ function getMissionTilesOverlayStyle(
   };
 }
 
+const BUBBLE_TRANSITION = 'opacity 150ms ease-in-out';
+
 function MissionTilesOverlayStep({
   stepNumber,
   resolvedText,
   targetRect,
   textFontSize,
   onNext,
+  isVisible,
 }: {
   stepNumber: number;
   resolvedText: string;
   targetRect: DOMRect | null;
   textFontSize: number;
   onNext: () => void;
+  isVisible: boolean;
 }): React.ReactElement {
   return (
     <div
@@ -70,6 +75,8 @@ function MissionTilesOverlayStep({
         background: "rgba(255, 255, 255, 0.30)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
+        opacity: isVisible ? 1 : 0,
+        transition: BUBBLE_TRANSITION,
       }}
     >
       <div className="flex h-full flex-col items-center justify-center gap-6 px-8 py-10 text-center">
@@ -104,6 +111,7 @@ export function OnboardingTooltip({
   onNext,
   targetRect,
   isLastStep,
+  isVisible,
 }: OnboardingTooltipProps): React.ReactElement {
   const stepNumber = currentIndex + 1;
   const resolvedText = resolveText(step.text, playerLogin);
@@ -120,6 +128,7 @@ export function OnboardingTooltip({
             : MISSION_TILES_OVERLAY_TEXT_SIZE_STEP_1
         }
         onNext={onNext}
+        isVisible={isVisible}
       />
     );
   }
@@ -141,6 +150,7 @@ export function OnboardingTooltip({
       targetRect={targetRect}
       isLastStep={isLastStep}
       onNext={onNext}
+      isVisible={isVisible}
     />
   );
 }

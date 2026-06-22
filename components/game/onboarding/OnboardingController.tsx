@@ -5,6 +5,11 @@ import type { OnboardingScene } from '@/types/onboarding';
 import { ONBOARDING_STEPS } from '@/constants/onboardingSteps';
 import { OnboardingTooltip } from './OnboardingTooltip';
 
+/** Длительность fade-out перед сменой шага (мс) */
+const FADE_OUT_MS = 100;
+/** Задержка после смены шага — даём DOM перерисоваться (мс) */
+const FADE_SETTLE_MS = 80;
+
 interface OnboardingControllerProps {
   playerLogin: string;
   onSceneChange: (scene: OnboardingScene) => void;
@@ -30,7 +35,9 @@ export function OnboardingController({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [completing, setCompleting] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const rafRef = useRef<number | null>(null);
+  const transitionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevTargetRef = useRef<string | undefined>(undefined);
   const prevSceneRef = useRef<OnboardingScene | undefined>(undefined);
 
@@ -72,6 +79,13 @@ export function OnboardingController({
     return () => clearTimeout(timeout);
   }, [step, onSceneChange, onStepChange, updateTargetRect]);
 
+  /** Cleanup таймера перехода при анмаунте */
+  useEffect(() => {
+    return () => {
+      if (transitionRef.current !== null) clearTimeout(transitionRef.current);
+    };
+  }, []);
+
   /** Пересчёт при ресайзе/скролле */
   useEffect(() => {
     const handle = (): void => {
@@ -99,6 +113,13 @@ export function OnboardingController({
     return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, []);
 
+  /** Пузырёк не перемещается — target и scene совпадают у обоих шагов */
+  const isSamePosition = useCallback((fromIndex: number, toIndex: number): boolean => {
+    const from = ONBOARDING_STEPS[fromIndex];
+    const to = ONBOARDING_STEPS[toIndex];
+    return from.target === to.target && from.scene === to.scene;
+  }, []);
+
   const handleNext = useCallback(async (): Promise<void> => {
     const isLast = currentIndex === TOTAL - 1;
 
@@ -114,13 +135,38 @@ export function OnboardingController({
       return;
     }
 
-    setCurrentIndex((prev) => prev + 1);
-  }, [currentIndex, completing, onComplete]);
+    if (isSamePosition(currentIndex, currentIndex + 1)) {
+      setCurrentIndex((prev) => prev + 1);
+      return;
+    }
+
+    if (transitionRef.current !== null) clearTimeout(transitionRef.current);
+    setIsVisible(false);
+    transitionRef.current = setTimeout(() => {
+      setCurrentIndex((prev) => prev + 1);
+      transitionRef.current = setTimeout(() => {
+        setIsVisible(true);
+      }, FADE_SETTLE_MS);
+    }, FADE_OUT_MS);
+  }, [currentIndex, completing, onComplete, isSamePosition]);
 
   const handleBack = useCallback((): void => {
     if (currentIndex === 0) return;
-    setCurrentIndex((prev) => prev - 1);
-  }, [currentIndex]);
+
+    if (isSamePosition(currentIndex, currentIndex - 1)) {
+      setCurrentIndex((prev) => prev - 1);
+      return;
+    }
+
+    if (transitionRef.current !== null) clearTimeout(transitionRef.current);
+    setIsVisible(false);
+    transitionRef.current = setTimeout(() => {
+      setCurrentIndex((prev) => prev - 1);
+      transitionRef.current = setTimeout(() => {
+        setIsVisible(true);
+      }, FADE_SETTLE_MS);
+    }, FADE_OUT_MS);
+  }, [currentIndex, isSamePosition]);
 
   const isLastStep = currentIndex === TOTAL - 1;
 
@@ -134,6 +180,7 @@ export function OnboardingController({
       onBack={handleBack}
       targetRect={targetRect}
       isLastStep={isLastStep}
+      isVisible={isVisible}
     />
   );
 }
