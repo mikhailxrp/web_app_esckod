@@ -19,6 +19,7 @@ import type {
   DecipherState,
 } from '@/types/decipher';
 import type { CipherType } from '@prisma/client';
+import type { DecipherDemoState } from '@/types/onboarding';
 
 interface PlayingState {
   cipherType: CipherType;
@@ -46,9 +47,12 @@ type View =
 interface DecipherGamePanelProps {
   slotKey: string;
   onClose: () => void;
+  /** Режим демонстрации в онбординге — не вызывает реальный API */
+  demo?: boolean;
+  demoState?: DecipherDemoState;
 }
 
-export function DecipherGamePanel({ slotKey, onClose }: DecipherGamePanelProps): ReactElement {
+export function DecipherGamePanel({ slotKey, onClose, demo = false }: DecipherGamePanelProps): ReactElement {
   const [view, setView] = useState<View>({ phase: 'loading' });
   const [busy, setBusy] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -100,9 +104,10 @@ export function DecipherGamePanel({ slotKey, onClose }: DecipherGamePanelProps):
   }, [slotKey]);
 
   useEffect(() => {
+    if (demo) return; // demo-режим: не обращаемся к API
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadState();
-  }, [loadState]);
+  }, [loadState, demo]);
 
   const completeMission = useCallback(
     async (hintText: string | null): Promise<void> => {

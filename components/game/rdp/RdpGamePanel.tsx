@@ -19,6 +19,7 @@ import type {
   RdpPuzzleState,
   RdpScenario,
 } from '@/types/rdp';
+import type { RdpDemoState } from '@/types/onboarding';
 
 // ─── Типы стадий ─────────────────────────────────────────────────────────────
 
@@ -42,11 +43,14 @@ type Stage =
 interface RdpGamePanelProps {
   connectResult: RdpConnectResult;
   onClose: () => void;
+  /** Режим демонстрации в онбординге — не вызывает реальный API */
+  demo?: boolean;
+  demoState?: RdpDemoState;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function RdpGamePanel({ connectResult, onClose }: RdpGamePanelProps): ReactElement {
+export function RdpGamePanel({ connectResult, onClose, demo = false }: RdpGamePanelProps): ReactElement {
   const { slotKey, displayName, rdpScenario, isCompleted, hintText } = connectResult;
 
   const [stage, setStage] = useState<Stage>(
@@ -108,11 +112,12 @@ export function RdpGamePanel({ connectResult, onClose }: RdpGamePanelProps): Rea
   }, [slotKey]);
 
   useEffect(() => {
+    if (demo) return; // demo-режим: не обращаемся к API
     if (!isCompleted) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       void loadState();
     }
-  }, [isCompleted, loadState]);
+  }, [isCompleted, loadState, demo]);
 
   const handleSolved = useCallback(async (): Promise<void> => {
     setStage({ phase: 'files' });

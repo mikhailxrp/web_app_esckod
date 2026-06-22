@@ -1,371 +1,211 @@
-# Модуль: Онбординг (onboarding)
+# Модуль: Онбординг
 
-> Спецификация одноразовой экскурсии по интерфейсу при первом входе игрока.
-> Связанные файлы: `.docs/database.md` (поле `User.onboardingDone`), `.docs/modules/auth.md`, `.docs/modules/logs.md`.
+## Обзор
 
----
+При первом входе игрок проходит 22-шаговый интерактивный инструктаж:  
+приветствие → демонстрация трёх мини-игр (Взломщик, Дешифратор, Удалённый доступ) в demo-режиме → подсказки по интерфейсу.
 
-## Содержание
-
-1. [Цели модуля](#цели-модуля)
-2. [Архитектурные решения](#архитектурные-решения)
-3. [Шаги онбординга](#шаги-онбординга)
-4. [Логика показа](#логика-показа)
-5. [Технология (react-joyride)](#технология-react-joyride)
-6. [API-эндпоинт](#api-эндпоинт)
-7. [Файлы, которые создаются](#файлы-которые-создаются)
-8. [Серверные правила](#серверные-правила)
-9. [Связи с другими модулями](#связи-с-другими-модулями)
-
----
-
-## Цели модуля
-
-После завершения этого модуля:
-- При **первом** входе на `/dashboard` игрок видит оверлей-экскурсию по интерфейсу
-- Подсвечиваются реальные элементы dashboard в логичной последовательности
-- После прохождения — `User.onboardingDone = true` (флаг сохранён на сервере)
-- В `OperationLog` пишется первая запись: «Подключение установлено»
-- При повторном входе онбординг **не показывается**
-- Нет кнопки Skip — только последовательное «Далее»
-
-**Не входит в модуль:**
-- Сами компоненты dashboard (это в модуле dashboard / другие модули миссий)
-- Контент текстов онбординга — заглушки в коде, финальные тексты от заказчика
-- Туториал по конкретным мини-играм — отдельные модули миссий, не онбординг
-
----
-
-## Архитектурные решения
-
-### 1. Оверлей поверх настоящего dashboard, а не отдельный экран
-
-**Что это значит:** игрок видит реальный dashboard со всеми элементами (плашки миссий, чат Детектива, история операций), а сверху лежит полупрозрачный оверлей с подсветкой одного элемента и тултипом-подсказкой рядом.
-
-**Почему так, а не отдельная страница с моками:**
-- Игрок сразу видит реальный интерфейс — после онбординга не нужно «переориентироваться»
-- Не нужно поддерживать две версии экранов (моки + реальный dashboard)
-- Если в dashboard что-то поменяется — мокированные скрины онбординга устареют, а оверлей продолжит работать
-
-### 2. Привязка к элементам через `data-onboarding-id`
-
-react-joyride использует CSS-селекторы для подсветки элементов. Использование классов или id опасно:
-- Классы Tailwind могут совпасть случайно
-- id могут конфликтовать с другими частями приложения
-
-Используем атрибуты `data-onboarding-id="<step-id>"`:
-
-```tsx
-// в dashboard
-<div data-onboarding-id="status-bar">
-  <StatusBar />
-</div>
-<div data-onboarding-id="mission-tiles">
-  <MissionTiles />
-</div>
-```
-
-```typescript
-// в OnboardingOverlay
-const steps = [
-  { target: '[data-onboarding-id="status-bar"]', content: '...' },
-  { target: '[data-onboarding-id="mission-tiles"]', content: '...' },
-];
-```
-
-**Соглашение:** все `data-onboarding-id` константами лежат в `constants/onboardingSteps.ts` — в одном месте видно, какие элементы нужны для онбординга. Если разработчик случайно удалит атрибут с элемента — ошибка отловится при ручной проверке.
-
-### 3. Нет Skip — только «Далее»
-
-Заказчик хочет, чтобы каждый игрок прошёл всю экскурсию. Это даёт:
-- Гарантию, что игрок видел все ключевые элементы
-- Уменьшение количества support-вопросов «а где у вас X»
-
-**Технически:** в `JoyrideProps` ставим `disableSkipButton: true`. Кнопки «Назад» и «Далее» — стандартные.
-
-### 4. Серверная защита `onboardingDone`
-
-Флаг `User.onboardingDone` пишется ТОЛЬКО сервером в `POST /api/onboarding/complete`. Клиент не может напрямую редактировать поля User. Это предохранитель — игрок не может через DevTools пометить себя «онбординг пройден» и потом оспаривать, что не видел инструкции.
-
-### 5. Атомарность завершения: флаг + лог в одной транзакции
-
-Завершение онбординга = два действия:
-1. `UPDATE User SET onboardingDone=true`
-2. `INSERT OperationLog ('Подключение установлено')`
-
-Они должны произойти вместе или не произойти вообще. Если транзакция откатилась — клиент получает ошибку и пытается ещё раз. Если завершилось наполовину — игрок без `onboardingDone=true` увидит онбординг снова, а лог уже добавлен (дубль) — это плохо.
-
-```typescript
-await prisma.$transaction([
-  prisma.user.update({ where: { id: userId }, data: { onboardingDone: true } }),
-  prisma.operationLog.create({ data: { userId, type: 'INFO', message: renderLogMessage('onboarding_completed') } }),
-]);
-```
-
----
-
-## Шаги онбординга
-
-Минимальный набор шагов (7 штук). Финальные тексты — от заказчика, в коде заглушки.
-
-| # | `data-onboarding-id` | Что подсвечивается | Текст-заглушка |
-|---|---|---|---|
-| 1 | `welcome` (центр экрана, без привязки) | Приветствие | «Добро пожаловать, детектив. Я проведу краткий инструктаж.» |
-| 2 | `status-bar` | Верхний статусбар (STATUS / TARGET / ACCESS) | «Здесь отображается статус подключения и текущая цель.» |
-| 3 | `mission-tiles` | Плашки активных миссий | «**Три направления расследования:** взлом сайтов, дешифровка папок, удалённый доступ. Нажмите на плашку — откроется форма запуска. Введите данные, которые удалось получить, чтобы запустить мини-игру.» |
-| 4 | `chat-detective` | Чат Детектива | «Здесь я буду давать инструкции по ходу расследования.» |
-| 5 | `operation-history` | История операций (внизу) | «Все ваши действия фиксируются здесь.» |
-| 6 | `hints-button` | Кнопка «Подсказка от Детектива» | «Если зайдёте в тупик — нажмите для получения подсказки.» |
-| 7 | `restart-button` | Кнопка «Начать заново» | «В любой момент вы можете перезапустить расследование.» |
-
-После шага 7 — кнопка «Завершить» вместо «Далее». Нажатие → `POST /api/onboarding/complete` → закрытие оверлея.
-
-**Контрактное правило:** если разработчик удаляет элемент с `data-onboarding-id` без обновления `constants/onboardingSteps.ts` — ручная проверка перед PR должна это поймать. В DoD добавляется пункт «Онбординг проходит до конца без ошибок».
+**Первое сообщение в чате Детектива приходит только по завершении инструктажа.**  
+Повторный вход (если `onboardingDone === true`) — инструктаж не показывается.
 
 ---
 
 ## Логика показа
 
-**Первое сообщение Детектива ← завершение онбординга:** `POST /api/onboarding/complete` → клиент вызывает `chatStore.refresh()` → `GET /api/chat/state` → `getChatState(userId, true)` → `ensureChatStarted('DETECTIVE')` → первая реплика.
+1. `app/(game)/dashboard/page.tsx` считывает `user.onboardingDone` из БД и передаёт в `DashboardClient` пропом.
+2. `DashboardClient` рендерит `<OnboardingController>` **только при `!onboardingDone`**.
+3. При завершении (шаг 22, «Завершить инструктаж») `OnboardingController` вызывает `POST /api/onboarding/complete`, затем — колбэк `onComplete` в `DashboardClient`.
+4. `onComplete` вызывает `chatStore.refresh()`, чтобы первая реплика Детектива пришла без перезагрузки страницы.
+5. При перезапуске игры `onboardingDone` **не сбрасывается** (учитывается в Phase 19).
 
-### Условие показа
+---
 
-Онбординг показывается, если **все** условия выполнены:
-1. Игрок залогинен (есть session с `type='PLAYER'`)
-2. Открыта страница `/dashboard`
-3. `User.onboardingDone === false`
-4. Устройство удовлетворяет минимальным требованиям экрана (если нет — `MobileGuard` из `mobile-block.md` перехватывает приложение раньше, и игрок не доходит до dashboard)
+## Архитектура — кастомный overlay на Tailwind
 
-### Когда стартует
+Инструктаж реализован без `react-joyride`. Причина: `react-joyride@2.x` несовместим с React 19 / Next 16 и не поддерживает управление внутренним состоянием модальных панелей миссий.
 
-При маунте dashboard:
+### Компоненты
 
-```tsx
-// app/(game)/dashboard/page.tsx (Server Component)
-const session = await auth();
-const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-// передаём флаг в Client Component
-return <DashboardClient onboardingDone={user.onboardingDone} ... />;
-```
+| Компонент | Файл | Описание |
+|---|---|---|
+| `OnboardingController` | `components/game/onboarding/OnboardingController.tsx` | Машина текущего шага; управляет сценой; вызывает `/complete` на финале |
+| `OnboardingTooltip` | `components/game/onboarding/OnboardingTooltip.tsx` | Тултип: текст, прогресс-полоса, кнопки «Назад / Далее / Завершить инструктаж» |
+| `OnboardingSpotlight` | `components/game/onboarding/OnboardingSpotlight.tsx` | Затемнение через `clip-path` с «окном» подсветки целевого элемента |
 
-```tsx
-// components/game/dashboard/DashboardClient.tsx (Client Component)
-'use client';
-export function DashboardClient({ onboardingDone, ... }) {
-  return (
-    <>
-      <Dashboard ... />
-      {!onboardingDone && <OnboardingOverlay />}
-    </>
-  );
+### Типы
+
+Файл `types/onboarding.ts`:
+
+```ts
+type OnboardingScene =
+  | 'base' | 'crack-launch' | 'crack-game' | 'crack-done'
+  | 'decipher-launch' | 'decipher-game' | 'decipher-done'
+  | 'rdp-launch' | 'rdp-game' | 'chat-final';
+
+interface OnboardingStep {
+  id: number;
+  scene: OnboardingScene;
+  target?: string;          // data-onboarding-id целевого элемента
+  text: string;
+  placement: 'top' | 'bottom' | 'left' | 'right' | 'center';
+  blurBackground?: boolean;
+  demoPayload?: DemoPayload;
 }
 ```
 
-### Когда заканчивается
+---
 
-Игрок нажимает «Завершить» на последнем шаге → `OnboardingOverlay`:
-1. Делает `POST /api/onboarding/complete`
-2. После 200 — закрывает оверлей (локальный state)
-3. **Не делает hard refresh** — пользователь сразу попадает в dashboard без перезагрузки
+## Реестр целевых элементов (ONBOARDING_TARGETS)
 
-При следующем заходе на dashboard `user.onboardingDone === true`, оверлей не рендерится.
+Все `data-onboarding-id` сосредоточены в `constants/onboardingSteps.ts`:
 
-### Поведение при перезапуске игры
+```ts
+export const ONBOARDING_TARGETS = {
+  STATUS_BAR:              'status-bar',
+  MISSION_TILES:           'mission-tiles',
+  CRACK_MISSION_CARD:      'crack-mission-card',
+  DECIPHER_MISSION_CARD:   'decipher-mission-card',
+  RDP_MISSION_CARD:        'rdp-mission-card',
+  CHAT_DETECTIVE:          'chat-detective',
+  OPERATION_HISTORY:       'operation-history',
+  HINTS_BUTTON:            'hints-button',
+  CRACK_FORM:              'crack-form',
+  CRACK_WORDLE_BOARD:      'crack-wordle-board',
+  CRACK_RESULT:            'crack-result',
+  DECIPHER_FORM:           'decipher-form',
+  DECIPHER_TABLE:          'decipher-table',
+  DECIPHER_RESULT:         'decipher-result',
+  RDP_FORM:                'rdp-form',
+  RDP_PUZZLE:              'rdp-puzzle',
+  RDP_INSTRUCTION_BUTTON:  'rdp-instruction-button',
+} as const;
+```
 
-`User.onboardingDone` **НЕ сбрасывается** при `POST /api/game/restart`. Логика: онбординг — это про обучение интерфейсу, а не про сюжет. Игрок уже знает интерфейс, второй раз показывать не нужно.
-
-См. также: `database.md` → раздел `User`, → `restart.md`.
-
-### Что если игрок закрыл вкладку посреди онбординга
-
-`User.onboardingDone` всё ещё `false`. При следующем заходе онбординг покажется **с самого начала** (шаг 1). Прогресс шагов не сохраняется на сервере — это малый объём шагов, нет смысла усложнять.
+Атрибуты навешаны в:
+- `DashboardClient.tsx` — `status-bar`, `mission-tiles`, `chat-detective`, `operation-history`, `hints-button`
+- `MissionCard.tsx` — `crack-mission-card`, `decipher-mission-card`, `rdp-mission-card` (через `data-onboarding-id` на `article`)
+- `CrackGamePanel.tsx`, `DecipherGamePanel.tsx`, `RdpGamePanel.tsx` — игровые цели (добавляются в Таске 3)
 
 ---
 
-## Технология (react-joyride)
+## Интеграция в DashboardClient
 
-### Почему react-joyride
+```ts
+// Новый стейт
+const [demoScene, setDemoScene] = useState<OnboardingScene | null>(null);
 
-- Простая интеграция с React
-- Поддержка `data-*` селекторов
-- Кастомизация стилей через `styles` prop
-- ~10kb gzipped — приемлемый размер для одноразового использования
+// Рендер тура
+{!onboardingDone && (
+  <OnboardingController
+    onSceneChange={setDemoScene}
+    onComplete={handleOnboardingComplete}
+  />
+)}
 
-### Конфигурация
+// Показываем demo-панель когда сцена активна (не 'base' и не 'chat-final')
+const showDemoPanel =
+  !onboardingDone &&
+  demoScene !== null &&
+  demoScene !== 'base' &&
+  demoScene !== 'chat-final';
+```
 
-```typescript
-// components/game/onboarding/OnboardingOverlay.tsx
-'use client';
-import Joyride, { Step, CallBackProps, STATUS } from 'react-joyride';
-import { onboardingSteps } from '@/constants/onboardingSteps';
+Когда `showDemoPanel === true`, секция миссий показывает соответствующую demo-панель вместо боевых панелей:
 
-export function OnboardingOverlay() {
-  const [run, setRun] = useState(true);
+| `demoScene` | Что рендерится |
+|---|---|
+| `'crack-launch'` | `<MissionCard missionType="CRACK" demo />` |
+| `'crack-game'` / `'crack-done'` | `<CrackGamePanel demo demoState={...} onClose={() => {}} />` |
+| `'decipher-launch'` | `<MissionCard missionType="DECIPHER" demo />` |
+| `'decipher-game'` / `'decipher-done'` | `<DecipherGamePanel demo demoState={...} onClose={() => {}} />` |
+| `'rdp-launch'` | `<MissionCard missionType="RDP" demo />` |
+| `'rdp-game'` | `<RdpGamePanel connectResult={DEMO_RDP_CONNECT_RESULT} demo demoState={...} onClose={() => {}} />` |
+| `'base'` / `null` / `'chat-final'` | Обычный dashboard |
 
-  const handleCallback = async (data: CallBackProps) => {
-    if (data.status === STATUS.FINISHED) {
-      setRun(false);
-      try {
-        await fetch('/api/onboarding/complete', { method: 'POST' });
-      } catch (e) {
-        // Если запрос упал — флаг останется false, при перезагрузке покажется снова.
-        // Не критично, лучше так, чем фолс-позитив.
-        console.error('Onboarding complete failed:', e);
-      }
-    }
-  };
+---
 
-  return (
-    <Joyride
-      steps={onboardingSteps}
-      run={run}
-      continuous
-      showProgress
-      showSkipButton={false}
-      disableCloseOnEsc
-      disableOverlayClose
-      hideBackButton={false}
-      callback={handleCallback}
-      locale={{
-        back: 'Назад',
-        next: 'Далее',
-        last: 'Завершить',
-      }}
-      styles={{
-        options: {
-          primaryColor: 'var(--accent-primary)', // соответствует дизайн-токенам
-          textColor: 'var(--text-primary)',
-          backgroundColor: 'var(--bg-card)',
-          overlayColor: 'rgba(0, 0, 0, 0.85)',
-          zIndex: 10000,
-        }
-      }}
-    />
-  );
+## Паттерн demo-пропа в игровых панелях
+
+Все три игровые панели (`CrackGamePanel`, `DecipherGamePanel`, `RdpGamePanel`) получили:
+
+```ts
+interface XxxGamePanelProps {
+  // ...существующие пропы
+  demo?: boolean;
+  demoState?: XxxDemoState;
 }
 ```
 
-**Ключевые опции:**
-- `continuous: true` — последовательный показ всех шагов
-- `disableCloseOnEsc: true` + `disableOverlayClose: true` — нельзя закрыть до конца (только «Завершить» на последнем шаге)
-- `showSkipButton: false` — нет Skip
-- `locale` — русские подписи кнопок
+При `demo === true`:
+- `useEffect` с `loadState()` пропускается (`if (demo) return`)
+- `view` / `stage` остаётся в `{ phase: 'loading' }` — панель показывает заглушку
+- Реальные API (`/api/missions/*`, `/api/logs/*`, `/api/progress/*`) **не вызываются**
+- `demoState` используется в Таске 3 для инициализации скриптовых состояний
+
+`MissionCard` при `demo === true`:
+- Кнопка «Открыть» вызывает `onDemoStart?.()` вместо открытия модала
+- Форма запуска (`/api/missions/*/launch`) не вызывается
 
 ---
 
-## API-эндпоинт
+## Карта 22 шагов
 
-### `POST /api/onboarding/complete`
-
-**Auth:** Player only (`session.user.type === 'PLAYER'`)
-
-**Body:** пустой (никаких параметров не нужно — userId берём из сессии)
-
-**Алгоритм:**
-```typescript
-// app/api/onboarding/complete/route.ts
-export async function POST() {
-  const session = await auth();
-  if (!session || session.user.type !== 'PLAYER') {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const userId = session.user.id;
-
-  // Проверка идемпотентности — если уже пройден, возвращаем 200 без изменений
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { onboardingDone: true } });
-  if (!user) {
-    return Response.json({ error: 'User not found' }, { status: 404 });
-  }
-  if (user.onboardingDone) {
-    return Response.json({ success: true, alreadyCompleted: true });
-  }
-
-  // Атомарная транзакция: флаг + лог
-  await prisma.$transaction([
-    prisma.user.update({
-      where: { id: userId },
-      data: { onboardingDone: true },
-    }),
-    prisma.operationLog.create({
-      data: {
-        userId,
-        type: 'INFO',
-        message: renderLogMessage('onboarding_completed'),
-      },
-    }),
-  ]);
-
-  return Response.json({ success: true });
-}
-```
-
-**Response 200:**
-```json
-{ "success": true }
-```
-
-или (если уже завершён ранее):
-```json
-{ "success": true, "alreadyCompleted": true }
-```
-
-**Response 401 / 404:** стандартные.
-
-**Rate limit:** не нужен — эндпоинт идемпотентен и срабатывает один раз за время жизни аккаунта.
+| Шаг | Сцена | Подсветка | Таск |
+|-----|-------|-----------|------|
+| 1 | `base` (blur) | — | 2 |
+| 2 | `base` | — | 2 |
+| 3 | `base` | `mission-tiles` | 2 |
+| 4 | `crack-launch` | `crack-mission-card` | 3 |
+| 5 | `crack-game` | `crack-wordle-board` | 3 |
+| 6 | `crack-game` | `crack-wordle-board` | 3 |
+| 7 | `crack-game` | `crack-wordle-board` | 3 |
+| 8 | `crack-game` | `crack-wordle-board` | 3 |
+| 9 | `crack-done` | `crack-result` | 3 |
+| 10 | `crack-done` | `operation-history` | 3 |
+| 11 | `base` | `mission-tiles` | 2 |
+| 12 | `decipher-launch` | `decipher-mission-card` | 3 |
+| 13 | `decipher-game` | `decipher-table` | 3 |
+| 14 | `decipher-game` | `decipher-table` | 3 |
+| 15 | `decipher-game` | `decipher-table` | 3 |
+| 16 | `decipher-done` | `decipher-result` | 3 |
+| 17 | `base` | `mission-tiles` | 2 |
+| 18 | `rdp-launch` | `rdp-mission-card` | 3 |
+| 19 | `rdp-game` | `rdp-puzzle` | 3 |
+| 20 | `rdp-game` | `rdp-instruction-button` | 3 |
+| 21 | `base` | `hints-button` | 2 |
+| 22 | `chat-final` | `chat-detective` | 2 |
 
 ---
 
-## Файлы, которые создаются
+## API: POST /api/onboarding/complete
 
-```
-app/
-├── api/
-│   └── onboarding/
-│       └── complete/
-│           └── route.ts                    # POST: завершение онбординга
+Файл: `app/api/onboarding/complete/route.ts`
 
-components/
-└── game/
-    └── onboarding/
-        └── OnboardingOverlay.tsx           # Client Component, Joyride wrapper
-
-constants/
-└── onboardingSteps.ts                      # массив Step[] с targets и текстами-заглушками
-
-# Изменения в существующих файлах:
-app/(game)/dashboard/page.tsx               # достаём user.onboardingDone, передаём в DashboardClient
-components/game/dashboard/DashboardClient.tsx  # условный рендер OnboardingOverlay
-+ добавление data-onboarding-id="..." на нужные элементы dashboard
-```
-
-**Зависимости (package.json):**
-```json
-"react-joyride": "^2.x"
-```
+- Auth: Player only (401 для не-PLAYER)
+- Идемпотентен: если `onboardingDone === true` → `{ success: true, alreadyCompleted: true }` без записей
+- Иначе — транзакция: `user.update({ onboardingDone: true })` + `operationLog` шаблон `onboarding_completed`
+- Body пустой, Zod не нужен
 
 ---
 
-## Серверные правила
+## Серверная защита чата Детектива
 
-1. **`onboardingDone` — только сервер.** Нет публичного эндпоинта для записи этого поля кроме `/api/onboarding/complete`. Внутри эндпоинта — проверка авторизации.
+В `lib/chat/state.ts` → `resolveChatSlot('DETECTIVE')`:
+- Если `user.onboardingDone === false` → возвращает `{ currentMessage: null, isVisible: true }` без вызова `ensureChatStarted`
+- Гейт только для `DETECTIVE` (Марина и остальные не блокируются)
 
-2. **Идемпотентность:** повторный вызов `/api/onboarding/complete` для уже завершившего игрока — не ошибка, возвращает 200 с `alreadyCompleted: true`. Это защита от двойных запросов при сетевых проблемах.
-
-3. **Не дублировать лог при повторном вызове:** если `user.onboardingDone === true` — не пишем второй `OperationLog`. Иначе у игрока в истории появится несколько записей «Подключение установлено».
-
-4. **При перезапуске игры — флаг не трогается.** В `lib/game/restart.ts` — `User` НЕ обновляется. Только связанные таблицы прогресса.
-
-5. **Ошибка отправки `/complete` — мягкая обработка.** Если на клиенте `fetch` упал (сеть, 500) — оверлей закрывается, но `onboardingDone` остаётся `false`. При следующем заходе игрок увидит онбординг снова. Это лучше, чем застрять на оверлее. Лог ошибки в консоли клиента.
-
-6. **Нет валидации Zod на body** — body пустой. Если в будущем добавятся параметры (например, отслеживание времени прохождения для аналитики) — добавить Zod-схему.
+После `POST /api/onboarding/complete` → `chatStore.refresh()` → `resolveChatSlot` уже видит `onboardingDone === true` → `ensureChatStarted` вызывается → первая реплика Детектива приходит без перезагрузки.
 
 ---
 
-## Связи с другими модулями
+## Поведение при Esc и клике по фону
 
-- **`auth.md`** — после первого логина игрока эта механика проверяет `User.onboardingDone` через `await prisma.user.findUnique(...)` в Server Component dashboard.
-- **`logs.md`** — запись «Подключение установлено» использует шаблон `onboarding_completed` из `constants/logTemplates.ts` через `lib/operationLog.ts`. На момент Фазы 2 модуль logs ещё не описан, но утилита `writeLog()` к этому моменту уже существует — этот эндпоинт может писать через неё или напрямую (как показано выше через транзакцию). Решение принимается при реализации Фазы 2.
-- **`mobile-block.md`** — общая заглушка перехватывает приложение в корневом layout при недостаточном размере экрана. Игрок с маленьким экраном не доходит до dashboard и не видит онбординг. Никакой совместной логики приоритетов в DashboardClient не требуется.
-- **`restart.md`** — `User.onboardingDone` НЕ сбрасывается. Защищено в `lib/game/restart.ts`.
-- **`database.md`** — поле `User.onboardingDone` описано там; здесь только применение.
+`OnboardingController` блокирует `keydown` с `key === 'Escape'` через `e.preventDefault() + e.stopPropagation()` на `window` (capture-фаза).
+
+`OnboardingSpotlight` перехватывает клики по оверлею через `e.stopPropagation()` — тур не закрывается по клику вне тултипа.
+
+---
+
+## Позиционирование spotlight
+
+`OnboardingSpotlight` использует `getBoundingClientRect()` + CSS `clip-path: polygon(...)` для создания «вырезанного окна» в тёмном оверлее. Пересчёт — при `resize` и `scroll` через `requestAnimationFrame`. `OnboardingController` дополнительно пересчитывает `targetRect` с задержкой 80ms при смене шага (чтобы DOM успел перерисоваться при смене сцены).

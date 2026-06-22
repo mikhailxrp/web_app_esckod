@@ -21,6 +21,7 @@ import type {
   CrackCompleteResult,
   CrackState,
 } from "@/types/crack";
+import type { CrackDemoState } from "@/types/onboarding";
 
 interface PlayingState {
   wordList: string[];
@@ -58,11 +59,15 @@ type View =
 interface CrackGamePanelProps {
   slotKey: string;
   onClose: () => void;
+  /** Режим демонстрации в онбординге — не вызывает реальный API */
+  demo?: boolean;
+  demoState?: CrackDemoState;
 }
 
 export function CrackGamePanel({
   slotKey,
   onClose,
+  demo = false,
 }: CrackGamePanelProps): ReactElement {
   const [view, setView] = useState<View>({ phase: "loading" });
   const [busy, setBusy] = useState(false);
@@ -117,9 +122,10 @@ export function CrackGamePanel({
   }, [slotKey]);
 
   useEffect(() => {
+    if (demo) return; // demo-режим: не обращаемся к API
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadState();
-  }, [loadState]);
+  }, [loadState, demo]);
 
   const completeMission = useCallback(
     async (playing: PlayingState): Promise<void> => {
