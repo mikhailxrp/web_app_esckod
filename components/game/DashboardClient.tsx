@@ -232,7 +232,7 @@ export function DashboardClient({
             <div data-onboarding-id="chat-detective">
               <ChatPanel
                 chatType="DETECTIVE"
-                demoTyping={onboardingActive && currentStepId === 22}
+                demoTyping={onboardingActive && currentStepId === 21}
               />
             </div>
             {marinaVisible && (

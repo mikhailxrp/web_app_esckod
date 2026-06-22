@@ -14,6 +14,9 @@ export type OnboardingScene =
 
 export type TooltipPlacement = 'top' | 'bottom' | 'left' | 'right' | 'center';
 
+/** Сторона пузырька, на которой рисуется хвостик. По умолчанию выводится из placement */
+export type BubbleTailSide = 'top' | 'bottom' | 'left' | 'right';
+
 /** Точка привязки хвостика пузырька к целевому элементу */
 export type BubbleAnchor =
   | 'top-left'
@@ -48,6 +51,8 @@ export interface OnboardingStep {
   bubbleFontSize?: number;
   /** Межстрочный интервал текста внутри пузырька (px). По умолчанию — fontSize × 1.625 */
   bubbleLineHeight?: number;
+  /** Переопределить сторону хвостика (по умолчанию выводится из placement) */
+  bubbleTailSide?: BubbleTailSide;
   demoPayload?: DemoPayload;
 }
 

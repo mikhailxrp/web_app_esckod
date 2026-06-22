@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { OnboardingScene } from '@/types/onboarding';
 import { ONBOARDING_STEPS } from '@/constants/onboardingSteps';
 import { OnboardingTooltip } from './OnboardingTooltip';
@@ -15,6 +15,12 @@ interface OnboardingControllerProps {
 
 const TOTAL = ONBOARDING_STEPS.length;
 
+function measureTarget(target: string | undefined): DOMRect | null {
+  if (!target) return null;
+  const el = document.querySelector(`[data-onboarding-id="${target}"]`);
+  return el ? (el as HTMLElement).getBoundingClientRect() : null;
+}
+
 export function OnboardingController({
   playerLogin,
   onSceneChange,
@@ -25,23 +31,41 @@ export function OnboardingController({
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [completing, setCompleting] = useState(false);
   const rafRef = useRef<number | null>(null);
+  const prevTargetRef = useRef<string | undefined>(undefined);
+  const prevSceneRef = useRef<OnboardingScene | undefined>(undefined);
 
   const step = ONBOARDING_STEPS[currentIndex];
 
   /** Пересчитываем targetRect при смене шага */
   const updateTargetRect = useCallback(() => {
-    if (!step.target) {
-      setTargetRect(null);
-      return;
-    }
-    const el = document.querySelector(`[data-onboarding-id="${step.target}"]`);
-    setTargetRect(el ? el.getBoundingClientRect() : null);
+    setTargetRect(measureTarget(step.target));
   }, [step.target]);
+
+  /**
+   * Первый маунт: измеряем синхронно до первой отрисовки браузером,
+   * чтобы оверлей не мигнул на центральной позиции.
+   */
+  useLayoutEffect(() => {
+    const rect = measureTarget(step.target);
+    if (rect) setTargetRect(rect);
+    prevTargetRef.current = step.target;
+    prevSceneRef.current = step.scene;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     onSceneChange(step.scene);
     onStepChange?.(step.id);
-    // Небольшая задержка для случаев когда сцена меняется и DOM перерисовывается
+
+    const targetChanged = prevTargetRef.current !== step.target;
+    const sceneChanged = prevSceneRef.current !== step.scene;
+    prevTargetRef.current = step.target;
+    prevSceneRef.current = step.scene;
+
+    // Задержка нужна только когда сцена или таргет сменились — DOM мог перерисоваться.
+    // Если сцена и таргет те же (например, шаги 1→2), повторный замер не нужен.
+    if (!targetChanged && !sceneChanged) return;
+
     const timeout = setTimeout(() => {
       updateTargetRect();
     }, 80);

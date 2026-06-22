@@ -1,6 +1,6 @@
 "use client";
 
-import type { BubbleAnchor, TooltipPlacement } from "@/types/onboarding";
+import type { BubbleAnchor, BubbleTailSide, TooltipPlacement } from "@/types/onboarding";
 
 const BUBBLE_FONT_SIZE = 14;
 const BUBBLE_LINE_HEIGHT_RATIO = 1.625;
@@ -13,7 +13,6 @@ const BUBBLE_GAP = 12;
 const BUBBLE_TAIL_OFFSET = 24;
 const BUBBLE_MAX_WIDTH = 340;
 
-type BubbleTailSide = "bottom" | "top" | "left" | "right";
 
 interface OnboardingBubbleProps {
   stepNumber: number;
@@ -23,6 +22,7 @@ interface OnboardingBubbleProps {
   bubbleGap?: number;
   bubbleTailSize?: number;
   bubbleTailOffset?: number;
+  bubbleTailSide?: BubbleTailSide;
   bubbleShiftX?: number;
   bubbleShiftY?: number;
   bubbleFontSize?: number;
@@ -243,6 +243,7 @@ export function OnboardingBubble({
   bubbleGap,
   bubbleTailSize,
   bubbleTailOffset,
+  bubbleTailSide,
   bubbleShiftX,
   bubbleShiftY,
   bubbleFontSize,
@@ -268,7 +269,7 @@ export function OnboardingBubble({
     bubbleAnchor,
     layout,
   );
-  const tailSide = getTailSide(placement);
+  const tailSide = bubbleTailSide ?? getTailSide(placement);
 
   return (
     <div

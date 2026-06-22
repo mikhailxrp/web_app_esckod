@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import type { OnboardingStep } from '@/types/onboarding';
-import { MISSION_TILES_OVERLAY_STEP_COUNT } from '@/constants/onboardingSteps';
-import { OnboardingBubble } from './OnboardingBubble';
+import type { OnboardingStep } from "@/types/onboarding";
+import { MISSION_TILES_OVERLAY_STEP_COUNT } from "@/constants/onboardingSteps";
+import { OnboardingBubble } from "./OnboardingBubble";
 
 interface OnboardingTooltipProps {
   step: OnboardingStep;
@@ -20,7 +20,7 @@ const MISSION_TILES_OVERLAY_TEXT_SIZE_STEP_1 = 20;
 const MISSION_TILES_OVERLAY_TEXT_SIZE_STEP_2 = 14;
 
 function resolveText(text: string, playerLogin: string): string {
-  return text.replace('{{login}}', playerLogin);
+  return text.replace("{{login}}", playerLogin);
 }
 
 function getMissionTilesOverlayStyle(
@@ -28,7 +28,7 @@ function getMissionTilesOverlayStyle(
 ): React.CSSProperties {
   if (targetRect) {
     return {
-      position: 'fixed',
+      position: "fixed",
       top: targetRect.top,
       left: targetRect.left,
       width: targetRect.width,
@@ -37,10 +37,10 @@ function getMissionTilesOverlayStyle(
   }
 
   return {
-    position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
+    position: "fixed",
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
     width: 520,
   };
 }
@@ -67,15 +67,15 @@ function MissionTilesOverlayStep({
       style={{
         ...getMissionTilesOverlayStyle(targetRect),
         zIndex: 402,
-        background: 'rgba(255, 255, 255, 0.30)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
+        background: "rgba(255, 255, 255, 0.30)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
       }}
     >
       <div className="flex h-full flex-col items-center justify-center gap-6 px-8 py-10 text-center">
         <p
           className="whitespace-pre-line leading-relaxed text-content-primary"
-          style={{ fontSize: `${textFontSize}px`, fontFamily: 'inherit' }}
+          style={{ fontSize: `${textFontSize}px`, fontFamily: "inherit" }}
         >
           {resolvedText}
         </p>
@@ -85,9 +85,9 @@ function MissionTilesOverlayStep({
           onClick={onNext}
           className="px-8 py-2.5 font-bold text-bg-primary transition-opacity hover:opacity-80"
           style={{
-            fontSize: '20px',
-            backgroundColor: '#44DFD7',
-            borderRadius: '14px',
+            fontSize: "20px",
+            backgroundColor: "#44DFD7",
+            borderRadius: "50px",
           }}
         >
           Далее
@@ -133,6 +133,7 @@ export function OnboardingTooltip({
       bubbleGap={step.bubbleGap}
       bubbleTailSize={step.bubbleTailSize}
       bubbleTailOffset={step.bubbleTailOffset}
+      bubbleTailSide={step.bubbleTailSide}
       bubbleShiftX={step.bubbleShiftX}
       bubbleShiftY={step.bubbleShiftY}
       bubbleFontSize={step.bubbleFontSize}
