@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { LogType } from '@prisma/client';
+import { LogType, Prisma } from '@prisma/client';
 
 import { renderLogMessage } from '@/lib/operationLog';
 import { prisma } from '@/lib/prisma';
@@ -39,7 +39,7 @@ export async function restartGame(userId: string): Promise<void> {
         finalReportDone: false,
         finalScore: null,
         finalReportChoice: null,
-        finalReportAnswers: null,
+        finalReportAnswers: Prisma.DbNull,
         version: { increment: 1 },
       },
     });

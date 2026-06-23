@@ -62,7 +62,6 @@ type Stage = 'loading' | 'questions' | 'result';
 
 interface Props {
   alreadySubmitted: boolean;
-  onClose: () => void;
 }
 
 // =============================================================
@@ -71,7 +70,6 @@ interface Props {
 
 export function FinalReportView({
   alreadySubmitted,
-  onClose,
 }: Props): React.ReactElement {
   const [stage, setStage] = useState<Stage>('loading');
   const [version, setVersion] = useState(0);
@@ -80,6 +78,7 @@ export function FinalReportView({
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [resultData, setResultData] = useState<ResultData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRestarting, setIsRestarting] = useState(false);
 
   const choiceLabels = REPORT_FINAL_CHOICES.map((c) => c.label.trim().toLowerCase());
 
@@ -221,6 +220,27 @@ export function FinalReportView({
     }
   };
 
+  const handleReplay = async (): Promise<void> => {
+    setIsRestarting(true);
+    try {
+      const res = await fetch('/api/game/restart', { method: 'POST' });
+      if (res.ok) {
+        window.location.reload();
+        return;
+      }
+      if (res.status === 429) {
+        toast.warning('Слишком частые попытки, подождите немного');
+      } else {
+        toast.error('Ошибка перезапуска. Попробуйте позже');
+      }
+    } catch (err) {
+      console.error('[FinalReportView] handleReplay', err);
+      toast.error('Ошибка перезапуска. Попробуйте позже');
+    } finally {
+      setIsRestarting(false);
+    }
+  };
+
   // =============================================================
   // Render
   // =============================================================
@@ -240,7 +260,8 @@ export function FinalReportView({
         answers={resultData.answers}
         finalContent={resultData.finalContent}
         linkBlocks={resultData.linkBlocks}
-        onClose={onClose}
+        onReplay={handleReplay}
+        isRestarting={isRestarting}
       />
     );
   }
