@@ -37,7 +37,8 @@ interface Props {
   answers: AnswerItem[];
   finalContent: FinalContent;
   linkBlocks: LinkBlock[];
-  onClose: () => void;
+  onReplay: () => Promise<void>;
+  isRestarting: boolean;
 }
 
 function parseLinkImages(images: unknown): LinkImage[] {
@@ -56,7 +57,8 @@ export function ReportResult({
   answers,
   finalContent,
   linkBlocks,
-  onClose,
+  onReplay,
+  isRestarting,
 }: Props): React.ReactElement {
   const controlAnswers = answers.filter((a) => !a.isFinalQuestion);
   const finalAnswer = answers.find((a) => a.isFinalQuestion);
@@ -200,10 +202,18 @@ export function ReportResult({
       <div className="flex justify-center">
         <button
           type="button"
-          onClick={onClose}
-          className="rounded-game-lg bg-accent px-12 py-3 font-mono text-game-sm font-bold uppercase tracking-widest text-black transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          onClick={() => { void onReplay(); }}
+          disabled={isRestarting}
+          aria-busy={isRestarting}
+          className="inline-flex items-center gap-2 rounded-game-lg bg-accent px-12 py-3 font-mono text-game-sm font-bold uppercase tracking-widest text-black transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Переиграть
+          {isRestarting && (
+            <span
+              className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent"
+              aria-hidden="true"
+            />
+          )}
+          {isRestarting ? 'Перезапуск...' : 'Переиграть'}
         </button>
       </div>
     </div>

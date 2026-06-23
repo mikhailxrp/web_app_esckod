@@ -1086,6 +1086,11 @@ await prisma.$transaction(async (tx) => {
   // Освобождается автоматически в COMMIT/ROLLBACK.
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}))`;
 
+  const { email } = await tx.user.findUniqueOrThrow({
+    where: { id: userId },
+    select: { email: true },
+  });
+
   // DELETE — записи, которые полностью удаляются
   await tx.missionProgress.deleteMany({ where: { userId } });
   await tx.crackSession.deleteMany({ where: { userId } });
@@ -1102,6 +1107,7 @@ await prisma.$transaction(async (tx) => {
       finalChoice: null,
       detectiveFinished: false,
       marinaFinished: false,
+      version: { increment: 1 },
     },
   });
   await tx.gameProgress.update({
@@ -1112,12 +1118,17 @@ await prisma.$transaction(async (tx) => {
       finalScore: null,
       finalReportChoice: null,
       finalReportAnswers: null,
+      version: { increment: 1 },
     },
   });
 
   // INSERT — стартовая запись в новом OperationLog
   await tx.operationLog.create({
-    data: { userId, type: "INFO", message: "Игра начата заново" },
+    data: {
+      userId,
+      type: "INFO",
+      message: renderLogMessage("game_restarted", {}),
+    },
   });
 
   // INSERT — аудит
@@ -1125,7 +1136,7 @@ await prisma.$transaction(async (tx) => {
     data: {
       type: "user_restart",
       userId,
-      message: `Игрок ${userEmail} выполнил перезапуск игры`,
+      message: `Игрок ${email} выполнил перезапуск игры`,
     },
   });
 });

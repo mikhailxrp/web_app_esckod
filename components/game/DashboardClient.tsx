@@ -167,7 +167,6 @@ export function DashboardClient({
       {reportOpen ? (
         <FinalReportView
           alreadySubmitted={reportAlreadySubmitted}
-          onClose={() => setReportOpen(false)}
         />
       ) : (
         /* Main grid: left column + right sidebar */
