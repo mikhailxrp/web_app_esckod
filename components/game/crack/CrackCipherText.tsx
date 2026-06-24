@@ -90,7 +90,7 @@ export function CrackCipherText({
 
   return (
     <div className="log-scrollbar h-[350px] w-full overflow-auto rounded-game-sm border border-white bg-[rgba(255,255,255,0.10)] p-4 backdrop-blur-sm">
-      <p className="break-all font-mono text-[14px] leading-relaxed text-[rgba(255,255,255,0.8)]">
+      <p className="break-all font-mono text-[15px] leading-relaxed tracking-[0.05em] text-[rgba(255,255,255,0.8)]">
         {tokens.map((token, i) => {
           if (token.type === "sep") {
             return (

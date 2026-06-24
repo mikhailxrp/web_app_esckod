@@ -52,7 +52,7 @@ function findInTable(table: string[][], char: string): [number, number] {
  * Расшифровывает слово шифром Плейфера.
  * ТОЛЬКО СЕРВЕР — не импортировать в 'use client'-файлы.
  *
- * @throws {Error} PLAYFAIR_ODD_LENGTH — нечётная длина слова после нормализации
+ * @throws {Error} PLAYFAIR_ODD_LENGTH — нечетная длина слова после нормализации
  * @throws {Error} PLAYFAIR_CHAR_NOT_FOUND — буква отсутствует в таблице
  * @throws {Error} PLAYFAIR_EMPTY_CELL — результат правила попал на пустую ячейку
  */

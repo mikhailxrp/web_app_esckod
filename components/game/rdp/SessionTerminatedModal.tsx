@@ -51,7 +51,7 @@ export function SessionTerminatedModal({
 
         {/* Description */}
         <p className="text-center font-sans text-sm text-white/70 leading-relaxed">
-          Удалённое соединение было разорвано администратором системы.
+          Удаленное соединение было разорвано администратором системы.
         </p>
 
         {/* Close button */}

@@ -92,7 +92,7 @@ export function DecipherCompletedView({
                 <div
                   role="status"
                   aria-live="polite"
-                  className="absolute right-10 top-1/2 -translate-y-1/2 flex items-center gap-1.5 rounded-game-sm border border-border bg-bg-secondary px-2 py-1 font-mono text-game-xs text-content-primary shadow-game-card"
+                  className="absolute left-full top-1/2 ml-2 -translate-y-1/2 flex items-center gap-1.5 rounded-game-sm border border-border bg-bg-secondary px-2 py-1 font-mono text-game-xs text-content-primary shadow-game-card"
                 >
                   <span>скопировано</span>
                   <button

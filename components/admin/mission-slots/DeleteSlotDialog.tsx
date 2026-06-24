@@ -86,7 +86,7 @@ export function DeleteSlotDialog({
         </div>
 
         <p className="mb-4 text-sm text-gray-600 dark:text-gray-300">
-          Слот <strong className="font-medium text-gray-900 dark:text-white">«{slot.displayName}»</strong> будет удалён без возможности восстановления.
+          Слот <strong className="font-medium text-gray-900 dark:text-white">«{slot.displayName}»</strong> будет удален без возможности восстановления.
         </p>
 
         {slot.completionsCount > 0 && (

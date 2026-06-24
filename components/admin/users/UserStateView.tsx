@@ -173,7 +173,7 @@ export function UserStateView({ snapshot }: UserStateViewProps): React.ReactElem
               value={snapshot.gameProgress.marinaTriggered ? 'да' : 'нет'}
             />
             <DataRow
-              label="Финальный отчёт"
+              label="Финальный отчет"
               value={snapshot.gameProgress.finalReportDone ? 'пройден' : 'не пройден'}
             />
             <DataRow
@@ -216,7 +216,7 @@ export function UserStateView({ snapshot }: UserStateViewProps): React.ReactElem
               value={snapshot.chatState.finalChoice ?? '—'}
             />
             <DataRow
-              label="Детектив завершён"
+              label="Детектив завершен"
               value={snapshot.chatState.detectiveFinished ? 'да' : 'нет'}
             />
             <DataRow

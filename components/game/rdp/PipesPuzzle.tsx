@@ -157,7 +157,7 @@ export function PipesPuzzle({
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
         if (data.error === 'TIMER_NOT_EXPIRED') {
-          // Таймер ещё не истёк — рефетч актуального состояния
+          // Таймер еще не истек — рефетч актуального состояния
           await onLoadState();
           setShowDeniedOverlay(false);
         } else {
@@ -243,7 +243,7 @@ export function PipesPuzzle({
 
       {/* Progress bar */}
       <div className="flex flex-col gap-1.5" aria-label={`Связность: ${progressPercent}%`}>
-        <div className="flex items-center justify-between font-mono text-game-xs text-content-muted">
+        <div className="flex items-center justify-between font-mono text-[14px] text-content-muted">
           <span>Связность трубопровода</span>
           <span>{progressPercent}%</span>
         </div>
@@ -266,7 +266,7 @@ export function PipesPuzzle({
         </div>
       ) : null}
 
-      {/* Оверлей «Доступ запрещён» */}
+      {/* Оверлей «Доступ запрещен» */}
       {showDeniedOverlay ? (
         <RdpAccessDeniedOverlay
           canSkip={canSkip}

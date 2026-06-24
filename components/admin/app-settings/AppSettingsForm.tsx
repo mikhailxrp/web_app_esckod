@@ -69,7 +69,7 @@ export function AppSettingsForm({
         if (json.error === 'VALIDATION_ERROR') {
           showToast('error', 'Некорректные данные. Проверьте email и URL.');
         } else {
-          showToast('error', 'Не удалось сохранить настройки. Попробуйте ещё раз.');
+          showToast('error', 'Не удалось сохранить настройки. Попробуйте еще раз.');
         }
         return;
       }
@@ -82,7 +82,7 @@ export function AppSettingsForm({
 
       showToast('success', 'Настройки сохранены.');
     } catch {
-      showToast('error', 'Не удалось сохранить настройки. Попробуйте ещё раз.');
+      showToast('error', 'Не удалось сохранить настройки. Попробуйте еще раз.');
     }
   };
 

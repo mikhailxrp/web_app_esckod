@@ -22,7 +22,7 @@ export function RdpAccessDeniedOverlay({
       className="absolute inset-0 z-10 flex items-center justify-center bg-black/75 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label="Доступ запрещён"
+      aria-label="Доступ запрещен"
     >
       <div className="flex flex-col items-center gap-5 rounded-game-lg border border-semantic-error bg-bg-primary p-8 text-center shadow-game-card">
         {/* Иконка ошибки */}
@@ -46,10 +46,10 @@ export function RdpAccessDeniedOverlay({
 
         <div className="flex flex-col gap-1">
           <h2 className="font-mono text-game-panel uppercase tracking-game-wide text-semantic-error">
-            Доступ запрещён
+            Доступ запрещен
           </h2>
           <p className="font-mono text-game-sm text-content-muted">
-            Таймер истёк. Соединение разорвано.
+            Таймер истек. Соединение разорвано.
           </p>
         </div>
 

@@ -4,7 +4,7 @@ import { QuestionsTable } from '@/components/admin/report/QuestionsTable';
 import type { QuestionListItem } from '@/types/admin-report';
 
 export const metadata = {
-  title: 'Финальный отчёт — Вопросы',
+  title: 'Финальный отчет — Вопросы',
 };
 
 function serializeQuestion(question: {

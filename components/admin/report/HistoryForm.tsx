@@ -165,7 +165,7 @@ export function HistoryForm({ initialData }: HistoryFormProps): React.ReactEleme
         showToast(
           'error',
           (json as { message?: string }).message ??
-            'Не удалось сохранить. Попробуйте ещё раз.',
+            'Не удалось сохранить. Попробуйте еще раз.',
         );
         return;
       }
@@ -176,7 +176,7 @@ export function HistoryForm({ initialData }: HistoryFormProps): React.ReactEleme
       showToast('success', 'История сохранена.');
       window.dispatchEvent(new CustomEvent('report-config-saved'));
     } catch {
-      showToast('error', 'Не удалось сохранить. Попробуйте ещё раз.');
+      showToast('error', 'Не удалось сохранить. Попробуйте еще раз.');
     }
   };
 

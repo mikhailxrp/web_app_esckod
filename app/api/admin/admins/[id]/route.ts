@@ -87,7 +87,7 @@ export async function DELETE(
 
   await writeAuditLog('admin_deleted', {
     adminId: session.user.id,
-    message: `Администратор "${existing.email}" удалён`,
+    message: `Администратор "${existing.email}" удален`,
     metadata: { deletedAdminId: id, email: existing.email },
   });
 

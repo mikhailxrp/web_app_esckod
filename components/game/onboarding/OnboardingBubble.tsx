@@ -1,11 +1,17 @@
 "use client";
 
-import type { BubbleAnchor, BubbleTailSide, TooltipPlacement } from "@/types/onboarding";
+import type {
+  BubbleAnchor,
+  BubbleTailSide,
+  BubbleTextAlign,
+  TooltipPlacement,
+} from "@/types/onboarding";
 
 const BUBBLE_FONT_SIZE = 14;
 const BUBBLE_LINE_HEIGHT_RATIO = 1.625;
 const BUBBLE_BUTTON_RADIUS = 14;
 const BUBBLE_BUTTON_BG = "#44DFD7";
+const BUBBLE_LETTER_SPACING = 0;
 const BUBBLE_BG = "rgba(255, 255, 255, 0.30)";
 const BUBBLE_BLUR = "blur(20px)";
 const BUBBLE_TAIL_SIZE = 10;
@@ -29,6 +35,8 @@ interface OnboardingBubbleProps {
   bubbleShiftY?: number;
   bubbleFontSize?: number;
   bubbleLineHeight?: number;
+  bubbleLetterSpacing?: number;
+  bubbleTextAlign?: BubbleTextAlign;
   targetRect: DOMRect | null;
   isLastStep?: boolean;
   isVisible?: boolean;
@@ -251,6 +259,8 @@ export function OnboardingBubble({
   bubbleShiftY,
   bubbleFontSize,
   bubbleLineHeight,
+  bubbleLetterSpacing,
+  bubbleTextAlign,
   targetRect,
   isLastStep = false,
   isVisible = true,
@@ -259,6 +269,7 @@ export function OnboardingBubble({
   const fontSize = bubbleFontSize ?? BUBBLE_FONT_SIZE;
   const lineHeight =
     bubbleLineHeight ?? Math.round(fontSize * BUBBLE_LINE_HEIGHT_RATIO);
+  const letterSpacing = bubbleLetterSpacing ?? BUBBLE_LETTER_SPACING;
   const layout: BubbleLayout = {
     tailSize: bubbleTailSize ?? BUBBLE_TAIL_SIZE,
     tailOffset: bubbleTailOffset ?? BUBBLE_TAIL_OFFSET,
@@ -298,7 +309,13 @@ export function OnboardingBubble({
       >
         <p
           className="mb-3 whitespace-pre-line text-left"
-          style={{ fontSize: `${fontSize}px`, lineHeight: `${lineHeight}px`, color: "#ffffff" }}
+          style={{
+            fontSize: `${fontSize}px`,
+            lineHeight: `${lineHeight}px`,
+            letterSpacing: `${letterSpacing}px`,
+            textAlign: bubbleTextAlign ?? "left",
+            color: "#ffffff",
+          }}
         >
           {text}
         </p>
@@ -309,6 +326,7 @@ export function OnboardingBubble({
           className="px-5 py-1.5 font-bold text-bg-primary transition-opacity hover:opacity-80"
           style={{
             fontSize: `${fontSize}px`,
+            letterSpacing: `${letterSpacing}px`,
             backgroundColor: BUBBLE_BUTTON_BG,
             borderRadius: `${BUBBLE_BUTTON_RADIUS}px`,
           }}

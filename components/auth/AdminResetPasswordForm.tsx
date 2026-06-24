@@ -58,14 +58,14 @@ export function AdminResetPasswordForm(): React.ReactElement {
           return;
         }
 
-        setServerError('Проверьте правильность введённых данных');
+        setServerError('Проверьте правильность введенных данных');
         return;
       }
 
       setIsSuccess(true);
     } catch (error) {
       console.error('Password reset failed:', error);
-      setServerError('Не удалось отправить запрос. Попробуйте ещё раз');
+      setServerError('Не удалось отправить запрос. Попробуйте еще раз');
     }
   }
 

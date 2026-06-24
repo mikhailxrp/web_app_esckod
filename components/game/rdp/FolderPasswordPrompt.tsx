@@ -164,7 +164,7 @@ export function FolderPasswordPrompt({
         toast.info('Папка уже разблокирована.');
         onClose();
       } else {
-        setError('Ошибка сервера. Попробуйте ещё раз.');
+        setError('Ошибка сервера. Попробуйте еще раз.');
       }
     } catch (err) {
       console.error('[FolderPasswordPrompt.handleSubmit]', err);

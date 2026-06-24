@@ -74,7 +74,7 @@ export function PdfViewer({
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: string };
         console.error('[PdfViewer.handleClose]', data.error);
-        toast.error('Не удалось закрыть файл. Попробуйте ещё раз.');
+        toast.error('Не удалось закрыть файл. Попробуйте еще раз.');
         setClosing(false);
         return;
       }

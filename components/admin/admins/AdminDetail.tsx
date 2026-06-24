@@ -113,13 +113,13 @@ export function AdminDetail({
       const data = await res.json();
 
       if (!res.ok) {
-        setPasswordError('Не удалось сбросить пароль. Попробуйте ещё раз.');
+        setPasswordError('Не удалось сбросить пароль. Попробуйте еще раз.');
         return;
       }
 
       setGeneratedPassword(data.password as string);
     } catch {
-      setPasswordError('Не удалось сбросить пароль. Попробуйте ещё раз.');
+      setPasswordError('Не удалось сбросить пароль. Попробуйте еще раз.');
     } finally {
       setPasswordLoading(false);
     }
@@ -138,11 +138,11 @@ export function AdminDetail({
 
       if (!res.ok) {
         if (data.error === 'CANNOT_DELETE_SELF') {
-          setDeleteError('Нельзя удалить собственную учётную запись.');
+          setDeleteError('Нельзя удалить собственную учетную запись.');
         } else if (data.error === 'CANNOT_DELETE_LAST_ADMIN') {
           setDeleteError('Нельзя удалить последнего администратора.');
         } else {
-          setDeleteError('Не удалось удалить администратора. Попробуйте ещё раз.');
+          setDeleteError('Не удалось удалить администратора. Попробуйте еще раз.');
         }
 
         setDeleteLoading(false);
@@ -151,7 +151,7 @@ export function AdminDetail({
 
       router.push('/admin/admins');
     } catch {
-      setDeleteError('Не удалось удалить администратора. Попробуйте ещё раз.');
+      setDeleteError('Не удалось удалить администратора. Попробуйте еще раз.');
       setDeleteLoading(false);
     }
   };
@@ -280,7 +280,7 @@ export function AdminDetail({
                   disabled={logsLoadingMore}
                   className="px-5 py-2 rounded-lg text-sm text-admin-input-text border border-admin-card-border hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
-                  {logsLoadingMore ? 'Загрузка...' : 'Загрузить ещё'}
+                  {logsLoadingMore ? 'Загрузка...' : 'Загрузить еще'}
                 </button>
               </div>
             )}

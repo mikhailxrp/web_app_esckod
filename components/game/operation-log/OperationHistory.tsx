@@ -36,14 +36,14 @@ export function OperationHistory({
           height={24}
           aria-hidden="true"
         />
-        <h2 className="font-mono text-game-panel uppercase tracking-game-wide text-accent">
+        <h2 className="font-mono text-game-panel tracking-game-wide text-accent">
           История действий
         </h2>
       </div>
 
       <div className="log-scrollbar flex-1 overflow-y-auto">
         {logs.length === 0 ? (
-          <p className="font-mono text-game-sm text-content-muted" role="status">
+          <p className="font-mono text-[13px] text-content-muted" role="status">
             Нет записей
           </p>
         ) : (

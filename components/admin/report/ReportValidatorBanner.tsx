@@ -17,7 +17,7 @@ const ISSUE_LABELS: Record<string, string> = {
   ORPHAN_CONTENT: 'Лишняя концовка с неизвестным значением',
   NOT_UPPERCASE: 'Значение концовки не в UPPERCASE',
   NO_FINAL_QUESTION: 'Не выбран финальный вопрос (Обвинить / Защитить)',
-  FINAL_QUESTION_NOT_FOUND: 'Сохранённый финальный вопрос не найден в базе',
+  FINAL_QUESTION_NOT_FOUND: 'Сохраненный финальный вопрос не найден в базе',
   FINAL_QUESTION_BAD_OPTIONS: 'Финальный вопрос не содержит вариантов «Обвинить» и «Защитить»',
 };
 
@@ -67,7 +67,7 @@ export function ReportValidatorBanner({
     return (
       <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3 mb-6 text-sm text-green-800">
         <CheckCircle size={16} className="shrink-0 text-green-600" />
-        <span>Конфигурация финального отчёта корректна.</span>
+        <span>Конфигурация финального отчета корректна.</span>
         <button
           type="button"
           onClick={() => void refresh()}
@@ -87,7 +87,7 @@ export function ReportValidatorBanner({
         <AlertTriangle size={16} className="shrink-0 mt-0.5 text-amber-500" />
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-amber-900 mb-1">
-            Конфигурация финального отчёта требует внимания
+            Конфигурация финального отчета требует внимания
           </p>
           <ul className="text-sm text-amber-800 space-y-0.5 list-disc list-inside">
             {validation.issues.map((issue) => (

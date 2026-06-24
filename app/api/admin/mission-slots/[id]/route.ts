@@ -269,7 +269,7 @@ export async function DELETE(
 
     await writeAuditLog('mission_slot_deleted', {
       adminId: session.user.id,
-      message: `Слот "${slot.displayName}" (${slot.slotKey}) удалён`,
+      message: `Слот "${slot.displayName}" (${slot.slotKey}) удален`,
       metadata: { slotKey: slot.slotKey, displayName: slot.displayName },
     });
 

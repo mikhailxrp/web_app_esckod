@@ -34,7 +34,7 @@ export function RdpCompletedView({ displayName, onClose }: RdpCompletedViewProps
       </div>
 
       <p className="font-mono text-game-sm text-content-secondary">
-        {displayName}: сессия удалённого доступа закрыта.
+        {displayName}: сессия удаленного доступа закрыта.
       </p>
 
       <button

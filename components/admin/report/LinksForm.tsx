@@ -70,7 +70,7 @@ export function LinksForm({ initialBlocks }: LinksFormProps): React.ReactElement
       if (!res.ok) {
         showToast(
           'error',
-          (json as { message?: string }).message ?? 'Не удалось сохранить. Попробуйте ещё раз.',
+          (json as { message?: string }).message ?? 'Не удалось сохранить. Попробуйте еще раз.',
         );
         return;
       }
@@ -80,7 +80,7 @@ export function LinksForm({ initialBlocks }: LinksFormProps): React.ReactElement
       reset({ blocks: updated.map((b) => ({ id: b.id, text: b.text })) });
       showToast('success', 'Ссылки сохранены.');
     } catch {
-      showToast('error', 'Не удалось сохранить. Попробуйте ещё раз.');
+      showToast('error', 'Не удалось сохранить. Попробуйте еще раз.');
     }
   };
 
@@ -231,7 +231,7 @@ export function LinksForm({ initialBlocks }: LinksFormProps): React.ReactElement
 
         {blocks.length === 0 && (
           <p className="text-sm text-admin-placeholder text-center py-8">
-            Блоки ещё не добавлены. Нажмите «Добавить блок».
+            Блоки еще не добавлены. Нажмите «Добавить блок».
           </p>
         )}
 

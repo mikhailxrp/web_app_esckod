@@ -19,7 +19,7 @@ export async function GET(): Promise<NextResponse> {
   } catch (error) {
     console.error('[report/validate] validateReportConfig failed:', error);
     return NextResponse.json(
-      { error: 'INTERNAL_ERROR', message: 'Не удалось проверить конфигурацию отчёта' },
+      { error: 'INTERNAL_ERROR', message: 'Не удалось проверить конфигурацию отчета' },
       { status: 500 },
     );
   }

@@ -57,7 +57,7 @@ export interface PuzzleField {
  *   TEE:      0 → E+S+W, 90 → N+S+W, 180 → N+E+W, 270 → N+E+S
  *
  * CROSS присутствует в union для расширяемости, но НЕ используется в MVP —
- * генератор его не создаёт.
+ * генератор его не создает.
  */
 export const TILE_CONNECTORS: Record<
   TileType,
@@ -81,7 +81,7 @@ export const TILE_CONNECTORS: Record<
     180: ['N', 'E', 'W'],
     270: ['N', 'E', 'S'],
   },
-  // Не используется в MVP — генератор CROSS не создаёт.
+  // Не используется в MVP — генератор CROSS не создает.
   CROSS: {
     0: ['N', 'E', 'S', 'W'],
     90: ['N', 'E', 'S', 'W'],

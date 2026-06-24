@@ -7,13 +7,13 @@ import { OnboardingTooltip } from './OnboardingTooltip';
 
 /** Длительность fade-out перед сменой шага (мс) */
 const FADE_OUT_MS = 100;
-/** Задержка после смены шага — даём DOM перерисоваться (мс) */
+/** Задержка после смены шага — даем DOM перерисоваться (мс) */
 const FADE_SETTLE_MS = 80;
 
 interface OnboardingControllerProps {
   playerLogin: string;
   onSceneChange: (scene: OnboardingScene) => void;
-  /** Вызывается при каждой смене шага — передаёт step.id для per-step demo-состояния */
+  /** Вызывается при каждой смене шага — передает step.id для per-step demo-состояния */
   onStepChange?: (stepId: number) => void;
   onComplete: () => void;
 }
@@ -86,7 +86,7 @@ export function OnboardingController({
     };
   }, []);
 
-  /** Пересчёт при ресайзе/скролле */
+  /** Пересчет при ресайзе/скролле */
   useEffect(() => {
     const handle = (): void => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
@@ -113,7 +113,7 @@ export function OnboardingController({
     return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, []);
 
-  /** Пузырёк не перемещается — target и scene совпадают у обоих шагов */
+  /** Пузырек не перемещается — target и scene совпадают у обоих шагов */
   const isSamePosition = useCallback((fromIndex: number, toIndex: number): boolean => {
     const from = ONBOARDING_STEPS[fromIndex];
     const to = ONBOARDING_STEPS[toIndex];

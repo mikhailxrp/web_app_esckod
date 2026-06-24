@@ -269,7 +269,7 @@ export function DecipherGamePanel({
 
   return (
     <article
-      className="relative flex flex-col overflow-hidden rounded-game-lg border border-border bg-[rgba(255,255,255,0.08)] pb-6 shadow-game-card"
+      className="relative flex flex-col overflow-hidden rounded-game-lg border border-white bg-[rgba(255,255,255,0.08)] pb-6 shadow-game-card"
       aria-label="Дешифратор"
       data-onboarding-id={ONBOARDING_TARGETS.DECIPHER_MISSION_CARD}
     >
@@ -282,17 +282,15 @@ export function DecipherGamePanel({
           height={30}
           aria-hidden="true"
         />
-        <span className="font-mono text-game-panel uppercase tracking-game-wide text-accent">
+        <span className="font-mono text-game-panel text-accent">
           Дешифратор
         </span>
 
         <div className="min-w-0 flex-1 overflow-hidden">
           <span
-            className="block overflow-hidden whitespace-nowrap font-mono text-game-xs text-border tracking-[-0.05em]"
+            className="ml-auto block h-3 w-[calc(50%+70px)] [background:repeating-linear-gradient(-60deg,transparent_0,transparent_8px,rgba(255,255,255,0.3)_8px,rgba(255,255,255,0.3)_10px)]"
             aria-hidden="true"
-          >
-            {'////////////////////////////////////////////////////////////////////'}
-          </span>
+          />
         </div>
 
         <div className="flex items-center gap-2">

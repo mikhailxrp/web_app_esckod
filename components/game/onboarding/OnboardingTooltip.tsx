@@ -1,6 +1,6 @@
 "use client";
 
-import type { OnboardingStep } from "@/types/onboarding";
+import type { BubbleTextAlign, OnboardingStep } from "@/types/onboarding";
 import { MISSION_TILES_OVERLAY_STEP_COUNT } from "@/constants/onboardingSteps";
 import { OnboardingBubble } from "./OnboardingBubble";
 
@@ -16,9 +16,6 @@ interface OnboardingTooltipProps {
   isLastStep: boolean;
   isVisible: boolean;
 }
-
-const MISSION_TILES_OVERLAY_TEXT_SIZE_STEP_1 = 20;
-const MISSION_TILES_OVERLAY_TEXT_SIZE_STEP_2 = 14;
 
 function resolveText(text: string, playerLogin: string): string {
   return text.replace("{{login}}", playerLogin);
@@ -53,6 +50,10 @@ function MissionTilesOverlayStep({
   resolvedText,
   targetRect,
   textFontSize,
+  textLineHeight,
+  textLetterSpacing,
+  textAlign,
+  centerTextVertically,
   onNext,
   isVisible,
 }: {
@@ -60,6 +61,10 @@ function MissionTilesOverlayStep({
   resolvedText: string;
   targetRect: DOMRect | null;
   textFontSize: number;
+  textLineHeight: number;
+  textLetterSpacing: number;
+  textAlign: BubbleTextAlign;
+  centerTextVertically: boolean;
   onNext: () => void;
   isVisible: boolean;
 }): React.ReactElement {
@@ -79,18 +84,30 @@ function MissionTilesOverlayStep({
         transition: BUBBLE_TRANSITION,
       }}
     >
-      <div className="flex h-full flex-col items-center justify-center gap-6 px-8 py-10 text-center">
-        <p
-          className="whitespace-pre-line leading-relaxed text-content-primary"
-          style={{ fontSize: `${textFontSize}px`, fontFamily: "inherit" }}
+      <div className="flex h-full flex-col items-center px-8 pt-10 pb-4">
+        <div
+          className={`flex w-full ${
+            centerTextVertically ? "flex-1 items-center justify-center" : ""
+          }`}
         >
-          {resolvedText}
-        </p>
+          <p
+            className="whitespace-pre-line text-content-primary"
+            style={{
+              fontSize: `${textFontSize}px`,
+              lineHeight: `${textLineHeight}px`,
+              letterSpacing: `${textLetterSpacing}px`,
+              textAlign,
+              fontFamily: "inherit",
+            }}
+          >
+            {resolvedText}
+          </p>
+        </div>
 
         <button
           type="button"
           onClick={onNext}
-          className="px-8 py-2.5 font-bold text-bg-primary transition-opacity hover:opacity-80"
+          className="mt-auto px-8 py-2.5 font-bold text-bg-primary transition-opacity hover:opacity-80"
           style={{
             fontSize: "14px",
             backgroundColor: "#44DFD7",
@@ -123,10 +140,12 @@ export function OnboardingTooltip({
         resolvedText={resolvedText}
         targetRect={targetRect}
         textFontSize={
-          currentIndex === 1
-            ? MISSION_TILES_OVERLAY_TEXT_SIZE_STEP_2
-            : MISSION_TILES_OVERLAY_TEXT_SIZE_STEP_1
+          step.bubbleFontSize ?? 14
         }
+        textLineHeight={step.bubbleLineHeight ?? 22}
+        textLetterSpacing={step.bubbleLetterSpacing ?? 0}
+        textAlign={step.bubbleTextAlign ?? "center"}
+        centerTextVertically={currentIndex === 0}
         onNext={onNext}
         isVisible={isVisible}
       />
@@ -147,6 +166,8 @@ export function OnboardingTooltip({
       bubbleShiftY={step.bubbleShiftY}
       bubbleFontSize={step.bubbleFontSize}
       bubbleLineHeight={step.bubbleLineHeight}
+      bubbleLetterSpacing={step.bubbleLetterSpacing}
+      bubbleTextAlign={step.bubbleTextAlign}
       targetRect={targetRect}
       isLastStep={isLastStep}
       onNext={onNext}

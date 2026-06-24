@@ -18,14 +18,14 @@ type UploaderState = 'idle' | 'uploading' | 'deleting';
 const ERROR_MESSAGES: Record<string, string> = {
   INVALID_FILE_TYPE: 'Недопустимый формат. Разрешены только MP3 и WAV.',
   FILE_TOO_LARGE: `Файл слишком большой. Максимум ${MAX_SIZE_MB} МБ.`,
-  S3_ERROR: 'Ошибка хранилища. Попробуйте ещё раз.',
+  S3_ERROR: 'Ошибка хранилища. Попробуйте еще раз.',
   VALIDATION_ERROR: 'Файл не выбран или пустой.',
 };
 
 function getErrorMessage(error: string | undefined): string {
-  if (!error) return 'Неизвестная ошибка. Попробуйте ещё раз.';
+  if (!error) return 'Неизвестная ошибка. Попробуйте еще раз.';
 
-  return ERROR_MESSAGES[error] ?? 'Ошибка сервера. Попробуйте ещё раз.';
+  return ERROR_MESSAGES[error] ?? 'Ошибка сервера. Попробуйте еще раз.';
 }
 
 export function AudioUploader({

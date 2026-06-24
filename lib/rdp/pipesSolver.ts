@@ -35,8 +35,8 @@ const DELTA: Record<Direction, { dr: number; dc: number }> = {
 };
 
 /**
- * Активные направления коннекторов плитки по её `type` + `rotation`.
- * Тонкая обёртка над `TILE_CONNECTORS` — единственный способ читать коннекторы
+ * Активные направления коннекторов плитки по ее `type` + `rotation`.
+ * Тонкая обертка над `TILE_CONNECTORS` — единственный способ читать коннекторы
  * в генераторе и solver'е, чтобы конвенция не дублировалась.
  */
 export const getTileConnectors = (

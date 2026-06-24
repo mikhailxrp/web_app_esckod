@@ -60,9 +60,9 @@ function getServerErrorMessage(
     case 'EMAIL_EXISTS':
       return 'Этот email уже зарегистрирован';
     case 'VALIDATION_ERROR':
-      return 'Проверьте правильность введённых данных';
+      return 'Проверьте правильность введенных данных';
     default:
-      return 'Произошла ошибка. Попробуйте ещё раз';
+      return 'Произошла ошибка. Попробуйте еще раз';
   }
 }
 
@@ -182,7 +182,7 @@ export function RegisterForm(): React.ReactElement {
       setIsSuccess(true);
     } catch (error) {
       console.error('Registration failed:', error);
-      setServerError('Не удалось выполнить регистрацию. Попробуйте ещё раз');
+      setServerError('Не удалось выполнить регистрацию. Попробуйте еще раз');
     }
   }
 
