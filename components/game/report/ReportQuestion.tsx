@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 interface Question {
   id: string;
@@ -20,19 +20,25 @@ export function ReportQuestion({
   onChange,
 }: Props): React.ReactElement {
   return (
-    <div className="rounded-game-lg border border-white/80 p-4">
+    <div className="rounded-game-lg border border-white/80 bg-[rgba(255,255,255,0.1)] p-4 backdrop-blur-sm">
       {/* Question header */}
-      <div className="mb-0 flex items-start gap-2 border-b border-white/80 pb-3">
-        <span
-          className="shrink-0 select-none font-mono font-normal"
-          style={{ fontSize: 20, color: '#44DFD7', lineHeight: 1.25 }}
-          aria-hidden="true"
-        >
-          [{questionNumber}]
+      <div className="mb-0 flex items-center gap-3 border-b border-white/80 pb-3">
+        <span className="relative mt-0.5 flex size-8 shrink-0 items-center justify-center select-none">
+          <span className="pointer-events-none absolute left-0 top-0 h-3.5 w-3.5 border-l-[2px] border-t-[2px] border-[#44DFD7]" />
+          <span className="pointer-events-none absolute right-0 top-0 h-3.5 w-3.5 border-r-[2px] border-t-[2px] border-[#44DFD7]" />
+          <span className="pointer-events-none absolute bottom-0 left-0 h-3.5 w-3.5 border-b-[2px] border-l-[2px] border-[#44DFD7]" />
+          <span className="pointer-events-none absolute bottom-0 right-0 h-3.5 w-3.5 border-b-[2px] border-r-[2px] border-[#44DFD7]" />
+          <span
+            className="font-mono font-normal"
+            style={{ fontSize: 16, color: "#44DFD7", lineHeight: 1 }}
+            aria-hidden="true"
+          >
+            {questionNumber}
+          </span>
         </span>
         <p
           className="font-mono font-normal tracking-wide"
-          style={{ fontSize: 20, color: '#44DFD7', lineHeight: 1.25 }}
+          style={{ fontSize: 20, color: "#44DFD7", lineHeight: 1.25 }}
         >
           {question.questionText}
         </p>
@@ -48,13 +54,13 @@ export function ReportQuestion({
               type="button"
               onClick={() => onChange(index)}
               className="flex items-center gap-2 rounded p-2 text-left font-mono transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
-              style={{ fontSize: 16, color: '#ffffff' }}
+              style={{ fontSize: 16, color: "#ffffff" }}
             >
               <span
                 className="shrink-0 select-none whitespace-nowrap leading-none"
-                style={{ color: selected ? '#44DFD7' : '#ffffff' }}
+                style={{ color: selected ? "#44DFD7" : "#ffffff" }}
               >
-                {selected ? '[✓]' : '[  ]'}
+                {selected ? "[✓]" : "[  ]"}
               </span>
               <span>{option}</span>
             </button>

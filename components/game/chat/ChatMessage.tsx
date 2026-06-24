@@ -30,6 +30,9 @@ const IS_RIGHT: Record<ChatAuthor, boolean> = {
 };
 
 const URL_PATTERN = /(https?:\/\/[^\s]+)/g;
+const CHAT_BUBBLE_FONT_SIZE = 14;
+const CHAT_BUBBLE_LINE_HEIGHT = 22;
+const CHAT_BUBBLE_LETTER_SPACING = 1.15;
 
 function renderTextWithLinks(text: string): ReactNode[] {
   const parts = text.split(URL_PATTERN);
@@ -75,8 +78,7 @@ export function ChatMessage({
         <>
           <div
             className={[
-              'max-w-[85%] rounded-game-md px-4 py-3',
-              isRight ? 'bg-[rgba(164,244,240,0.60)] text-content-inverse' : 'bg-[rgba(255,255,255,0.30)] text-content-primary',
+              'max-w-[85%]',
               awaitingClass,
             ].join(' ')}
           >
@@ -89,10 +91,15 @@ export function ChatMessage({
         <div
           className={[
             'max-w-[85%] rounded-game-md px-4 py-3',
-            'font-mono text-game-sm leading-relaxed whitespace-pre-wrap',
+            'font-mono whitespace-pre-wrap',
             isRight ? 'bg-[rgba(164,244,240,0.60)] text-content-inverse' : 'bg-[rgba(255,255,255,0.30)] text-content-primary',
             awaitingClass,
           ].join(' ')}
+          style={{
+            fontSize: `${CHAT_BUBBLE_FONT_SIZE}px`,
+            lineHeight: `${CHAT_BUBBLE_LINE_HEIGHT}px`,
+            letterSpacing: `${CHAT_BUBBLE_LETTER_SPACING}px`,
+          }}
         >
           {text ? renderTextWithLinks(text) : null}
         </div>

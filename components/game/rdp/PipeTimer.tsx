@@ -53,7 +53,7 @@ export function PipeTimer({ timerStartedAt, timerSeconds, onExpire }: PipeTimerP
       aria-live="polite"
       aria-label={`Оставшееся время: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`}
     >
-      <span className="text-[1.1rem] font-bold tracking-widest">
+      <span className="text-[1.225rem] font-bold tracking-widest">
         {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
       </span>
     </div>

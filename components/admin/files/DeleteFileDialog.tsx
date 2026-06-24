@@ -85,7 +85,7 @@ export function DeleteFileDialog({
         </div>
 
         <p className="mb-6 text-sm text-gray-600 dark:text-gray-300">
-          Это действие необратимо. Файл будет удалён из хранилища.
+          Это действие необратимо. Файл будет удален из хранилища.
         </p>
 
         {error && (

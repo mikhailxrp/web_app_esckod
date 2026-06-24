@@ -94,7 +94,7 @@ export function ResetPasswordForm(): React.ReactElement {
         } else if (result.error === 'RATE_LIMIT_EXCEEDED') {
           setServerError('Слишком много попыток. Попробуйте позже');
         } else {
-          setServerError('Проверьте правильность введённых данных');
+          setServerError('Проверьте правильность введенных данных');
         }
         return;
       }
@@ -102,7 +102,7 @@ export function ResetPasswordForm(): React.ReactElement {
       setIsSuccess(true);
     } catch (error) {
       console.error('Password reset failed:', error);
-      setServerError('Не удалось отправить запрос. Попробуйте ещё раз');
+      setServerError('Не удалось отправить запрос. Попробуйте еще раз');
     }
   }
 

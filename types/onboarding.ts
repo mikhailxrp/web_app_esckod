@@ -28,6 +28,8 @@ export type BubbleAnchor =
   | 'center-left'
   | 'center-right';
 
+export type BubbleTextAlign = 'left' | 'center' | 'right';
+
 export interface OnboardingStep {
   id: number;
   scene: OnboardingScene;
@@ -51,6 +53,10 @@ export interface OnboardingStep {
   bubbleFontSize?: number;
   /** Межстрочный интервал текста внутри пузырька (px). По умолчанию — fontSize × 1.625 */
   bubbleLineHeight?: number;
+  /** Межбуквенный интервал текста и кнопки внутри пузырька (px). По умолчанию — 0 */
+  bubbleLetterSpacing?: number;
+  /** Выравнивание текста внутри пузырька/оверлея */
+  bubbleTextAlign?: BubbleTextAlign;
   /** Переопределить сторону хвостика (по умолчанию выводится из placement) */
   bubbleTailSide?: BubbleTailSide;
   demoPayload?: DemoPayload;
@@ -72,7 +78,7 @@ export interface DemoPayload {
   demoLogEntries?: OnboardingDemoLogEntry[];
 }
 
-/** Фаза демо-панели взломщика — задаёт, что рендерить в demo-режиме */
+/** Фаза демо-панели взломщика — задает, что рендерить в demo-режиме */
 export type CrackDemoPhase = 'launch' | 'playing' | 'completed';
 
 export interface CrackDemoAttempt {

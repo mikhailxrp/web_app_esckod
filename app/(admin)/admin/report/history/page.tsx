@@ -6,7 +6,7 @@ import { validateReportConfig } from '@/lib/final-report/validate';
 import type { HistoryData, QuestionListItem, ContentItem } from '@/types/admin-report';
 
 export const metadata = {
-  title: 'Финальный отчёт — История',
+  title: 'Финальный отчет — История',
 };
 
 function serializeQuestion(q: {

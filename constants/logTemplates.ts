@@ -10,14 +10,14 @@ export const logTemplates = {
   decipher_access_granted:
     'Папка {folderPath} расшифрована. Пароль: {folderPassword}',
   rdp_invalid_ip: 'Неверный IP-адрес: {ip}',
-  rdp_puzzle_solved: 'Доступ к удалённому компьютеру ({logSubjectName}) предоставлен',
+  rdp_puzzle_solved: 'Доступ к удаленному компьютеру ({logSubjectName}) предоставлен',
   rdp_timer_expired: 'Сеанс прерван: соединение разорвано',
   rdp_session_lost:
     'Доступ к {logSubjectName} потерян: обнаружено два активных сеанса. Новый IP: {nextIp}',
   rdp_folder_unlocked:
     'Папка {folderPath} в системе {logSubjectName} разблокирована. Пароль: {folderPassword}',
   rdp_completed: 'Изучение материалов завершено',
-  final_report_submitted: 'Финальный отчёт сдан. Результат: {percent}%',
+  final_report_submitted: 'Финальный отчет сдан. Результат: {percent}%',
   mission_completed_overview: 'Миссия "{displayName}" — пройдена',
   game_restarted: 'Игра начата заново',
   admin_progress_reset: '[admin] Прогресс по миссии "{displayName}" сброшен',

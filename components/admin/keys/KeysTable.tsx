@@ -234,7 +234,7 @@ export function KeysTable({
       const error =
         data.error === 'MAX_BELOW_CURRENT'
           ? 'Лимит не может быть меньше текущего числа активаций'
-          : 'Не удалось сохранить. Попробуйте ещё раз';
+          : 'Не удалось сохранить. Попробуйте еще раз';
       return { success: false, error };
     }
     const updated = await res.json();

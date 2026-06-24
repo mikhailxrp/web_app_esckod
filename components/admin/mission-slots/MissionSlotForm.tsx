@@ -64,7 +64,7 @@ interface MissionSlotFormProps {
 const MISSION_TYPE_LABELS: Record<MissionType, string> = {
   CRACK: 'Взлом сайта',
   DECIPHER: 'Дешифратор',
-  RDP: 'Удалённый доступ',
+  RDP: 'Удаленный доступ',
 };
 
 // ── Default values builder ────────────────────────────────────────────────────
@@ -328,7 +328,7 @@ export function MissionSlotForm({
               >
                 <option value="CRACK">Взлом сайта</option>
                 <option value="DECIPHER">Дешифратор</option>
-                <option value="RDP">Удалённый доступ</option>
+                <option value="RDP">Удаленный доступ</option>
               </select>
             </Field>
           ) : (
@@ -348,7 +348,7 @@ export function MissionSlotForm({
             <Field
               label="Ключ слота"
               htmlFor="slotKey"
-              hint={mode === 'create' ? 'Формат: CRACK_НАЗВАНИЕ (латиница + подчёркивание)' : undefined}
+              hint={mode === 'create' ? 'Формат: CRACK_НАЗВАНИЕ (латиница + подчеркивание)' : undefined}
               error={errors.slotKey?.message}
               required={mode === 'create'}
             >

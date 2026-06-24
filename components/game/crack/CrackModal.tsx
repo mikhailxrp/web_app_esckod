@@ -304,7 +304,7 @@ export function CrackModal({ slotKey, onClose }: CrackModalProps): ReactElement 
       onClick={onClose}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-[840px] animate-modal-panel flex-col overflow-hidden rounded-game-lg border border-border bg-bg-primary shadow-game-card"
+        className="flex max-h-[90vh] w-full max-w-[840px] animate-modal-panel flex-col overflow-hidden rounded-game-lg border border-white bg-bg-primary shadow-game-card"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

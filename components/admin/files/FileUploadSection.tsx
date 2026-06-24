@@ -16,12 +16,12 @@ const ERROR_MESSAGES: Record<string, string> = {
   FILE_TOO_LARGE: `Файл превышает ${MAX_SIZE_MB} МБ.`,
   FILE_NAME_EXISTS: 'Файл с таким именем уже существует в этой папке.',
   NOT_RDP_SLOT: 'Выбранный слот не является RDP-слотом.',
-  S3_ERROR: 'Ошибка хранилища. Попробуйте ещё раз.',
+  S3_ERROR: 'Ошибка хранилища. Попробуйте еще раз.',
 };
 
 function getErrorMessage(error: string | undefined): string {
-  if (!error) return 'Неизвестная ошибка. Попробуйте ещё раз.';
-  return ERROR_MESSAGES[error] ?? 'Ошибка сервера. Попробуйте ещё раз.';
+  if (!error) return 'Неизвестная ошибка. Попробуйте еще раз.';
+  return ERROR_MESSAGES[error] ?? 'Ошибка сервера. Попробуйте еще раз.';
 }
 
 interface FileUploadSectionProps {

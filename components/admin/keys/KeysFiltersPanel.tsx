@@ -156,7 +156,7 @@ export function KeysFiltersPanel({
               onChange={(e) => onLimitChangedChange(e.target.checked)}
               className="accent-admin-accent"
             />
-            Изменён лимит
+            Изменен лимит
           </label>
         </fieldset>
       </div>

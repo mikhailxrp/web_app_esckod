@@ -115,7 +115,7 @@ export function LoginForm(): React.ReactElement {
       });
 
       if (!result) {
-        setAuthError('Произошла ошибка. Попробуйте ещё раз');
+        setAuthError('Произошла ошибка. Попробуйте еще раз');
         return;
       }
 
@@ -129,10 +129,10 @@ export function LoginForm(): React.ReactElement {
         return;
       }
 
-      setAuthError('Произошла ошибка. Попробуйте ещё раз');
+      setAuthError('Произошла ошибка. Попробуйте еще раз');
     } catch (error) {
       console.error('Login failed:', error);
-      setAuthError('Произошла ошибка. Попробуйте ещё раз');
+      setAuthError('Произошла ошибка. Попробуйте еще раз');
     }
   }
 

@@ -169,7 +169,7 @@ export function RdpModal({ connectResult, onClose }: RdpModalProps): ReactElemen
       className="fixed inset-0 z-card flex animate-modal-backdrop items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label="Удалённый доступ"
+      aria-label="Удаленный доступ"
       onClick={onClose}
     >
       <div
@@ -186,7 +186,7 @@ export function RdpModal({ connectResult, onClose }: RdpModalProps): ReactElemen
             aria-hidden="true"
           />
           <span className="font-mono text-game-sm uppercase tracking-game-wide text-accent">
-            Удалённый доступ
+            Удаленный доступ
           </span>
           {displayName ? (
             <span className="font-mono text-game-xs text-content-muted">— {displayName}</span>
@@ -206,7 +206,7 @@ export function RdpModal({ connectResult, onClose }: RdpModalProps): ReactElemen
             <button
               type="button"
               onClick={onClose}
-              aria-label="Закрыть окно удалённого доступа"
+              aria-label="Закрыть окно удаленного доступа"
               className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
             >
               <Image

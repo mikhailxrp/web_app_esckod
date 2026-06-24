@@ -4,7 +4,7 @@ import { LinksForm } from '@/components/admin/report/LinksForm';
 import type { LinkBlock, LinkImage } from '@/types/admin-report';
 
 export const metadata = {
-  title: 'Финальный отчёт — Ссылки',
+  title: 'Финальный отчет — Ссылки',
 };
 
 function serializeLinkBlock(block: {

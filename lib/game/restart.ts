@@ -28,6 +28,7 @@ export async function restartGame(userId: string): Promise<void> {
         finalChoice: null,
         detectiveFinished: false,
         marinaFinished: false,
+        firedTriggers: [],
         version: { increment: 1 },
       },
     });

@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from "react";
 
-import { fetchWithVersion } from '@/lib/api/fetchWithVersion';
-import GameLoader from '@/components/ui/GameLoader';
-import { toast } from '@/components/ui/Toast';
-import { REPORT_FINAL_CHOICES } from '@/constants/reportFinalChoices';
-import { ReportQuestion } from './ReportQuestion';
-import { ReportResult } from './ReportResult';
+import { fetchWithVersion } from "@/lib/api/fetchWithVersion";
+import GameLoader from "@/components/ui/GameLoader";
+import { toast } from "@/components/ui/Toast";
+import { REPORT_FINAL_CHOICES } from "@/constants/reportFinalChoices";
+import { ReportQuestion } from "./ReportQuestion";
+import { ReportResult } from "./ReportResult";
 
 // =============================================================
 // Types
@@ -58,7 +58,7 @@ interface ResultData {
   linkBlocks: LinkBlock[];
 }
 
-type Stage = 'loading' | 'questions' | 'result';
+type Stage = "loading" | "questions" | "result";
 
 interface Props {
   alreadySubmitted: boolean;
@@ -71,16 +71,20 @@ interface Props {
 export function FinalReportView({
   alreadySubmitted,
 }: Props): React.ReactElement {
-  const [stage, setStage] = useState<Stage>('loading');
+  const [stage, setStage] = useState<Stage>("loading");
   const [version, setVersion] = useState(0);
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [finalReportQuestionId, setFinalReportQuestionId] = useState<string | null>(null);
+  const [finalReportQuestionId, setFinalReportQuestionId] = useState<
+    string | null
+  >(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [resultData, setResultData] = useState<ResultData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRestarting, setIsRestarting] = useState(false);
 
-  const choiceLabels = REPORT_FINAL_CHOICES.map((c) => c.label.trim().toLowerCase());
+  const choiceLabels = REPORT_FINAL_CHOICES.map((c) =>
+    c.label.trim().toLowerCase(),
+  );
 
   // If finalReportQuestionId is configured — use it.
   // Otherwise fall back to scanning all questions for one whose options match REPORT_FINAL_CHOICES.
@@ -103,18 +107,18 @@ export function FinalReportView({
 
   const fetchResult = useCallback(async (): Promise<void> => {
     try {
-      const res = await fetch('/api/final-report/result');
+      const res = await fetch("/api/final-report/result");
       if (!res.ok) {
         const data = (await res.json()) as { error?: string };
-        toast.error(data.error ?? 'Ошибка загрузки результата');
+        toast.error(data.error ?? "Ошибка загрузки результата");
         return;
       }
       const data = (await res.json()) as ResultData;
       setResultData(data);
-      setStage('result');
+      setStage("result");
     } catch (err) {
-      console.error('[FinalReportView] fetchResult', err);
-      toast.error('Ошибка соединения');
+      console.error("[FinalReportView] fetchResult", err);
+      toast.error("Ошибка соединения");
     }
   }, []);
 
@@ -126,20 +130,20 @@ export function FinalReportView({
 
     async function fetchQuestions(): Promise<void> {
       try {
-        const res = await fetch('/api/final-report/questions');
+        const res = await fetch("/api/final-report/questions");
         if (!res.ok) {
           const data = (await res.json()) as { error?: string };
-          toast.error(data.error ?? 'Ошибка загрузки вопросов');
+          toast.error(data.error ?? "Ошибка загрузки вопросов");
           return;
         }
         const data = (await res.json()) as QuestionsResponse;
         setQuestions(data.questions);
         setFinalReportQuestionId(data.finalReportQuestionId);
         setVersion(data.version);
-        setStage('questions');
+        setStage("questions");
       } catch (err) {
-        console.error('[FinalReportView] fetchQuestions', err);
-        toast.error('Ошибка соединения');
+        console.error("[FinalReportView] fetchQuestions", err);
+        toast.error("Ошибка соединения");
       }
     }
 
@@ -168,7 +172,7 @@ export function FinalReportView({
 
   const refetchVersion = async (): Promise<void> => {
     try {
-      const res = await fetch('/api/final-report/questions');
+      const res = await fetch("/api/final-report/questions");
       if (res.ok) {
         const data = (await res.json()) as QuestionsResponse;
         setVersion(data.version);
@@ -183,19 +187,21 @@ export function FinalReportView({
 
     const finalChoice = getFinalChoice();
     if (!finalChoice) {
-      toast.error('Необходимо выбрать «Обвинить» или «Защитить»');
+      toast.error("Необходимо выбрать «Обвинить» или «Защитить»");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const response = await fetchWithVersion('/api/final-report/submit', {
+      const response = await fetchWithVersion("/api/final-report/submit", {
         body: {
           finalChoice,
-          answers: Object.entries(answers).map(([questionId, selectedOption]) => ({
-            questionId,
-            selectedOption,
-          })),
+          answers: Object.entries(answers).map(
+            ([questionId, selectedOption]) => ({
+              questionId,
+              selectedOption,
+            }),
+          ),
           expectedVersion: version,
         },
         onConflict: refetchVersion,
@@ -207,14 +213,14 @@ export function FinalReportView({
 
       if (!response.ok) {
         const data = (await response.json()) as { error?: string };
-        toast.error(data.error ?? 'Ошибка при отправке отчёта');
+        toast.error(data.error ?? "Ошибка при отправке отчета");
         return;
       }
 
       await fetchResult();
     } catch (err) {
-      console.error('[FinalReportView] handleSubmit', err);
-      toast.error('Ошибка соединения');
+      console.error("[FinalReportView] handleSubmit", err);
+      toast.error("Ошибка соединения");
     } finally {
       setIsSubmitting(false);
     }
@@ -223,19 +229,19 @@ export function FinalReportView({
   const handleReplay = async (): Promise<void> => {
     setIsRestarting(true);
     try {
-      const res = await fetch('/api/game/restart', { method: 'POST' });
+      const res = await fetch("/api/game/restart", { method: "POST" });
       if (res.ok) {
         window.location.reload();
         return;
       }
       if (res.status === 429) {
-        toast.warning('Слишком частые попытки, подождите немного');
+        toast.warning("Слишком частые попытки, подождите немного");
       } else {
-        toast.error('Ошибка перезапуска. Попробуйте позже');
+        toast.error("Ошибка перезапуска. Попробуйте позже");
       }
     } catch (err) {
-      console.error('[FinalReportView] handleReplay', err);
-      toast.error('Ошибка перезапуска. Попробуйте позже');
+      console.error("[FinalReportView] handleReplay", err);
+      toast.error("Ошибка перезапуска. Попробуйте позже");
     } finally {
       setIsRestarting(false);
     }
@@ -245,7 +251,7 @@ export function FinalReportView({
   // Render
   // =============================================================
 
-  if (stage === 'loading') {
+  if (stage === "loading") {
     return (
       <div className="flex flex-1 items-center justify-center py-20">
         <GameLoader />
@@ -253,7 +259,7 @@ export function FinalReportView({
     );
   }
 
-  if (stage === 'result' && resultData) {
+  if (stage === "result" && resultData) {
     return (
       <ReportResult
         score={resultData.score}
@@ -286,18 +292,24 @@ export function FinalReportView({
 
       {/* Final choice block — same card style as control questions */}
       {finalQuestion && (
-        <div className="rounded-game-lg border border-white/80 p-4">
-          <div className="mb-0 flex items-start gap-2 border-b border-white/80 pb-3">
-            <span
-              className="shrink-0 select-none font-mono font-normal"
-              style={{ fontSize: 20, color: '#44DFD7', lineHeight: 1.25 }}
-              aria-hidden="true"
-            >
-              [→]
+        <div className="rounded-game-lg border border-white/80 bg-[rgba(255,255,255,0.1)] p-4 backdrop-blur-sm">
+          <div className="mb-0 flex items-start gap-3 border-b border-white/80 pb-3">
+            <span className="relative mt-0.5 flex size-8 shrink-0 items-center justify-center select-none">
+              <span className="pointer-events-none absolute left-0 top-0 h-3.5 w-3.5 border-l-[2px] border-t-[2px] border-[#44DFD7]" />
+              <span className="pointer-events-none absolute right-0 top-0 h-3.5 w-3.5 border-r-[2px] border-t-[2px] border-[#44DFD7]" />
+              <span className="pointer-events-none absolute bottom-0 left-0 h-3.5 w-3.5 border-b-[2px] border-l-[2px] border-[#44DFD7]" />
+              <span className="pointer-events-none absolute bottom-0 right-0 h-3.5 w-3.5 border-b-[2px] border-r-[2px] border-[#44DFD7]" />
+              <span
+                className="font-mono font-normal"
+                style={{ fontSize: 20, color: "#44DFD7", lineHeight: 1 }}
+                aria-hidden="true"
+              >
+                →
+              </span>
             </span>
             <p
               className="font-mono font-normal tracking-wide"
-              style={{ fontSize: 20, color: '#44DFD7', lineHeight: 1.25 }}
+              style={{ fontSize: 20, color: "#44DFD7", lineHeight: 1.25 }}
             >
               {finalQuestion.questionText}
             </p>
@@ -311,13 +323,13 @@ export function FinalReportView({
                   type="button"
                   onClick={() => handleAnswer(finalQuestion.id, index)}
                   className="flex items-center gap-2 rounded p-2 text-left font-mono transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
-                  style={{ fontSize: 16, color: '#ffffff' }}
+                  style={{ fontSize: 16, color: "#ffffff" }}
                 >
                   <span
                     className="shrink-0 select-none whitespace-nowrap leading-none"
-                    style={{ color: selected ? '#44DFD7' : '#ffffff' }}
+                    style={{ color: selected ? "#44DFD7" : "#ffffff" }}
                   >
-                    {selected ? '[✓]' : '[  ]'}
+                    {selected ? "[✓]" : "[  ]"}
                   </span>
                   <span>{option}</span>
                 </button>
@@ -334,13 +346,13 @@ export function FinalReportView({
           disabled={!allAnswered || isSubmitting}
           onClick={() => void handleSubmit()}
           className={[
-            'rounded-game-lg px-12 py-3 font-mono text-game-sm font-bold uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+            "rounded-game-lg px-12 py-3 font-mono text-[20px] font-bold uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
             allAnswered && !isSubmitting
-              ? 'bg-accent text-black hover:opacity-80'
-              : 'cursor-not-allowed bg-accent/20 text-content-muted opacity-50',
-          ].join(' ')}
+              ? "bg-accent text-black hover:opacity-80"
+              : "cursor-not-allowed bg-accent/20 text-content-muted opacity-50",
+          ].join(" ")}
         >
-          {isSubmitting ? 'Отправка...' : 'Отправить отчет'}
+          {isSubmitting ? "Отправка..." : "Отправить отчет"}
         </button>
       </div>
     </div>

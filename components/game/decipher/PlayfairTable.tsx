@@ -27,7 +27,7 @@ export function PlayfairTable({ table, onLetterClick }: PlayfairTableProps): Rea
               <div
                 key={key}
                 aria-hidden="true"
-                className="size-[60px] rounded-game-sm border border-white/20"
+                className="size-[60px] rounded-game-sm border border-white/30"
               />
             );
           }
@@ -38,7 +38,7 @@ export function PlayfairTable({ table, onLetterClick }: PlayfairTableProps): Rea
               type="button"
               onClick={() => onLetterClick?.(letter)}
               aria-label={`Буква ${letter}`}
-              className="size-[60px] rounded-game-sm border border-white font-mono text-[20px] font-medium text-accent transition-colors hover:bg-white/5 active:scale-95"
+              className="size-[60px] rounded-game-sm border border-white/30 font-mono text-[20px] font-medium text-accent transition-colors hover:bg-white/5 active:scale-95"
             >
               {letter}
             </button>

@@ -164,7 +164,7 @@ export function WindowsSimulation({
         const errData = (await res.json().catch(() => ({}))) as { error?: string };
         const msg =
           errData.error === 'TRIGGER_NOT_ACTIVATED'
-            ? 'Миссия ещё не активирована.'
+            ? 'Миссия еще не активирована.'
             : 'Не удалось завершить миссию.';
         toast.error(msg);
         // Restore triggered stage so user can retry

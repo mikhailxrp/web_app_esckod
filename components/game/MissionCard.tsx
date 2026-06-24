@@ -58,7 +58,7 @@ const LABEL_CLASS = "font-mono text-game-base text-content-secondary";
 
 // CRACK-кнопка функциональна; Decipher/RDP подключаются в Phase 12/14
 const SUBMIT_BTN_CLASS =
-  "mt-2 h-input-height w-full rounded-game-full bg-accent font-mono text-game-sm uppercase tracking-game-wide text-content-inverse disabled:cursor-not-allowed disabled:opacity-50";
+  "mt-2 h-input-height w-full rounded-game-full bg-accent font-mono text-[20px] uppercase tracking-game-wide text-content-inverse disabled:cursor-not-allowed disabled:opacity-50";
 
 // ─── Form: CRACK ──────────────────────────────────────────────────────────────
 
@@ -102,7 +102,7 @@ function CrackForm({ onLaunched }: CrackFormProps): React.ReactElement {
       const data = (await res.json()) as { slotKey: string };
       onLaunched(data.slotKey);
     } catch {
-      setServerError("Ошибка соединения. Попробуйте ещё раз.");
+      setServerError("Ошибка соединения. Попробуйте еще раз.");
     }
   };
 
@@ -159,7 +159,11 @@ function CrackForm({ onLaunched }: CrackFormProps): React.ReactElement {
         </p>
       ) : null}
 
-      <button type="submit" disabled={isSubmitting} className={SUBMIT_BTN_CLASS}>
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className={SUBMIT_BTN_CLASS}
+      >
         Начать
       </button>
     </form>
@@ -206,7 +210,7 @@ function DecipherForm({ onLaunched }: DecipherFormProps): React.ReactElement {
       const data = (await res.json()) as { slotKey: string };
       onLaunched(data.slotKey);
     } catch {
-      setServerError("Ошибка соединения. Попробуйте ещё раз.");
+      setServerError("Ошибка соединения. Попробуйте еще раз.");
     }
   };
 
@@ -263,7 +267,11 @@ function DecipherForm({ onLaunched }: DecipherFormProps): React.ReactElement {
         </p>
       ) : null}
 
-      <button type="submit" disabled={isSubmitting} className={SUBMIT_BTN_CLASS}>
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className={SUBMIT_BTN_CLASS}
+      >
         Начать
       </button>
     </form>
@@ -308,7 +316,7 @@ function RdpForm({ onLaunched }: RdpFormProps): React.ReactElement {
         if (data.error === "INVALID_IP") {
           setServerError("IP не распознан. Проверьте адрес.");
         } else {
-          setServerError("Ошибка подключения. Попробуйте ещё раз.");
+          setServerError("Ошибка подключения. Попробуйте еще раз.");
         }
         await refreshLogs();
         return;
@@ -317,7 +325,7 @@ function RdpForm({ onLaunched }: RdpFormProps): React.ReactElement {
       const data = (await res.json()) as RdpConnectResult;
       onLaunched(data);
     } catch {
-      setServerError("Ошибка соединения. Попробуйте ещё раз.");
+      setServerError("Ошибка соединения. Попробуйте еще раз.");
     }
   };
 
@@ -354,7 +362,11 @@ function RdpForm({ onLaunched }: RdpFormProps): React.ReactElement {
         </p>
       ) : null}
 
-      <button type="submit" disabled={isSubmitting} className={SUBMIT_BTN_CLASS}>
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className={SUBMIT_BTN_CLASS}
+      >
         Подключиться
       </button>
     </form>
@@ -407,23 +419,19 @@ function MissionModal({
           <Image
             src={config.iconSrc}
             alt=""
-            width={20}
-            height={20}
+            width={30}
+            height={30}
             aria-hidden="true"
           />
-          <span className="font-mono text-game-sm uppercase tracking-game-wide text-accent">
+          <span className="font-mono text-[20px] text-accent">
             {config.label}
           </span>
 
           <div className="min-w-0 flex-1 overflow-hidden">
             <span
-              className="block overflow-hidden whitespace-nowrap font-mono text-game-xs text-border tracking-[-0.05em]"
+              className="ml-auto block h-3 w-[calc(50%+70px)] [background:repeating-linear-gradient(-60deg,transparent_0,transparent_8px,rgba(255,255,255,0.3)_8px,rgba(255,255,255,0.3)_10px)]"
               aria-hidden="true"
-            >
-              {
-                "////////////////////////////////////////////////////////////////////"
-              }
-            </span>
+            />
           </div>
 
           <button
@@ -432,7 +440,13 @@ function MissionModal({
             aria-label="Закрыть форму"
             className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
           >
-            <Image src="/assets/icons/close.svg" alt="" width={16} height={16} aria-hidden="true" />
+            <Image
+              src="/assets/icons/close.svg"
+              alt=""
+              width={16}
+              height={16}
+              aria-hidden="true"
+            />
           </button>
         </div>
 
@@ -451,7 +465,6 @@ function MissionModal({
             />
           )}
         </div>
-
       </div>
     </div>
   );
@@ -483,8 +496,9 @@ export function MissionCard({
 
   const handleLaunched = (slotKey: string): void => {
     setIsOpen(false);
-    if (missionType === 'CRACK' && onCrackLaunched) onCrackLaunched(slotKey);
-    if (missionType === 'DECIPHER' && onDecipherLaunched) onDecipherLaunched(slotKey);
+    if (missionType === "CRACK" && onCrackLaunched) onCrackLaunched(slotKey);
+    if (missionType === "DECIPHER" && onDecipherLaunched)
+      onDecipherLaunched(slotKey);
   };
 
   const handleRdpLaunched = (data: RdpConnectResult): void => {

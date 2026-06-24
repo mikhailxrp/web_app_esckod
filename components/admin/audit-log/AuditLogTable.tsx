@@ -116,7 +116,7 @@ export function AuditLogTable({
       setLogs(data.logs);
       setNextCursor(data.nextCursor);
     } catch {
-      setError('Не удалось загрузить данные. Попробуйте ещё раз.');
+      setError('Не удалось загрузить данные. Попробуйте еще раз.');
     } finally {
       setIsLoading(false);
     }
@@ -137,7 +137,7 @@ export function AuditLogTable({
       setLogs((prev) => [...prev, ...data.logs]);
       setNextCursor(data.nextCursor);
     } catch {
-      setError('Не удалось загрузить данные. Попробуйте ещё раз.');
+      setError('Не удалось загрузить данные. Попробуйте еще раз.');
     } finally {
       setIsLoading(false);
     }
@@ -247,7 +247,7 @@ export function AuditLogTable({
             disabled={isLoading}
             className="px-6 py-2 rounded-lg text-sm text-admin-label border border-admin-card-border hover:bg-gray-50 disabled:opacity-50 transition-colors"
           >
-            {isLoading ? 'Загрузка...' : 'Загрузить ещё'}
+            {isLoading ? 'Загрузка...' : 'Загрузить еще'}
           </button>
         </div>
       )}

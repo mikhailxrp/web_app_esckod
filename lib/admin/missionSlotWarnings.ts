@@ -42,7 +42,7 @@ export async function getMissionSlotWarnings(
       warnings.push({
         code: 'DUPLICATE_CRACK_LAUNCHER',
         message:
-          'Уже существует активный Crack-слот с таким URL и логином. Launch-эндпоинт вернёт непредсказуемый слот (findFirst).',
+          'Уже существует активный Crack-слот с таким URL и логином. Launch-эндпоинт вернет непредсказуемый слот (findFirst).',
       });
     }
   }
@@ -61,7 +61,7 @@ export async function getMissionSlotWarnings(
       warnings.push({
         code: 'DUPLICATE_DECIPHER_FOLDER',
         message:
-          'Уже существует активный Decipher-слот с таким путём к папке. Launch-эндпоинт вернёт непредсказуемый слот (findFirst).',
+          'Уже существует активный Decipher-слот с таким путем к папке. Launch-эндпоинт вернет непредсказуемый слот (findFirst).',
       });
     }
   }
@@ -80,7 +80,7 @@ export async function getMissionSlotWarnings(
       warnings.push({
         code: 'DUPLICATE_RDP_IP',
         message:
-          'Уже существует активный RDP-слот с таким IP. Connect-эндпоинт вернёт непредсказуемый слот (findFirst).',
+          'Уже существует активный RDP-слот с таким IP. Connect-эндпоинт вернет непредсказуемый слот (findFirst).',
       });
     }
   }

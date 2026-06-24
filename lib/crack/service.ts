@@ -269,7 +269,7 @@ export async function applyAttempt(
         };
       }
 
-      // Провал: попытки исчерпаны — пересоздаём поле с новым словом.
+      // Провал: попытки исчерпаны — пересоздаем поле с новым словом.
       if (nextAttemptsUsed >= session.maxAttempts) {
         const { targetWord: newTargetWord, wordList: newWordList } =
           generateCrackField();

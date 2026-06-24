@@ -26,7 +26,7 @@ const DISTRIBUTION: readonly DistributionGroup[] = [
  * и набор отвлекающих с разной степенью похожести.
  *
  * Все параметры случайны: при каждом вызове — другое слово и поле (правило 9).
- * Graceful degradation: если в группе меньше слов, чем нужно, берём что есть.
+ * Graceful degradation: если в группе меньше слов, чем нужно, берем что есть.
  */
 export function generateCrackField(): CrackField {
   const targetWord = randomFrom(wordList5letters);

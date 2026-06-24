@@ -9,7 +9,7 @@ interface FetchWithVersionOptions {
 }
 
 /**
- * POST-обёртка с обработкой optimistic locking (409).
+ * POST-обертка с обработкой optimistic locking (409).
  * На 409 — показывает тост и вызывает onConflict (обычно refresh()).
  * Без авто-ретрая.
  */
