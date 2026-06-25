@@ -5,9 +5,10 @@ import { useState } from 'react';
 interface TranscriptToggleProps {
   text: string;
   messageId: string;
+  letterSpacing?: number;
 }
 
-export function TranscriptToggle({ text, messageId }: TranscriptToggleProps): React.ReactElement {
+export function TranscriptToggle({ text, messageId, letterSpacing }: TranscriptToggleProps): React.ReactElement {
   const [isOpen, setIsOpen] = useState(false);
   const transcriptId = `transcript-${messageId}`;
 
@@ -33,6 +34,7 @@ export function TranscriptToggle({ text, messageId }: TranscriptToggleProps): Re
           role="region"
           aria-label="Расшифровка аудио"
           className="rounded-game-md bg-bg-tertiary px-4 py-3 font-mono text-game-sm leading-relaxed text-content-primary whitespace-pre-wrap"
+          style={letterSpacing !== undefined ? { letterSpacing: `${letterSpacing}px` } : undefined}
         >
           {text}
         </div>

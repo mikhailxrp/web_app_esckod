@@ -56,13 +56,32 @@ export function ReportQuestion({
               className="flex items-center gap-2 rounded p-2 text-left font-mono transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
               style={{ fontSize: 16, color: "#ffffff" }}
             >
-              <span
-                className="shrink-0 select-none whitespace-nowrap leading-none"
-                style={{ color: selected ? "#44DFD7" : "#ffffff" }}
-              >
-                {selected ? "[✓]" : "[  ]"}
+              <span className="relative flex size-6 shrink-0 items-center justify-center select-none">
+                <span className="pointer-events-none absolute left-0 top-0 bottom-0 border-l-[2px] border-[#44DFD7]" />
+                <span className="pointer-events-none absolute right-0 top-0 bottom-0 border-r-[2px] border-[#44DFD7]" />
+                <span className="pointer-events-none absolute left-0 top-0 h-0 w-[7px] border-t-[2px] border-[#44DFD7]" />
+                <span className="pointer-events-none absolute right-0 top-0 h-0 w-[7px] border-t-[2px] border-[#44DFD7]" />
+                <span className="pointer-events-none absolute bottom-0 left-0 h-0 w-[7px] border-b-[2px] border-[#44DFD7]" />
+                <span className="pointer-events-none absolute bottom-0 right-0 h-0 w-[7px] border-b-[2px] border-[#44DFD7]" />
+                {selected ? (
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 14 14"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M2 7.5l3 3L12 3.5"
+                      stroke="#44DFD7"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                ) : null}
               </span>
-              <span>{option}</span>
+              <span style={{ letterSpacing: "1.15px" }}>{option}</span>
             </button>
           );
         })}

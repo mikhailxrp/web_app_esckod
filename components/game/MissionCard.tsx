@@ -186,6 +186,7 @@ function DecipherForm({ onLaunched }: DecipherFormProps): React.ReactElement {
     mode: "onChange",
   });
   const [serverError, setServerError] = useState<string | null>(null);
+  const refreshLogs = useLogStore((s) => s.refreshLogs);
 
   const onSubmit = async (values: DecipherLaunchInput): Promise<void> => {
     setServerError(null);
@@ -204,6 +205,7 @@ function DecipherForm({ onLaunched }: DecipherFormProps): React.ReactElement {
 
       if (!res.ok) {
         setServerError("Путь или ключ не распознаны.");
+        await refreshLogs();
         return;
       }
 
@@ -429,9 +431,11 @@ function MissionModal({
 
           <div className="min-w-0 flex-1 overflow-hidden">
             <span
-              className="ml-auto block h-3 w-[calc(50%+70px)] [background:repeating-linear-gradient(-60deg,transparent_0,transparent_8px,rgba(255,255,255,0.3)_8px,rgba(255,255,255,0.3)_10px)]"
+              className="ml-auto pr-2 flex h-7 w-[calc(50%+70px)] items-center overflow-hidden whitespace-nowrap font-mono text-xl font-normal leading-none tracking-[-0.3em] text-white/30 select-none [direction:rtl]"
               aria-hidden="true"
-            />
+            >
+              {"/ ".repeat(30)}
+            </span>
           </div>
 
           <button

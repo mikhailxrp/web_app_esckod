@@ -56,8 +56,7 @@ export function ChatPanel({
     slot.messages.length > 0;
 
   const shouldPulse = hasUnread || awaitingAdvance;
-  const borderClass =
-    chatType === "DETECTIVE" ? "border-white" : "border-border";
+  const borderClass = "border-white";
   const windowHeightClass =
     chatType === "DETECTIVE" ? "h-[450px]" : "h-[500px]";
 
@@ -101,9 +100,11 @@ export function ChatPanel({
 
         <div className="min-w-0 flex-1 overflow-hidden" aria-hidden="true">
           <span
-            className="ml-auto block h-3 w-1/2 [background:repeating-linear-gradient(-60deg,transparent_0,transparent_8px,rgba(255,255,255,0.3)_8px,rgba(255,255,255,0.3)_10px)]"
+            className="ml-auto pr-2 flex h-7 w-[calc(50%+40px)] items-center overflow-hidden whitespace-nowrap font-mono text-xl font-normal leading-none tracking-[-0.3em] text-white/30 select-none [direction:rtl]"
             aria-hidden="true"
-          />
+          >
+            {"/ ".repeat(10)}
+          </span>
         </div>
 
         <span className="relative block h-5 w-5" aria-hidden="true">
@@ -118,7 +119,7 @@ export function ChatPanel({
           ) : null}
         </span>
         <span
-          className="pointer-events-none absolute bottom-0 left-3 right-3 h-px rounded-full bg-white"
+          className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-border"
           aria-hidden="true"
         />
       </button>

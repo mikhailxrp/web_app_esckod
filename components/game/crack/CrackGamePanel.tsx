@@ -348,7 +348,9 @@ export function CrackGamePanel({
           : null;
 
   const wordleSpotlight =
-    demo && demoState?.wordleSpotlight ? demoState.wordleSpotlight : "word-list";
+    demo && demoState?.wordleSpotlight
+      ? demoState.wordleSpotlight
+      : "word-list";
   const isAttemptPanelSpotlight = wordleSpotlight === "attempt-panel";
 
   return (
@@ -366,19 +368,21 @@ export function CrackGamePanel({
           height={30}
           aria-hidden="true"
         />
-        <span className="font-mono text-game-panel text-accent">
-          Взломщик
-        </span>
+        <span className="font-mono text-game-panel text-accent">Взломщик</span>
 
         <div className="min-w-0 flex-1 overflow-hidden">
           <span
-            className="ml-auto block h-3 w-[calc(50%+70px)] [background:repeating-linear-gradient(-60deg,transparent_0,transparent_8px,rgba(255,255,255,0.3)_8px,rgba(255,255,255,0.3)_10px)]"
+            className="ml-auto pr-2 flex h-7 w-[calc(50%+70px)] items-center overflow-hidden whitespace-nowrap font-mono text-xl font-normal leading-none tracking-[-0.3em] text-white/30 select-none [direction:rtl]"
             aria-hidden="true"
-          />
+          >
+            {"/ ".repeat(35)}
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
-          {hintText ? <CrackHintButton hintText={hintText} disabled={demo} /> : null}
+          {hintText ? (
+            <CrackHintButton hintText={hintText} disabled={demo} />
+          ) : null}
           <button
             type="button"
             onClick={onClose}
@@ -436,11 +440,12 @@ export function CrackGamePanel({
           </div>
         )}
 
-        {view.phase === "loading" && !(demo && demoState?.phase === "launch") && (
-          <div className="flex flex-1 items-center justify-center px-6 py-8">
-            <GameLoader />
-          </div>
-        )}
+        {view.phase === "loading" &&
+          !(demo && demoState?.phase === "launch") && (
+            <div className="flex flex-1 items-center justify-center px-6 py-8">
+              <GameLoader />
+            </div>
+          )}
 
         {view.phase === "error" && (
           <div className="flex flex-1 items-center justify-center px-6 py-8">

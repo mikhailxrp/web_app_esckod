@@ -46,6 +46,7 @@
 
   body {
     @apply min-h-screen;
+    overflow-anchor: none;
   }
 
   body::before {
