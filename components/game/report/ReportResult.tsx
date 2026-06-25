@@ -219,7 +219,7 @@ export function ReportResult({
         </div>
         <p
           className="pt-3 font-mono font-normal leading-relaxed text-white whitespace-pre-wrap"
-          style={{ fontSize: 16 }}
+          style={{ fontSize: 16, letterSpacing: "1.15px" }}
         >
           {finalContent.bodyText}
         </p>
@@ -234,7 +234,7 @@ export function ReportResult({
           }}
           disabled={isRestarting}
           aria-busy={isRestarting}
-          className="inline-flex items-center gap-2 rounded-game-lg bg-accent px-12 py-3 font-mono text-[20px] font-bold uppercase tracking-widest text-black transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-game-lg bg-accent px-12 py-3 font-mono text-[20px] font-normal uppercase tracking-widest text-black transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isRestarting && (
             <span

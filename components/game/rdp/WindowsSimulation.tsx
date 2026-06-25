@@ -13,6 +13,7 @@ import { fetchWithVersion } from '@/lib/api/fetchWithVersion';
 import GameLoader from '@/components/ui/GameLoader';
 import { toast } from '@/components/ui/Toast';
 import { useChatStore } from '@/store/chatStore';
+import { useLogStore } from '@/store/logStore';
 import type {
   RdpCompleteResult,
   RdpFileView,
@@ -68,6 +69,7 @@ export function WindowsSimulation({
   onUnlockedCountChange,
 }: WindowsSimulationProps): ReactElement {
   const showTriggeredMessage = useChatStore((s) => s.showTriggeredMessage);
+  const refreshLogs = useLogStore((s) => s.refreshLogs);
 
   const [stage, setStage] = useState<SimStage>({ phase: 'loading' });
   const [folders, setFolders] = useState<RdpFolderView[]>([]);
@@ -268,9 +270,10 @@ export function WindowsSimulation({
           setNextIp(result.nextIp);
         }
         setStage({ phase: 'triggered', scenarioFinal: sf });
+        void refreshLogs();
       }
     },
-    [closeWindow, showTriggeredMessage],
+    [closeWindow, showTriggeredMessage, refreshLogs],
   );
 
   // ─── Render ──────────────────────────────────────────────────────────────

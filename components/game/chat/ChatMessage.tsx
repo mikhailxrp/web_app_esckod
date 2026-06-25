@@ -85,7 +85,7 @@ export function ChatMessage({
             <AudioPlayer src={audioUrl} />
           </div>
 
-          {text && <TranscriptToggle text={text} messageId={id} />}
+          {text && <TranscriptToggle text={text} messageId={id} letterSpacing={CHAT_BUBBLE_LETTER_SPACING} />}
         </>
       ) : (
         <div

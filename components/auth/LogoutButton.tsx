@@ -17,7 +17,7 @@ export function LogoutButton(): React.ReactElement {
       type="button"
       variant="ghost"
       onClick={() => void handleLogout()}
-      className="px-3 min-w-[80px] hover:bg-transparent"
+      className="px-3 min-w-[80px] hover:bg-accent/15"
     >
       Выйти
     </Button>

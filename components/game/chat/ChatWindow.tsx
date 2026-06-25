@@ -24,11 +24,13 @@ export function ChatWindow({ chatType, demoTyping = false }: ChatWindowProps): R
   const slot = useChatStore((s) =>
     chatType === 'DETECTIVE' ? s.detective : s.marina,
   );
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const feedRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom when new messages appear or typing indicator shows
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const feed = feedRef.current;
+    if (!feed) return;
+    feed.scrollTo({ top: feed.scrollHeight, behavior: 'smooth' });
   }, [slot.messages.length, slot.isTyping, demoTyping]);
 
   if (slot.status === 'loading' && slot.messages.length === 0 && !demoTyping) {
@@ -79,7 +81,7 @@ export function ChatWindow({ chatType, demoTyping = false }: ChatWindowProps): R
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-hidden">
       {/* Message feed */}
-      <div className="chat-scrollbar flex flex-1 flex-col gap-3 overflow-y-auto pr-1">
+      <div ref={feedRef} className="chat-scrollbar flex flex-1 flex-col gap-3 overflow-y-auto pr-1">
         {slot.messages.length === 0 && !showTyping ? (
           <p className="py-4 text-center font-mono text-game-sm text-content-muted" role="status">
             Нет сообщений
@@ -124,7 +126,6 @@ export function ChatWindow({ chatType, demoTyping = false }: ChatWindowProps): R
           </div>
         )}
 
-        <div ref={bottomRef} />
       </div>
 
       {/* Affordances */}

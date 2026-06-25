@@ -22,7 +22,7 @@ export function DetectiveHintsButton({
         aria-label="Подсказка от Детектива"
         data-onboarding-id="hints-button"
         disabled={disabled}
-        className="inline-flex h-input-height min-w-[120px] items-center justify-center rounded-game-full px-3 font-accent text-game-sm uppercase tracking-game-wide text-accent transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
+        className="inline-flex h-input-height min-w-[120px] items-center justify-center rounded-game-full px-3 font-accent text-game-sm uppercase tracking-game-wide text-accent transition-colors duration-200 hover:bg-accent/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40"
       >
         Подсказка
       </button>

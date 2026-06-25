@@ -234,9 +234,11 @@ export function RdpGamePanel({
 
         <div className="min-w-0 flex-1 overflow-hidden">
           <span
-            className="ml-auto block h-3 w-[calc(50%+70px)] [background:repeating-linear-gradient(-60deg,transparent_0,transparent_8px,rgba(255,255,255,0.3)_8px,rgba(255,255,255,0.3)_10px)]"
+            className="ml-auto pr-2 flex h-7 w-[calc(50%+70px)] items-center overflow-hidden whitespace-nowrap font-mono text-xl font-normal leading-none tracking-[-0.3em] text-white/30 select-none [direction:rtl]"
             aria-hidden="true"
-          />
+          >
+            {"/ ".repeat(16)}
+          </span>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">

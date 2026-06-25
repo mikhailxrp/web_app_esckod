@@ -2,10 +2,19 @@
 
 import { useState } from 'react';
 import type { ReactElement } from 'react';
+import NextImage from 'next/image';
 
 import { fetchWithVersion } from '@/lib/api/fetchWithVersion';
 import { toast } from '@/components/ui/Toast';
 import type { RdpFileView, RdpFileViewedResult } from '@/types/rdp';
+
+const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg']);
+
+function isImageFile(file: RdpFileView): boolean {
+  const source = file.url ?? file.name;
+  const ext = source.split('?')[0].split('.').pop()?.toLowerCase();
+  return ext !== undefined && IMAGE_EXTENSIONS.has(`.${ext}`);
+}
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
@@ -168,23 +177,40 @@ export function PdfViewer({
         </div>
       </div>
 
-      {/* PDF content */}
-      <div className="flex-1 bg-white overflow-hidden">
-        {file.url ? (
-          <iframe
-            key={zoom}
-            src={`${file.url}#toolbar=0&zoom=${zoom}`}
-            title={file.name}
-            className="w-full border-0 block"
-            aria-label={`Документ: ${file.name}`}
+      {/* File content */}
+      {file.url ? (
+        isImageFile(file) ? (
+          <div
+            className="flex-1 bg-white overflow-auto p-2"
             style={{ height: maximized ? '100%' : '420px' }}
-          />
-        ) : (
-          <div className="flex items-center justify-center" style={{ minHeight: '420px' }}>
-            <p className="font-sans text-sm text-gray-400">Файл недоступен</p>
+          >
+            <NextImage
+              src={file.url}
+              alt={file.name}
+              width={0}
+              height={0}
+              sizes="100vw"
+              unoptimized
+              style={{ width: `${zoom}%`, height: 'auto', display: 'block', margin: '0 auto' }}
+            />
           </div>
-        )}
-      </div>
+        ) : (
+          <div className="flex-1 bg-white overflow-hidden">
+            <iframe
+              key={zoom}
+              src={`${file.url}#toolbar=0&zoom=${zoom}`}
+              title={file.name}
+              className="w-full border-0 block"
+              aria-label={`Документ: ${file.name}`}
+              style={{ height: maximized ? '100%' : '420px' }}
+            />
+          </div>
+        )
+      ) : (
+        <div className="flex-1 bg-white flex items-center justify-center" style={{ minHeight: '420px' }}>
+          <p className="font-sans text-sm text-gray-400">Файл недоступен</p>
+        </div>
+      )}
     </div>
   );
 }
