@@ -237,9 +237,7 @@ export default async function AdminPage(): Promise<React.ReactElement> {
   const inProgress = totalWithProgress - completedGame;
   const gaugeTotal = completedGame + inProgress;
   const completedRatio = gaugeTotal > 0 ? completedGame / gaugeTotal : 0;
-  const { completedPath, inProgressPath, trackPath, dotX, dotY } = computeGaugePaths(
-    completedRatio > 0 ? completedRatio : 0.5,
-  );
+  const { completedPath, inProgressPath, trackPath, dotX, dotY } = computeGaugePaths(completedRatio);
   const completedPct = gaugeTotal > 0 ? Math.round((completedGame / gaugeTotal) * 100) : 0;
   const inProgressPct = 100 - completedPct;
   const desktopShare = totalUsers > 0 ? '100.00%' : '—';
