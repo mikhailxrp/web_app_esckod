@@ -50,9 +50,13 @@ async function checkBlockStatus(email: string): Promise<BlockStatus> {
   }
 }
 
-export function LoginForm(): React.ReactElement {
+interface LoginFormProps {
+  initialError?: string;
+}
+
+export function LoginForm({ initialError }: LoginFormProps = {}): React.ReactElement {
   const router = useRouter();
-  const [authError, setAuthError] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<string | null>(initialError ?? null);
   const [supportEmail, setSupportEmail] = useState(FALLBACK_SUPPORT_EMAIL);
 
   const {

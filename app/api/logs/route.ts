@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { requirePlayer } from '@/lib/auth-guards';
 import { prisma } from '@/lib/prisma';
 
 const DEFAULT_LOG_LIMIT = 100;
 const MAX_LOG_LIMIT = 500;
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  const session = await auth();
+  const guard = await requirePlayer();
 
-  if (!session || session.user.type !== 'PLAYER') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
+
+  const session = guard.session;
 
   const { searchParams } = new URL(req.url);
   const rawLimit = Number(searchParams.get('limit'));

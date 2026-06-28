@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { auth } from '@/lib/auth';
+import { requirePlayer } from '@/lib/auth-guards';
 import { rewindHint } from '@/lib/hints/service';
 import { checkRateLimit } from '@/lib/rateLimit';
 
@@ -8,11 +8,13 @@ const HINTS_REWIND_RATE_LIMIT_MAX = 30;
 const HINTS_REWIND_RATE_LIMIT_WINDOW_MS = 60_000;
 
 export async function POST(): Promise<NextResponse> {
-  const session = await auth();
+  const guard = await requirePlayer();
 
-  if (!session || session.user.type !== 'PLAYER') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
+
+  const session = guard.session;
 
   const allowed = checkRateLimit(
     `hints-rewind:${session.user.id}`,

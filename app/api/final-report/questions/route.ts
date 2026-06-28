@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server';
 
-import { auth } from '@/lib/auth';
+import { requirePlayer } from '@/lib/auth-guards';
 import { checkAvailability } from '@/lib/final-report/availability';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(): Promise<NextResponse> {
-  const session = await auth();
+  const guard = await requirePlayer();
 
-  if (!session || session.user.type !== 'PLAYER') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
+
+  const session = guard.session;
 
   try {
     const availability = await checkAvailability(session.user.id);

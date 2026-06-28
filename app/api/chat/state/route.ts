@@ -1,16 +1,18 @@
 import { NextResponse } from 'next/server';
 
-import { auth } from '@/lib/auth';
+import { requirePlayer } from '@/lib/auth-guards';
 import { getChatState } from '@/lib/chat/state';
 import { applyTemplateToView } from '@/lib/chat/template';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(): Promise<NextResponse> {
-  const session = await auth();
+  const guard = await requirePlayer();
 
-  if (!session || session.user.type !== 'PLAYER') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
+
+  const session = guard.session;
 
   try {
     const user = await prisma.user.findUniqueOrThrow({

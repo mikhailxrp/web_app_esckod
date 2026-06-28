@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { ToastContainer } from '@/components/ui/Toast';
+import { BlockedSessionWatcher } from '@/components/game/BlockedSessionWatcher';
 
 export default async function GameLayout({
   children,
@@ -15,6 +16,7 @@ export default async function GameLayout({
 
   return (
     <div className="relative min-h-screen">
+      <BlockedSessionWatcher />
       {children}
       <ToastContainer />
     </div>

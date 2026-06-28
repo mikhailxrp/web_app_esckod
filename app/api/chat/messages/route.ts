@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { auth } from '@/lib/auth';
+import { requirePlayer } from '@/lib/auth-guards';
 import { getChatHistory } from '@/lib/chat/history';
 import { applyTemplateToView } from '@/lib/chat/template';
 import { prisma } from '@/lib/prisma';
 import { messagesQuerySchema } from '@/lib/validations/chat';
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  const session = await auth();
+  const guard = await requirePlayer();
 
-  if (!session || session.user.type !== 'PLAYER') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
+
+  const session = guard.session;
 
   const { searchParams } = new URL(req.url);
   const parsed = messagesQuerySchema.safeParse({

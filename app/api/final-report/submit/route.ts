@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server';
 
-import { auth } from '@/lib/auth';
+import { requirePlayer } from '@/lib/auth-guards';
 import { submitReport } from '@/lib/final-report/submit';
 import { submitSchema } from '@/lib/validations/final-report';
 
 export async function POST(req: Request): Promise<NextResponse> {
-  const session = await auth();
+  const guard = await requirePlayer();
 
-  if (!session || session.user.type !== 'PLAYER') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
+
+  const session = guard.session;
 
   const parsed = submitSchema.safeParse(await req.json());
   if (!parsed.success) {
