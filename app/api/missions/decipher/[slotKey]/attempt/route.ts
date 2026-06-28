@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { DECIPHER_ATTEMPT_RATE_LIMIT } from '@/constants/gameConfig';
-import { auth } from '@/lib/auth';
+import { requirePlayer } from '@/lib/auth-guards';
 import { applyDecipherAttempt } from '@/lib/decipher/service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { decipherAttemptSchema } from '@/lib/validations/missions';
@@ -16,11 +16,13 @@ export async function POST(
   req: NextRequest,
   { params }: RouteParams,
 ): Promise<NextResponse> {
-  const session = await auth();
+  const guard = await requirePlayer();
 
-  if (!session || session.user.type !== 'PLAYER') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
+
+  const session = guard.session;
 
   const { slotKey } = await params;
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-import { auth } from '@/lib/auth';
+import { requirePlayer } from '@/lib/auth-guards';
 import { restartGame } from '@/lib/game/restart';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { restartGameSchema } from '@/lib/validations/restart';
@@ -9,11 +9,13 @@ const RESTART_RATE_LIMIT = 3;
 const RESTART_RATE_LIMIT_WINDOW_MS = 60_000;
 
 export async function POST(): Promise<NextResponse> {
-  const session = await auth();
+  const guard = await requirePlayer();
 
-  if (!session || session.user.type !== 'PLAYER') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
+
+  const session = guard.session;
 
   const userId = session.user.id;
 

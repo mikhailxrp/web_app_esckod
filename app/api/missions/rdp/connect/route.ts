@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { RDP_CONNECT_RATE_LIMIT } from '@/constants/gameConfig';
-import { auth } from '@/lib/auth';
+import { requirePlayer } from '@/lib/auth-guards';
 import { handleConnect } from '@/lib/rdp/service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { rdpLaunchSchema } from '@/lib/validations/missions';
@@ -9,11 +9,13 @@ import { rdpLaunchSchema } from '@/lib/validations/missions';
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const session = await auth();
+  const guard = await requirePlayer();
 
-  if (!session || session.user.type !== 'PLAYER') {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!guard.ok) {
+    return guard.response;
   }
+
+  const session = guard.session;
 
   const allowed = checkRateLimit(
     `rdp-connect:${session.user.id}`,
