@@ -17,8 +17,8 @@ type SlotStats = {
   slotKey: string;
   displayName: string;
   total: number;
-  completed: number;
   skipped: number;
+  failedNow: number;
   hadErrors: number;
 };
 
@@ -197,15 +197,19 @@ export default async function AdminPage(): Promise<React.ReactElement> {
     const records = allProgresses.filter((p) => p.slotId === slot.id);
     const total = records.length;
 
-    const completed = records.filter((p) => p.completed).length;
-
     const skipped = records.filter((p) => {
       const meta = p.metadata as Record<string, unknown> | null;
       return meta?.skipped === true;
     }).length;
 
+    const failedNow = records.filter((p) => {
+      const meta = p.metadata as Record<string, unknown> | null;
+      return !p.completed && meta?.skipped !== true;
+    }).length;
+
     const hadErrors = records.filter((p) => {
       const meta = p.metadata as Record<string, unknown> | null;
+      if (p.completed || meta?.skipped === true) return false;
       if (!meta) return false;
       if (slot.missionType === 'CRACK') return Number(meta.failedSessionsCount ?? 0) > 0;
       if (slot.missionType === 'DECIPHER') return Number(meta.failedAttemptsCount ?? 0) > 0;
@@ -217,8 +221,8 @@ export default async function AdminPage(): Promise<React.ReactElement> {
       slotKey: slot.slotKey,
       displayName: slot.displayName,
       total,
-      completed,
       skipped,
+      failedNow,
       hadErrors,
     });
   }
@@ -286,7 +290,7 @@ export default async function AdminPage(): Promise<React.ReactElement> {
                     <p className="text-[14px] text-admin-label">
                       Неудачные попытки:{' '}
                       <span className="font-medium text-admin-input-text">
-                        {pct(stat.total - stat.completed - stat.skipped, stat.total)}
+                        {pct(stat.failedNow, stat.total)}
                       </span>
                     </p>
                     <p className="text-[14px] text-admin-label">
@@ -416,6 +420,10 @@ export default async function AdminPage(): Promise<React.ReactElement> {
                 </div>
                 <span className="text-[14px] text-admin-input-text">{desktopShare}</span>
               </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-admin-card-border">
+              <p className="text-[14px] text-admin-label">Среднее время прохождения</p>
+              <p className="text-[16px] font-semibold text-admin-input-text mt-1">{avgDuration}</p>
             </div>
           </div>
         </div>

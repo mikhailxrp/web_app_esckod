@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const ALLOWED_AUDIO_MIME = ['audio/mpeg', 'audio/wav', 'audio/mp3'] as const;
 
-export const MAX_AUDIO_SIZE_BYTES = 5 * 1024 * 1024;
+export const MAX_AUDIO_SIZE_BYTES = 10 * 1024 * 1024;
 
 export function normalizeFilename(name: string): string {
   return name.toLowerCase().replace(/\s+/g, '_');
