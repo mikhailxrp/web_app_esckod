@@ -7,6 +7,7 @@ import {
   Monitor,
 } from 'lucide-react';
 import { DevResetAllButton } from '@/components/admin/DevResetAllButton';
+import { MetricsAutoRefresh } from '@/components/admin/MetricsAutoRefresh';
 import { RegistrationChart, type DayData } from '@/components/admin/analytics/RegistrationChart';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -273,6 +274,7 @@ export default async function AdminPage(): Promise<React.ReactElement> {
 
   return (
     <>
+      <MetricsAutoRefresh />
       <h1 className="text-xl font-semibold text-admin-input-text mb-6">Метрики</h1>
 
       <div className="flex items-start gap-4 mb-4">
