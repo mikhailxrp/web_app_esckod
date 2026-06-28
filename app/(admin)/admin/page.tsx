@@ -165,12 +165,24 @@ export default async function AdminPage(): Promise<React.ReactElement> {
       GROUP BY EXTRACT(MONTH FROM "createdAt")
     `,
 
-    // Average completion time (registration → final report)
+    // Average completion time (onboarding → final report)
     prisma.$queryRaw<Array<{ avg_seconds: number | null }>>`
-      SELECT EXTRACT(EPOCH FROM AVG(ol."createdAt" - u."createdAt"))::float AS avg_seconds
-      FROM "OperationLog" ol
-      JOIN "User" u ON ol."userId" = u.id
-      WHERE ol.message LIKE 'Финальный отчет сдан%'
+      WITH onboarding AS (
+        SELECT "userId", MIN("createdAt") AS onboarding_at
+        FROM "OperationLog"
+        WHERE message = 'Подключение установлено'
+        GROUP BY "userId"
+      ),
+      final_report AS (
+        SELECT "userId", MIN("createdAt") AS final_at
+        FROM "OperationLog"
+        WHERE message LIKE 'Финальный отчет сдан%'
+        GROUP BY "userId"
+      )
+      SELECT EXTRACT(EPOCH FROM AVG(final_report.final_at - onboarding.onboarding_at))::float AS avg_seconds
+      FROM onboarding
+      INNER JOIN final_report ON final_report."userId" = onboarding."userId"
+      WHERE final_report.final_at >= onboarding.onboarding_at
     `,
 
     prisma.missionSlot.findMany({
