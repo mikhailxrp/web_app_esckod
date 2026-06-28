@@ -38,7 +38,6 @@ Thumbs.db
 .docs/phases/*
 .docs/ref/*
 .docs/prompts/*
-.docs/dev-log.md
 .docs/dod-global.md
 .docs/backlog.md
 CLAUDE.md
@@ -46,6 +45,7 @@ current-pipeline.md
 TASK.md
 TASK-example.md
 .cursor/
+.claude/
 example-sql.md
 
 # debug module

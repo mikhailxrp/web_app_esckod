@@ -18,8 +18,8 @@ type SlotStats = {
   displayName: string;
   total: number;
   skipped: number;
-  failedNow: number;
-  hadErrors: number;
+  totalAttempts: number;
+  failedAttempts: number;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -214,28 +214,41 @@ export default async function AdminPage(): Promise<React.ReactElement> {
       return meta?.skipped === true;
     }).length;
 
-    const failedNow = records.filter((p) => {
-      const meta = p.metadata as Record<string, unknown> | null;
-      return !p.completed && meta?.skipped !== true;
-    }).length;
+    // Неудачные попытки прохождения = проваленные прогоны мини-игры:
+    //   CRACK — пересоздания поля (failedSessionsCount),
+    //   DECIPHER — накопительные неверные вводы (failedAttempts),
+    //   RDP — истечения таймера со сбросом пазла (timerExpiredCount; только сценарий 2,
+    //         в сценарии 1 пазл бесконечный и провалить его нельзя → всегда 0).
+    // Успешная попытка = миссия пройдена не пропуском (completed && !skipped) — ровно одна.
+    // Общее число попыток = failedAttempts + successfulAttempts.
+    let failedAttempts = 0;
+    let successfulAttempts = 0;
 
-    const hadErrors = records.filter((p) => {
+    for (const p of records) {
       const meta = p.metadata as Record<string, unknown> | null;
-      if (p.completed || meta?.skipped === true) return false;
-      if (!meta) return false;
-      if (slot.missionType === 'CRACK') return Number(meta.failedSessionsCount ?? 0) > 0;
-      if (slot.missionType === 'DECIPHER') return Number(meta.failedAttemptsCount ?? 0) > 0;
-      if (slot.missionType === 'RDP') return Number(meta.timerExpiredCount ?? 0) > 0;
-      return false;
-    }).length;
+
+      if (slot.missionType === 'CRACK') {
+        failedAttempts += Number(meta?.failedSessionsCount ?? 0);
+      } else if (slot.missionType === 'DECIPHER') {
+        failedAttempts += Number(meta?.failedAttempts ?? 0);
+      } else if (slot.missionType === 'RDP') {
+        failedAttempts += Number(meta?.timerExpiredCount ?? 0);
+      }
+
+      if (p.completed && meta?.skipped !== true) {
+        successfulAttempts += 1;
+      }
+    }
+
+    const totalAttempts = failedAttempts + successfulAttempts;
 
     slotStatsMap.set(slot.id, {
       slotKey: slot.slotKey,
       displayName: slot.displayName,
       total,
       skipped,
-      failedNow,
-      hadErrors,
+      totalAttempts,
+      failedAttempts,
     });
   }
 
@@ -294,15 +307,9 @@ export default async function AdminPage(): Promise<React.ReactElement> {
                   </p>
                   <div className="space-y-1">
                     <p className="text-[14px] text-admin-label">
-                      Ошибки ввода:{' '}
-                      <span className="font-medium text-admin-input-text">
-                        {pct(stat.hadErrors, stat.total)}
-                      </span>
-                    </p>
-                    <p className="text-[14px] text-admin-label">
                       Неудачные попытки:{' '}
                       <span className="font-medium text-admin-input-text">
-                        {pct(stat.failedNow, stat.total)}
+                        {pct(stat.failedAttempts, stat.totalAttempts)}
                       </span>
                     </p>
                     <p className="text-[14px] text-admin-label">

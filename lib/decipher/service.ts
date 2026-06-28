@@ -34,6 +34,8 @@ interface DecipherMetadata {
   lastAttemptCorrect: boolean;
   failedAttemptsCount: number;
   skipped: boolean;
+  /** Накопительный счётчик неверных вводов — НЕ сбрасывается при успехе. */
+  failedAttempts: number;
 }
 
 interface DecipherSlotRow {
@@ -62,6 +64,7 @@ function parseMetadata(raw: Prisma.JsonValue | null): DecipherMetadata {
     lastAttemptCorrect: false,
     failedAttemptsCount: 0,
     skipped: false,
+    failedAttempts: 0,
   };
 
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
@@ -80,6 +83,10 @@ function parseMetadata(raw: Prisma.JsonValue | null): DecipherMetadata {
 
   if (typeof record.skipped === 'boolean') {
     base.skipped = record.skipped;
+  }
+
+  if (typeof record.failedAttempts === 'number') {
+    base.failedAttempts = record.failedAttempts;
   }
 
   return base;
@@ -286,6 +293,7 @@ export async function applyDecipherAttempt(
     lastAttemptCorrect: isCorrect,
     failedAttemptsCount,
     skipped: false,
+    failedAttempts: currentMeta.failedAttempts + (isCorrect ? 0 : 1),
   };
 
   await prisma.missionProgress.upsert({
@@ -341,6 +349,7 @@ async function finalizeDecipherMission(
             lastAttemptCorrect: meta.lastAttemptCorrect,
             failedAttemptsCount: meta.failedAttemptsCount,
             skipped: true,
+            failedAttempts: meta.failedAttempts,
           }),
           version: { increment: 1 },
         },
