@@ -35,3 +35,6 @@ export const RDP_FILE_VIEWED_RATE_LIMIT = 60;
 
 /** Rate limit: завершение миссии (на userId + slotKey). */
 export const RDP_COMPLETE_RATE_LIMIT = 5;
+
+/** Rate limit: копирование пути к папке (на userId + slotKey). */
+export const RDP_COPY_FOLDER_PATH_RATE_LIMIT = 60;

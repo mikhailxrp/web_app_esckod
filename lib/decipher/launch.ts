@@ -20,7 +20,7 @@ export async function findActiveDecipherSlot(
       missionType: 'DECIPHER',
       isActive: true,
       folderPath,
-      cipherKey,
+      cipherKey: { equals: cipherKey, mode: 'insensitive' },
     },
     select: { id: true, slotKey: true },
   });

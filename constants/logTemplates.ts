@@ -16,6 +16,7 @@ export const logTemplates = {
     'Доступ к {logSubjectName} потерян: обнаружено два активных сеанса. Новый IP: {nextIp}',
   rdp_folder_unlocked:
     'Папка {folderPath} в системе {logSubjectName} разблокирована. Пароль: {folderPassword}',
+  rdp_folder_path_copied: 'Скопирован путь к папке {folderPath} в системе {logSubjectName}',
   rdp_completed: 'Изучение материалов завершено',
   final_report_submitted: 'Финальный отчет сдан. Результат: {percent}%',
   mission_completed_overview: 'Миссия "{displayName}" — пройдена',

@@ -21,8 +21,14 @@ export async function POST(req: Request): Promise<NextResponse> {
     );
   }
 
+  const ip =
+    req.headers.get('x-real-ip') ??
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    null;
+  const userAgent = req.headers.get('user-agent') ?? null;
+
   try {
-    const result = await submitReport(session.user.id, parsed.data);
+    const result = await submitReport(session.user.id, parsed.data, { ip, userAgent });
 
     if (!result.ok) {
       return NextResponse.json(

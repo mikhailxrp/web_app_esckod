@@ -220,9 +220,9 @@ export function RegisterForm(): React.ReactElement {
         <form noValidate onSubmit={handleSubmit(onSubmit)}>
           <div className="form-split">
             <div className="form-split__text">
-              <p id="register-title">Рады приветствовать тебя, агент!</p>
+              <p id="register-title">Рады приветствовать нового агента!</p>
               <p>
-                Для того, чтобы приступить к расследованию, тебе нужно
+                Для того, чтобы приступить к расследованию, вам нужно
                 зарегистрироваться и ввести ключ доступа из коробки.
               </p>
               <p>

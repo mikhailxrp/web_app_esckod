@@ -30,7 +30,7 @@ export function DecipherSkipButton({ onSkip, disabled }: DecipherSkipButtonProps
         type="button"
         onClick={() => setConfirmOpen(true)}
         disabled={disabled}
-        className="font-mono text-game-sm uppercase tracking-game-wide text-content-muted underline-offset-4 transition-colors hover:text-content-primary hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+        className="font-mono text-game-sm uppercase tracking-game-wide text-content-secondary underline-offset-4 transition-colors hover:text-content-primary hover:underline disabled:cursor-not-allowed disabled:opacity-50"
       >
         Пропустить миссию
       </button>

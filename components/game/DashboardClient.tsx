@@ -16,6 +16,7 @@ import { FinalReportView } from "@/components/game/report/FinalReportView";
 import { OnboardingController } from "@/components/game/onboarding/OnboardingController";
 import { ONBOARDING_STEPS } from "@/constants/onboardingSteps";
 import { useChatStore } from "@/store/chatStore";
+import { useLogStore } from "@/store/logStore";
 import type { DemoPayload, OnboardingScene } from "@/types/onboarding";
 import type { RdpConnectResult } from "@/types/rdp";
 
@@ -101,6 +102,7 @@ export function DashboardClient({
   onboardingDone,
 }: DashboardClientProps): React.ReactElement {
   const refresh = useChatStore((s) => s.refresh);
+  const refreshLogs = useLogStore((s) => s.refreshLogs);
   const marinaVisible = useChatStore((s) => s.marina.isVisible);
   const [activeCrackSlotKey, setActiveCrackSlotKey] = useState<string | null>(null);
   const [activeDecipherSlotKey, setActiveDecipherSlotKey] = useState<string | null>(null);
@@ -120,7 +122,7 @@ export function DashboardClient({
 
   const handleOnboardingComplete = (): void => {
     setOnboardingActive(false);
-    void refresh();
+    void Promise.all([refresh(), refreshLogs()]);
   };
 
   const visibleMissions = MISSION_ORDER.filter((type) =>

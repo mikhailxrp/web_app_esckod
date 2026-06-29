@@ -44,6 +44,13 @@ export interface UserStateSnapshot {
     maxAttempts: number;
   }[];
   hintProgress: { lastSeenHintIndex: number } | null;
+  completions: {
+    id: string;
+    completedAt: string;
+    finalScore: number | null;
+    ipAddress: string | null;
+    userAgent: string | null;
+  }[];
   totalActiveSlots: number;
   logsCount: number;
   recentLogs: {

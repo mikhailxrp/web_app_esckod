@@ -116,7 +116,9 @@ function CrackForm({ onLaunched }: CrackFormProps): React.ReactElement {
           Ссылка
         </label>
         <input
-          {...register("targetUrl")}
+          {...register("targetUrl", {
+            onChange: () => { if (serverError) setServerError(null); },
+          })}
           id="crack-targetUrl"
           type="url"
           aria-invalid={Boolean(errors.targetUrl)}
@@ -137,7 +139,9 @@ function CrackForm({ onLaunched }: CrackFormProps): React.ReactElement {
           Почта
         </label>
         <input
-          {...register("targetEmail")}
+          {...register("targetEmail", {
+            onChange: () => { if (serverError) setServerError(null); },
+          })}
           id="crack-targetEmail"
           type="text"
           aria-invalid={Boolean(errors.targetEmail)}
@@ -226,7 +230,9 @@ function DecipherForm({ onLaunched }: DecipherFormProps): React.ReactElement {
           Ссылка / путь
         </label>
         <input
-          {...register("folderPath")}
+          {...register("folderPath", {
+            onChange: () => { if (serverError) setServerError(null); },
+          })}
           id="decipher-folderPath"
           type="text"
           aria-invalid={Boolean(errors.folderPath)}
@@ -247,11 +253,13 @@ function DecipherForm({ onLaunched }: DecipherFormProps): React.ReactElement {
           Ключ
         </label>
         <input
-          {...register("cipherKey")}
+          {...register("cipherKey", {
+            onChange: () => { if (serverError) setServerError(null); },
+          })}
           id="decipher-cipherKey"
           type="text"
           aria-invalid={Boolean(errors.cipherKey)}
-          className={INPUT_CLASS}
+          className={`${INPUT_CLASS} uppercase`}
         />
         {errors.cipherKey ? (
           <p
@@ -341,7 +349,9 @@ function RdpForm({ onLaunched }: RdpFormProps): React.ReactElement {
           IP адрес
         </label>
         <input
-          {...register("ip")}
+          {...register("ip", {
+            onChange: () => { if (serverError) setServerError(null); },
+          })}
           id="rdp-ip"
           type="text"
           aria-invalid={Boolean(errors.ip)}

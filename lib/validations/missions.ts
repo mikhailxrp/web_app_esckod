@@ -14,7 +14,7 @@ export const crackAttemptSchema = z.object({
 
 export const decipherLaunchSchema = z.object({
   folderPath: z.string().min(1, 'Укажите ссылку или путь к папке'),
-  cipherKey: z.string().min(1, 'Укажите ключ'),
+  cipherKey: z.string().min(1, 'Укажите ключ').transform((v) => v.toUpperCase()),
 });
 
 export const decipherAttemptSchema = z.object({
@@ -57,6 +57,10 @@ export const rdpCompleteSchema = z.object({
   expectedVersion: z.number().int().nonnegative(),
 });
 
+export const rdpCopyFolderPathSchema = z.object({
+  folderName: z.string().min(1),
+});
+
 export type CrackLaunchInput = z.infer<typeof crackLaunchSchema>;
 export type CrackAttemptInput = z.infer<typeof crackAttemptSchema>;
 export type DecipherLaunchInput = z.infer<typeof decipherLaunchSchema>;
@@ -69,3 +73,4 @@ export type RdpSkipInput = z.infer<typeof rdpSkipSchema>;
 export type RdpUnlockFolderInput = z.infer<typeof rdpUnlockFolderSchema>;
 export type RdpFileViewedInput = z.infer<typeof rdpFileViewedSchema>;
 export type RdpCompleteInput = z.infer<typeof rdpCompleteSchema>;
+export type RdpCopyFolderPathInput = z.infer<typeof rdpCopyFolderPathSchema>;
