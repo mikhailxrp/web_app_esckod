@@ -149,7 +149,7 @@ export default async function AdminPage(): Promise<React.ReactElement> {
         UNION
         SELECT "userId" FROM "GameCompletion"
       ) AS combined
-    `.then((rows) => Number(rows[0]?.count ?? 0n)),
+    `.then((rows) => Number(rows[0]?.count ?? 0)),
     prisma.gameCompletion.count(),
     // Players currently in progress (have GameProgress, not yet done)
     prisma.gameProgress.count({ where: { finalReportDone: false } }),
