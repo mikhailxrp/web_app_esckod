@@ -66,6 +66,7 @@ model User {
   missionProgress   MissionProgress[]
   crackSessions     CrackSession[]
   hintProgress      UserHintProgress?
+  gameCompletions   GameCompletion[]
 
   @@index([accessKeyId])
 }
@@ -332,6 +333,22 @@ model UserHintProgress {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ==================== GAME COMPLETIONS ====================
+
+model GameCompletion {
+  id          String   @id @default(cuid())
+  userId      String
+  completedAt DateTime @default(now())
+  finalScore  Int?
+  ipAddress   String?
+  userAgent   String?
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([completedAt])
 }
 
 // ==================== ADMIN AND SETTINGS ====================

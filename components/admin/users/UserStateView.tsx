@@ -274,6 +274,47 @@ export function UserStateView({ snapshot }: UserStateViewProps): React.ReactElem
         </p>
       </div>
 
+      {/* История прохождений */}
+      <div className="bg-white rounded-xl shadow-admin-card border border-admin-card-border p-6 mb-6">
+        <h2 className="text-base font-semibold text-admin-input-text mb-1">
+          История прохождений
+        </h2>
+        <p className="text-sm text-admin-placeholder mb-4">
+          Завершённых игр: {snapshot.completions.length}
+        </p>
+
+        {snapshot.completions.length === 0 ? (
+          <p className="text-sm text-admin-placeholder">Игра ещё не завершена</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-admin-card-border">
+                <th className="text-left py-2 text-admin-placeholder font-medium">#</th>
+                <th className="text-left py-2 text-admin-placeholder font-medium">Дата завершения</th>
+                <th className="text-left py-2 text-admin-placeholder font-medium">Счёт</th>
+                <th className="text-left py-2 text-admin-placeholder font-medium">IP</th>
+                <th className="text-left py-2 text-admin-placeholder font-medium">User-Agent</th>
+              </tr>
+            </thead>
+            <tbody>
+              {snapshot.completions.map((c, index) => (
+                <tr key={c.id} className="border-b border-admin-card-border last:border-0">
+                  <td className="py-2 text-admin-placeholder">{snapshot.completions.length - index}</td>
+                  <td className="py-2 text-admin-label whitespace-nowrap">{formatDateTime(c.completedAt)}</td>
+                  <td className="py-2 text-admin-label">
+                    {c.finalScore !== null ? `${c.finalScore}%` : '—'}
+                  </td>
+                  <td className="py-2 text-admin-label font-mono text-xs">{c.ipAddress ?? '—'}</td>
+                  <td className="py-2 text-admin-placeholder text-xs max-w-xs truncate" title={c.userAgent ?? ''}>
+                    {c.userAgent ?? '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
       {/* Логи */}
       <div className="bg-white rounded-xl shadow-admin-card border border-admin-card-border p-6">
         <h2 className="text-base font-semibold text-admin-input-text mb-1">

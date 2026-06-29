@@ -265,7 +265,7 @@ export async function getFiles(
 
   const meta = parseMetadata(progress?.metadata ?? null);
 
-  if (!progress || !meta.puzzleSolved) {
+  if (!progress || (!meta.puzzleSolved && !meta.skipped)) {
     return { type: "PUZZLE_NOT_SOLVED" };
   }
 
@@ -400,7 +400,7 @@ export async function unlockFolder(
 
   const meta = parseMetadata(progress?.metadata ?? null);
 
-  if (!progress || !meta.puzzleSolved) {
+  if (!progress || (!meta.puzzleSolved && !meta.skipped)) {
     return { type: "PUZZLE_NOT_SOLVED" };
   }
 
@@ -938,7 +938,7 @@ export async function handleFileViewed(
 
   const meta = parseMetadata(progress?.metadata ?? null);
 
-  if (!progress || !meta.puzzleSolved) {
+  if (!progress || (!meta.puzzleSolved && !meta.skipped)) {
     return { type: "PUZZLE_NOT_SOLVED" };
   }
 
@@ -1183,14 +1183,6 @@ export async function handleComplete(
         data: {
           userId,
           type: LogType.SUCCESS,
-          message: renderLogMessage("rdp_completed", {}),
-        },
-      });
-
-      await tx.operationLog.create({
-        data: {
-          userId,
-          type: LogType.SUCCESS,
           message: renderLogMessage("mission_completed_overview", {
             displayName: slot.displayName,
           }),
@@ -1252,7 +1244,7 @@ export async function handleSkip(
 
   const meta = parseMetadata(progress?.metadata ?? null);
 
-  if (progress?.completed) {
+  if (progress?.completed || meta.skipped) {
     return { type: "SUCCESS" };
   }
 
@@ -1260,58 +1252,20 @@ export async function handleSkip(
     return { type: "CANNOT_SKIP" };
   }
 
+  // Пропускаем только пазл — миссия НЕ завершается здесь.
+  // Игрок переходит к симуляции Windows и проходит оставшийся флоу
+  // (просмотр файлов → file-viewed → marinaTriggered → complete).
   const updatedMeta: RdpMetadata = {
     ...meta,
     skipped: true,
-    triggerActivated: true,
   };
 
-  await prisma.$transaction(async (tx) => {
-    await tx.missionProgress.update({
-      where: { userId_slotId: { userId, slotId: slot.id } },
-      data: {
-        completed: true,
-        completedAt: new Date(),
-        metadata: metadataToJson(updatedMeta),
-        version: { increment: 1 },
-      },
-    });
-
-    await tx.gameProgress.upsert({
-      where: { userId },
-      create: { userId, marinaTriggered: true },
-      update: { marinaTriggered: true, version: { increment: 1 } },
-    });
-
-    await tx.operationLog.create({
-      data: {
-        userId,
-        type: LogType.SUCCESS,
-        message: renderLogMessage("rdp_completed", {}),
-      },
-    });
-
-    await tx.operationLog.create({
-      data: {
-        userId,
-        type: LogType.SUCCESS,
-        message: renderLogMessage("mission_completed_overview", {
-          displayName: slot.displayName,
-        }),
-      },
-    });
-
-    await advanceTriggerListeners(
-      tx,
-      userId,
-      CHAT_TRIGGER_EVENTS.RDP_COMPLETED(slot.slotKey),
-    );
-
-    await advanceTriggerListeners(
-      tx,
-      userId,
-      CHAT_TRIGGER_EVENTS.RDP_MARINA_TRIGGERED,
-    );
+  await prisma.missionProgress.update({
+    where: { userId_slotId: { userId, slotId: slot.id } },
+    data: {
+      metadata: metadataToJson(updatedMeta),
+      version: { increment: 1 },
+    },
   });
 
   return { type: "SUCCESS" };

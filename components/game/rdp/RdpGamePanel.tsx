@@ -179,15 +179,17 @@ export function RdpGamePanel({
         return false;
       }
 
-      setStage({ phase: "completed" });
-      await Promise.all([refreshLogs(), refreshChat()]);
+      // Пазл пропущен — открываем симуляцию Windows, чтобы игрок мог
+      // ознакомиться с документами перед активацией чата Марины.
+      setStage({ phase: "files" });
+      await refreshLogs();
       return true;
     } catch (error) {
       console.error("[RdpGamePanel.handleSkip]", error);
       toast.error("Ошибка соединения.");
       return false;
     }
-  }, [slotKey, refreshLogs, refreshChat]);
+  }, [slotKey, refreshLogs]);
 
   const handleCompleted = useCallback(async (): Promise<void> => {
     setStage({ phase: "completed" });
@@ -237,7 +239,7 @@ export function RdpGamePanel({
             className="ml-auto pr-2 flex h-7 w-[calc(50%+70px)] items-center overflow-hidden whitespace-nowrap font-mono text-xl font-normal leading-none tracking-[-0.3em] text-white/30 select-none [direction:rtl]"
             aria-hidden="true"
           >
-            {"/ ".repeat(16)}
+            {"/ ".repeat(14)}
           </span>
         </div>
 

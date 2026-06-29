@@ -129,7 +129,10 @@ export function AudioPlayer({
         )}
       </button>
 
-      <div className="flex min-w-0 flex-1 items-center gap-3">
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <span className="truncate font-mono text-[14px] leading-none text-white">
+          {filename}
+        </span>
         <div className="flex min-w-0 flex-1 items-center gap-1.5">
           {WAVE_BARS.map((heightRatio, index) => (
             <button
@@ -145,10 +148,6 @@ export function AudioPlayer({
             />
           ))}
         </div>
-
-        <span className="shrink-0 truncate font-mono text-[14px] leading-none text-white">
-          {filename}
-        </span>
       </div>
     </div>
   );

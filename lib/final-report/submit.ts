@@ -37,7 +37,12 @@ interface SubmitSuccess {
 
 type SubmitResult = { ok: true; data: SubmitSuccess } | { ok: false; error: SubmitError };
 
-export async function submitReport(userId: string, body: SubmitBody): Promise<SubmitResult> {
+interface SubmitContext {
+  ip?: string | null;
+  userAgent?: string | null;
+}
+
+export async function submitReport(userId: string, body: SubmitBody, context?: SubmitContext): Promise<SubmitResult> {
   const availability = await checkAvailability(userId);
 
   if (!availability.available && !availability.alreadySubmitted) {
@@ -160,6 +165,15 @@ export async function submitReport(userId: string, body: SubmitBody): Promise<Su
     }
     throw err;
   }
+
+  await prisma.gameCompletion.create({
+    data: {
+      userId,
+      finalScore: percent,
+      ipAddress: context?.ip ?? null,
+      userAgent: context?.userAgent ?? null,
+    },
+  });
 
   await writeLog({
     userId,

@@ -33,6 +33,7 @@
   html {
     @apply bg-bg-page text-content-primary;
     font-family: "VCR OSD Mono", monospace;
+    letter-spacing: 1.15px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -42,6 +43,11 @@
   textarea,
   button {
     font-family: inherit;
+  }
+
+  input {
+    letter-spacing: 1.15px;
+    caret-color: theme("colors.content.primary");
   }
 
   body {
@@ -509,6 +515,19 @@
 .admin-zone .font-mono,
 .admin-zone .font-accent {
   font-family: var(--font-roboto), "Roboto", sans-serif;
+}
+
+.admin-zone,
+.admin-zone input,
+.admin-zone button,
+.admin-zone textarea,
+.admin-zone select {
+  letter-spacing: normal;
+}
+
+.admin-zone input,
+.admin-zone textarea {
+  caret-color: auto;
 }
 
 /* -----------------------------------------------------------

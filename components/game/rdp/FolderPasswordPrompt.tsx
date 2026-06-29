@@ -5,6 +5,7 @@ import type { ReactElement } from 'react';
 
 import { fetchWithVersion } from '@/lib/api/fetchWithVersion';
 import { toast } from '@/components/ui/Toast';
+import { useLogStore } from '@/store/logStore';
 import type { RdpFolderView, RdpUnlockResult } from '@/types/rdp';
 
 // ─── Props ───────────────────────────────────────────────────────────────────
@@ -72,41 +73,21 @@ interface WindowControlsProps {
 
 function WindowControls({ onClose }: WindowControlsProps): ReactElement {
   return (
-    <div className="flex items-center gap-0.5">
-      <button
-        type="button"
-        aria-label="Свернуть"
-        className="flex size-6 items-center justify-center rounded-sm hover:bg-gray-300 text-gray-700"
-      >
-        <svg width="10" height="1" viewBox="0 0 10 1" aria-hidden="true">
-          <path d="M0 0.5h10" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
-      </button>
-      <button
-        type="button"
-        aria-label="Развернуть"
-        className="flex size-6 items-center justify-center rounded-sm hover:bg-gray-300 text-gray-700"
-      >
-        <svg width="9" height="9" viewBox="0 0 9 9" fill="none" aria-hidden="true">
-          <rect x="0.5" y="0.5" width="8" height="8" stroke="currentColor" strokeWidth="1" />
-        </svg>
-      </button>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Закрыть"
-        className="flex size-6 items-center justify-center rounded-sm hover:bg-red-500 hover:text-white text-gray-700"
-      >
-        <svg width="9" height="9" viewBox="0 0 9 9" aria-hidden="true">
-          <path
-            d="M1 1l7 7M8 1l-7 7"
-            stroke="currentColor"
-            strokeWidth="1.2"
-            strokeLinecap="round"
-          />
-        </svg>
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={onClose}
+      aria-label="Закрыть"
+      className="flex size-6 items-center justify-center rounded-sm hover:bg-red-500 hover:text-white text-gray-700"
+    >
+      <svg width="9" height="9" viewBox="0 0 9 9" aria-hidden="true">
+        <path
+          d="M1 1l7 7M8 1l-7 7"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+        />
+      </svg>
+    </button>
   );
 }
 
@@ -121,6 +102,8 @@ export function FolderPasswordPrompt({
   onClose,
   onConflict,
 }: FolderPasswordPromptProps): ReactElement {
+  const refreshLogs = useLogStore((s) => s.refreshLogs);
+
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -183,6 +166,11 @@ export function FolderPasswordPrompt({
     } catch {
       // clipboard unavailable — silently ignore
     }
+    void fetch(`/api/missions/rdp/${slotKey}/copy-folder-path`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ folderName: folder.folderName }),
+    }).then(() => refreshLogs());
   };
 
   return (

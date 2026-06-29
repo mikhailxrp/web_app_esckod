@@ -29,12 +29,12 @@ export function ChatPanel({
   );
   const markRead = useChatStore((s) => s.markRead);
 
-  // Reset unread counter whenever the panel is open
+  // Reset unread counter whenever the panel is open (including when new messages arrive while open)
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && slot.unreadCount > 0) {
       markRead(chatType);
     }
-  }, [isOpen, chatType, markRead]);
+  }, [isOpen, slot.unreadCount, chatType, markRead]);
 
   const hasUnread = !isOpen && slot.unreadCount > 0;
 

@@ -294,6 +294,8 @@ export function WindowsSimulation({
         backgroundImage: "url('/assets/img/desctop_windows_bg.jpg')",
         backgroundSize: 'cover',
         backgroundPosition: 'center',
+        letterSpacing: 'normal',
+        caretColor: 'auto',
       }}
       aria-label="Рабочий стол Windows"
     >

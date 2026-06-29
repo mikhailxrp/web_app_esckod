@@ -73,13 +73,17 @@ function computeGaugePaths(completedRatio: number): {
   const cx = 100;
   const cy = 100;
   const r = 75;
-  const safeRatio = Math.max(0.005, Math.min(0.995, completedRatio));
+  const trackPath = `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`;
+
+  // Clamp to [0.05, 0.95] to keep chord well below 2r (avoids degenerate SVG arcs
+  // near the endpoints where chord → 2r and browser rendering becomes unreliable).
+  const safeRatio = Math.max(0.05, Math.min(0.95, completedRatio));
   const angle = Math.PI * (1 - safeRatio);
   const midX = cx + r * Math.cos(angle);
   const midY = cy - r * Math.sin(angle);
 
   return {
-    trackPath: `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`,
+    trackPath,
     completedPath: `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${midX.toFixed(2)} ${midY.toFixed(2)}`,
     inProgressPath: `M ${midX.toFixed(2)} ${midY.toFixed(2)} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`,
     dotX: midX,
@@ -125,7 +129,8 @@ export default async function AdminPage(): Promise<React.ReactElement> {
     activatedKeys,
     unusedKeys,
     maxActivationsKeys,
-    completedGame,
+    uniqueCompleters,
+    totalCompletions,
     totalWithProgress,
     weekRaw,
     monthRaw,
@@ -137,8 +142,17 @@ export default async function AdminPage(): Promise<React.ReactElement> {
     prisma.accessKey.count({ where: { currentActivations: { gt: 0 } } }),
     prisma.accessKey.count({ where: { currentActivations: 0 } }),
     prisma.accessKey.count({ where: { currentActivations: { gte: 5 } } }),
-    prisma.gameProgress.count({ where: { finalReportDone: true } }),
-    prisma.gameProgress.count(),
+    // Unique users who EVER completed (current finalReportDone=true OR historical GameCompletion record)
+    prisma.$queryRaw<Array<{ count: bigint }>>`
+      SELECT COUNT(*) AS count FROM (
+        SELECT "userId" FROM "GameProgress" WHERE "finalReportDone" = true
+        UNION
+        SELECT "userId" FROM "GameCompletion"
+      ) AS combined
+    `.then((rows) => Number(rows[0]?.count ?? 0n)),
+    prisma.gameCompletion.count(),
+    // Players currently in progress (have GameProgress, not yet done)
+    prisma.gameProgress.count({ where: { finalReportDone: false } }),
 
     // Weekly: ISODOW 1=Mon .. 7=Sun
     prisma.$queryRaw<RegistrationRow[]>`
@@ -264,11 +278,11 @@ export default async function AdminPage(): Promise<React.ReactElement> {
   const avgDuration = formatDuration(avgSeconds ?? 0);
 
   // ── Player progress gauge ──
-  const inProgress = totalWithProgress - completedGame;
-  const gaugeTotal = completedGame + inProgress;
-  const completedRatio = gaugeTotal > 0 ? completedGame / gaugeTotal : 0;
+  const inProgress = totalWithProgress;
+  const gaugeTotal = uniqueCompleters + inProgress;
+  const completedRatio = gaugeTotal > 0 ? uniqueCompleters / gaugeTotal : 0;
   const { completedPath, inProgressPath, trackPath, dotX, dotY } = computeGaugePaths(completedRatio);
-  const completedPct = gaugeTotal > 0 ? Math.round((completedGame / gaugeTotal) * 100) : 0;
+  const completedPct = gaugeTotal > 0 ? Math.round((uniqueCompleters / gaugeTotal) * 100) : 0;
   const inProgressPct = 100 - completedPct;
   const desktopShare = totalUsers > 0 ? '100.00%' : '—';
 
@@ -336,21 +350,27 @@ export default async function AdminPage(): Promise<React.ReactElement> {
                   <path d={trackPath} stroke="#E5E7EB" strokeWidth="14" fill="none" strokeLinecap="round" />
                   {gaugeTotal > 0 && (
                     <>
-                      <path
-                        d={completedPath}
-                        stroke="#6E39CB"
-                        strokeWidth="14"
-                        fill="none"
-                        strokeLinecap="round"
-                      />
-                      <path
-                        d={inProgressPath}
-                        stroke="#C4B5FD"
-                        strokeWidth="14"
-                        fill="none"
-                        strokeLinecap="round"
-                      />
-                      <circle cx={dotX} cy={dotY} r="6" fill="white" stroke="#6E39CB" strokeWidth="3" />
+                      {uniqueCompleters > 0 && (
+                        <path
+                          d={inProgress === 0 ? trackPath : completedPath}
+                          stroke="#6E39CB"
+                          strokeWidth="14"
+                          fill="none"
+                          strokeLinecap="round"
+                        />
+                      )}
+                      {inProgress > 0 && (
+                        <path
+                          d={uniqueCompleters === 0 ? trackPath : inProgressPath}
+                          stroke="#C4B5FD"
+                          strokeWidth="14"
+                          fill="none"
+                          strokeLinecap="round"
+                        />
+                      )}
+                      {uniqueCompleters > 0 && inProgress > 0 && (
+                        <circle cx={dotX} cy={dotY} r="6" fill="white" stroke="#6E39CB" strokeWidth="3" />
+                      )}
                     </>
                   )}
                 </svg>
@@ -381,8 +401,13 @@ export default async function AdminPage(): Promise<React.ReactElement> {
                   <div>
                     <p className="text-[14px] text-admin-label leading-tight">Завершили игру</p>
                     <p className="text-[44px] font-semibold text-admin-input-text leading-tight">
-                      {completedGame.toLocaleString('ru')}
+                      {uniqueCompleters.toLocaleString('ru')}
                     </p>
+                    {totalCompletions > uniqueCompleters && (
+                      <p className="text-[12px] text-admin-placeholder leading-tight mt-0.5">
+                        {totalCompletions.toLocaleString('ru')} прохождений всего (с перезапусками)
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 p-4 rounded-lg border border-admin-card-border bg-white">

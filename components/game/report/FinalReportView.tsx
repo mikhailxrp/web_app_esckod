@@ -124,6 +124,7 @@ export function FinalReportView({
 
   useEffect(() => {
     if (alreadySubmitted) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void fetchResult();
       return;
     }

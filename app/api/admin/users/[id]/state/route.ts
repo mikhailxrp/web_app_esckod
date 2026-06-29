@@ -100,6 +100,16 @@ export async function GET(
             lastSeenHintIndex: true,
           },
         },
+        gameCompletions: {
+          select: {
+            id: true,
+            completedAt: true,
+            finalScore: true,
+            ipAddress: true,
+            userAgent: true,
+          },
+          orderBy: { completedAt: 'desc' },
+        },
         operationLogs: {
           take: 10,
           orderBy: { createdAt: 'desc' },
@@ -130,6 +140,7 @@ export async function GET(
     missionProgress,
     crackSessions,
     hintProgress,
+    gameCompletions,
     operationLogs,
     _count,
     ...userFields
@@ -160,6 +171,7 @@ export async function GET(
       maxAttempts: item.maxAttempts,
     })),
     hintProgress,
+    completions: gameCompletions,
     totalActiveSlots,
     logsCount: _count.operationLogs,
     recentLogs: operationLogs,
