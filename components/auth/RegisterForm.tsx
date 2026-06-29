@@ -1,23 +1,23 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Input } from '@/components/ui/Input';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Input } from "@/components/ui/Input";
 import {
   registerFormSchema,
   type RegisterFormInput,
-} from '@/lib/validations/auth';
+} from "@/lib/validations/auth";
 
 const REDIRECT_DELAY_MS = 10000;
-const AUTH_CARD_PATTERN = '/'.repeat(60);
+const AUTH_CARD_PATTERN = "/".repeat(60);
 
 const FALLBACK_DEFAULTS = {
   defaultMarketingConsent: false,
-  supportEmail: 'support@example.com',
-  privacyPolicyUrl: 'https://example.com/privacy',
+  supportEmail: "support@example.com",
+  privacyPolicyUrl: "https://example.com/privacy",
 } as const;
 
 interface RegistrationDefaults {
@@ -27,11 +27,11 @@ interface RegistrationDefaults {
 }
 
 type RegisterErrorCode =
-  | 'INVALID_KEY'
-  | 'KEY_BLOCKED'
-  | 'ACTIVATIONS_EXCEEDED'
-  | 'EMAIL_EXISTS'
-  | 'VALIDATION_ERROR';
+  | "INVALID_KEY"
+  | "KEY_BLOCKED"
+  | "ACTIVATIONS_EXCEEDED"
+  | "EMAIL_EXISTS"
+  | "VALIDATION_ERROR";
 
 interface RegisterSuccessResponse {
   success: true;
@@ -51,18 +51,18 @@ function getServerErrorMessage(
   supportEmail: string,
 ): string {
   switch (code) {
-    case 'INVALID_KEY':
+    case "INVALID_KEY":
       return `Ключ доступа не найден. Проверьте написание или обратитесь в поддержку: ${supportEmail}`;
-    case 'KEY_BLOCKED':
+    case "KEY_BLOCKED":
       return `Ключ заблокирован. Обратитесь в поддержку: ${supportEmail}`;
-    case 'ACTIVATIONS_EXCEEDED':
-      return 'По этому ключу уже зарегистрировано максимальное число пользователей';
-    case 'EMAIL_EXISTS':
-      return 'Этот email уже зарегистрирован';
-    case 'VALIDATION_ERROR':
-      return 'Проверьте правильность введенных данных';
+    case "ACTIVATIONS_EXCEEDED":
+      return "По этому ключу уже зарегистрировано максимальное число пользователей";
+    case "EMAIL_EXISTS":
+      return "Этот email уже зарегистрирован";
+    case "VALIDATION_ERROR":
+      return "Проверьте правильность введенных данных";
     default:
-      return 'Произошла ошибка. Попробуйте еще раз';
+      return "Произошла ошибка. Попробуйте еще раз";
   }
 }
 
@@ -77,12 +77,10 @@ function AuthCardHeader(): React.ReactElement {
   );
 }
 
-
 export function RegisterForm(): React.ReactElement {
   const router = useRouter();
-  const [defaults, setDefaults] = useState<RegistrationDefaults>(
-    FALLBACK_DEFAULTS,
-  );
+  const [defaults, setDefaults] =
+    useState<RegistrationDefaults>(FALLBACK_DEFAULTS);
   const [isSuccess, setIsSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -95,9 +93,9 @@ export function RegisterForm(): React.ReactElement {
   } = useForm<RegisterFormInput>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      accessKey: '',
+      name: "",
+      email: "",
+      accessKey: "",
       consentPolicy: false,
       consentMarketing: FALLBACK_DEFAULTS.defaultMarketingConsent,
     },
@@ -108,7 +106,7 @@ export function RegisterForm(): React.ReactElement {
 
     async function loadDefaults(): Promise<void> {
       try {
-        const response = await fetch('/api/settings/registration-defaults');
+        const response = await fetch("/api/settings/registration-defaults");
 
         if (!response.ok) {
           return;
@@ -126,7 +124,7 @@ export function RegisterForm(): React.ReactElement {
           consentMarketing: data.defaultMarketingConsent,
         }));
       } catch (error) {
-        console.error('Failed to load registration defaults:', error);
+        console.error("Failed to load registration defaults:", error);
       }
     }
 
@@ -143,7 +141,7 @@ export function RegisterForm(): React.ReactElement {
     }
 
     const timeoutId = window.setTimeout(() => {
-      router.push('/login');
+      router.push("/login");
     }, REDIRECT_DELAY_MS);
 
     return () => {
@@ -160,9 +158,9 @@ export function RegisterForm(): React.ReactElement {
     };
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -181,8 +179,8 @@ export function RegisterForm(): React.ReactElement {
 
       setIsSuccess(true);
     } catch (error) {
-      console.error('Registration failed:', error);
-      setServerError('Не удалось выполнить регистрацию. Попробуйте еще раз');
+      console.error("Registration failed:", error);
+      setServerError("Не удалось выполнить регистрацию. Попробуйте еще раз");
     }
   }
 
@@ -237,9 +235,10 @@ export function RegisterForm(): React.ReactElement {
               <Input
                 label="Имя пользователя"
                 type="text"
+                maxLength={15}
                 autoComplete="username"
                 error={errors.name?.message}
-                {...register('name')}
+                {...register("name")}
               />
 
               <Input
@@ -247,7 +246,7 @@ export function RegisterForm(): React.ReactElement {
                 type="email"
                 autoComplete="email"
                 error={errors.email?.message}
-                {...register('email')}
+                {...register("email")}
               />
 
               <Input
@@ -255,14 +254,14 @@ export function RegisterForm(): React.ReactElement {
                 type="text"
                 autoComplete="off"
                 error={errors.accessKey?.message}
-                {...register('accessKey')}
+                {...register("accessKey")}
               />
 
               <label className="form-field__checkbox-label">
                 <input
                   type="checkbox"
                   className="form-field__checkbox"
-                  {...register('consentPolicy')}
+                  {...register("consentPolicy")}
                 />
                 <span>
                   Я согласен(-на) на обработку персональных данных (
@@ -278,14 +277,16 @@ export function RegisterForm(): React.ReactElement {
                 </span>
               </label>
               {errors.consentPolicy?.message ? (
-                <p className="form-field__error">{errors.consentPolicy.message}</p>
+                <p className="form-field__error">
+                  {errors.consentPolicy.message}
+                </p>
               ) : null}
 
               <label className="form-field__checkbox-label">
                 <input
                   type="checkbox"
                   className="form-field__checkbox"
-                  {...register('consentMarketing')}
+                  {...register("consentMarketing")}
                 />
                 <span>Я согласен(-на) получать информационную рассылку</span>
               </label>
@@ -301,7 +302,7 @@ export function RegisterForm(): React.ReactElement {
                 disabled={isSubmitting}
                 className="btn-primary"
               >
-                {isSubmitting ? 'ОТПРАВКА…' : 'ПОДТВЕРДИТЬ'}
+                {isSubmitting ? "ОТПРАВКА…" : "ПОДТВЕРДИТЬ"}
               </button>
 
               <p className="text-center">
