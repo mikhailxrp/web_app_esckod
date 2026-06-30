@@ -48,6 +48,7 @@ export interface UserStateSnapshot {
     id: string;
     completedAt: string;
     finalScore: number | null;
+    durationSeconds: number | null;
     ipAddress: string | null;
     userAgent: string | null;
   }[];
@@ -63,3 +64,4 @@ export interface UserStateSnapshot {
 
 export type UserStatusFilter = 'all' | 'active' | 'blocked';
 export type UserSortValue = 'createdAt_desc' | 'createdAt_asc';
+export type UserCompletionsFilter = 'all' | '0' | '1plus' | '5plus';

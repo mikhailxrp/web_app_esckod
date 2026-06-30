@@ -7,7 +7,6 @@ import { PipeTimer } from '@/components/game/rdp/PipeTimer';
 import { PipeTile } from '@/components/game/rdp/PipeTile';
 import type { PipeEndpoint } from '@/components/game/rdp/PipeTile';
 import { RdpAccessDeniedOverlay } from '@/components/game/rdp/RdpAccessDeniedOverlay';
-import { RdpSkipButton } from '@/components/game/rdp/RdpSkipButton';
 import { toast } from '@/components/ui/Toast';
 import { computePuzzleProgress, isLocallySolved } from '@/lib/rdp/connectivity';
 import type { PuzzleField, TileRotation } from '@/lib/rdp/types';
@@ -258,13 +257,6 @@ export function PipesPuzzle({
           />
         </div>
       </div>
-
-      {/* Кнопка пропуска (только при canSkip) */}
-      {canSkip ? (
-        <div className="flex justify-center border-t border-border pt-3">
-          <RdpSkipButton onSkip={onSkip} disabled={busy} />
-        </div>
-      ) : null}
 
       {/* Оверлей «Доступ запрещен» */}
       {showDeniedOverlay ? (

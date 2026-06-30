@@ -44,8 +44,8 @@ export function RdpSkipConfirmModal({
           Пропустить миссию?
         </h2>
         <p className="font-mono text-game-sm text-content-secondary">
-          Миссия будет помечена как пройденная. Это откроет следующий чат. Отменить пропуск
-          нельзя. Продолжить?
+          Миссия будет помечена как пройденная. Это может повлиять на восприятие
+          истории. Отменить пропуск нельзя. Продолжить?
         </p>
 
         <div className="mt-2 flex justify-end gap-3">

@@ -475,34 +475,36 @@ export function CrackGamePanel({
         {view.phase === "failed" && (
           <div className="flex flex-1 items-center justify-center px-6 py-8">
             <div
-              className="flex w-[220px] flex-col gap-3 rounded-game-sm border border-border bg-bg-card p-4"
+              className="flex flex-col items-center gap-5 rounded-game-lg border border-semantic-error bg-bg-primary p-8 text-center shadow-game-card"
               role="alert"
               aria-live="assertive"
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-game-sm text-content-primary">
+              <svg
+                width="44"
+                height="44"
+                viewBox="0 0 44 44"
+                fill="none"
+                aria-hidden="true"
+                className="text-semantic-error"
+              >
+                <circle cx="22" cy="22" r="21" stroke="currentColor" strokeWidth="2" />
+                <path d="M22 12v12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                <circle cx="22" cy="31" r="1.5" fill="currentColor" />
+              </svg>
+
+              <div className="flex flex-col gap-1">
+                <h2 className="font-mono text-game-panel uppercase tracking-game-wide text-semantic-error">
+                  Доступ запрещен
+                </h2>
+                <p className="font-mono text-game-sm text-content-muted">
                   Миссия провалена.
-                </span>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label="Закрыть игровое поле"
-                  className="flex size-6 shrink-0 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
-                >
-                  <Image
-                    src="/assets/icons/close.svg"
-                    alt=""
-                    width={14}
-                    height={14}
-                    aria-hidden="true"
-                  />
-                </button>
+                </p>
               </div>
 
               <button
                 type="button"
                 onClick={handleRestart}
-                className="h-input-height w-full rounded-game-full bg-accent font-mono text-game-sm uppercase tracking-game-wide text-content-inverse transition-opacity hover:opacity-90"
+                className="h-input-height w-full max-w-[200px] rounded-game-full bg-accent font-mono text-game-sm uppercase tracking-game-wide text-content-inverse transition-opacity hover:opacity-90"
               >
                 Начать заново
               </button>

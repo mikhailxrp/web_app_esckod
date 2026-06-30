@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
-import type { UserListItem, UserSortValue, UserStatusFilter } from '@/types/admin-users';
+import type { UserCompletionsFilter, UserListItem, UserSortValue, UserStatusFilter } from '@/types/admin-users';
 import { UsersFiltersPanel } from './UsersFiltersPanel';
 import { BanUserDialog } from './BanUserDialog';
 import { DeleteUserDialog } from './DeleteUserDialog';
@@ -84,6 +84,7 @@ export function UsersTable({
   const [activeQuery, setActiveQuery] = useState('');
   const [status, setStatus] = useState<UserStatusFilter>('all');
   const [sort, setSort] = useState<UserSortValue>('createdAt_desc');
+  const [completions, setCompletions] = useState<UserCompletionsFilter>('all');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +102,7 @@ export function UsersTable({
       q: string,
       st: UserStatusFilter,
       so: UserSortValue,
+      co: UserCompletionsFilter,
     ): Promise<void> => {
       setLoading(true);
       setError(null);
@@ -110,6 +112,7 @@ export function UsersTable({
           limit: String(LIMIT),
           status: st,
           sort: so,
+          completions: co,
         });
         if (q) params.set('search', q);
 
@@ -135,25 +138,31 @@ export function UsersTable({
     debounceRef.current = setTimeout(() => {
       setActiveQuery(value);
       setPage(1);
-      doFetch(1, value, status, sort);
+      doFetch(1, value, status, sort, completions);
     }, 300);
   };
 
   const handleStatusChange = (newStatus: UserStatusFilter): void => {
     setStatus(newStatus);
     setPage(1);
-    doFetch(1, activeQuery, newStatus, sort);
+    doFetch(1, activeQuery, newStatus, sort, completions);
   };
 
   const handleSortChange = (newSort: UserSortValue): void => {
     setSort(newSort);
     setPage(1);
-    doFetch(1, activeQuery, status, newSort);
+    doFetch(1, activeQuery, status, newSort, completions);
+  };
+
+  const handleCompletionsChange = (newCompletions: UserCompletionsFilter): void => {
+    setCompletions(newCompletions);
+    setPage(1);
+    doFetch(1, activeQuery, status, sort, newCompletions);
   };
 
   const handlePageChange = (newPage: number): void => {
     setPage(newPage);
-    doFetch(newPage, activeQuery, status, sort);
+    doFetch(newPage, activeQuery, status, sort, completions);
   };
 
   const handleBanSuccess = (userId: string, updatedIsBlocked: boolean): void => {
@@ -168,7 +177,7 @@ export function UsersTable({
   };
 
   const pageNumbers = buildPageNumbers(page, totalPages);
-  const hasActiveFilters = status !== 'all' || sort !== 'createdAt_desc';
+  const hasActiveFilters = status !== 'all' || sort !== 'createdAt_desc' || completions !== 'all';
 
   return (
     <div>
@@ -221,8 +230,10 @@ export function UsersTable({
         <UsersFiltersPanel
           status={status}
           sort={sort}
+          completions={completions}
           onStatusChange={handleStatusChange}
           onSortChange={handleSortChange}
+          onCompletionsChange={handleCompletionsChange}
         />
       )}
 

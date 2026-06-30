@@ -37,7 +37,7 @@ export function DecipherCompletedView({
 
   return (
     <div className="flex flex-col items-center gap-7 px-4 py-6">
-      <h2 className="font-mono text-game-lg text-content-primary">
+      <h2 className="font-mono text-game-lg text-accent">
         Доступ предоставлен
       </h2>
 

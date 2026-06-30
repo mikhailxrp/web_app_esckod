@@ -338,14 +338,15 @@ model UserHintProgress {
 // ==================== GAME COMPLETIONS ====================
 
 model GameCompletion {
-  id          String   @id @default(cuid())
-  userId      String
-  completedAt DateTime @default(now())
-  finalScore  Int?
-  ipAddress   String?
-  userAgent   String?
+  id              String   @id @default(cuid())
+  userId          String
+  completedAt     DateTime @default(now())
+  finalScore      Int?
+  durationSeconds Int?
+  ipAddress       String?
+  userAgent       String?
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([completedAt])

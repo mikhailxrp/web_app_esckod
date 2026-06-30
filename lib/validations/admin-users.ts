@@ -6,6 +6,7 @@ export const listUsersQuerySchema = z.object({
   search: z.string().optional(),
   status: z.enum(['all', 'active', 'blocked']).default('all'),
   sort: z.enum(['createdAt_desc', 'createdAt_asc']).default('createdAt_desc'),
+  completions: z.enum(['all', '0', '1plus', '5plus']).default('all'),
 });
 
 export const updateUserSchema = z.object({

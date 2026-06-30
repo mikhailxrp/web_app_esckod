@@ -105,6 +105,7 @@ export async function GET(
             id: true,
             completedAt: true,
             finalScore: true,
+            durationSeconds: true,
             ipAddress: true,
             userAgent: true,
           },

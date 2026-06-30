@@ -302,7 +302,7 @@ export function FinalReportView({
               <span className="pointer-events-none absolute bottom-0 right-0 h-3.5 w-3.5 border-b-[2px] border-r-[2px] border-[#44DFD7]" />
               <span
                 className="font-mono font-normal"
-                style={{ fontSize: 20, color: "#44DFD7", lineHeight: 1 }}
+                style={{ fontSize: 20, color: "#44DFD7", lineHeight: 1, paddingBottom: "5px" }}
                 aria-hidden="true"
               >
                 →

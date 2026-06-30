@@ -9,6 +9,7 @@ import {
 import { DevResetAllButton } from '@/components/admin/DevResetAllButton';
 import { MetricsAutoRefresh } from '@/components/admin/MetricsAutoRefresh';
 import { RegistrationChart, type DayData } from '@/components/admin/analytics/RegistrationChart';
+import { formatDuration } from '@/lib/formatDuration';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,14 +54,6 @@ function fillYear(raw: RegistrationRow[]): DayData[] {
   return ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'].map(
     (label, i) => ({ label, count: map.get(i + 1) ?? 0 }),
   );
-}
-
-function formatDuration(seconds: number): string {
-  if (!seconds || seconds <= 0) return 'нет данных';
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  if (h === 0) return `${m} мин.`;
-  return m === 0 ? `${h} ч.` : `${h} ч. ${m} мин.`;
 }
 
 function computeGaugePaths(completedRatio: number): {
@@ -180,25 +173,13 @@ export default async function AdminPage(): Promise<React.ReactElement> {
       GROUP BY EXTRACT(MONTH FROM "createdAt")
     `,
 
-    // Average completion time (onboarding → final report)
-    prisma.$queryRaw<Array<{ avg_seconds: number | null }>>`
-      WITH onboarding AS (
-        SELECT "userId", MIN("createdAt") AS onboarding_at
-        FROM "OperationLog"
-        WHERE message = 'Подключение установлено'
-        GROUP BY "userId"
-      ),
-      final_report AS (
-        SELECT "userId", MIN("createdAt") AS final_at
-        FROM "OperationLog"
-        WHERE message LIKE 'Финальный отчет сдан%'
-        GROUP BY "userId"
-      )
-      SELECT EXTRACT(EPOCH FROM AVG(final_report.final_at - onboarding.onboarding_at))::float AS avg_seconds
-      FROM onboarding
-      INNER JOIN final_report ON final_report."userId" = onboarding."userId"
-      WHERE final_report.final_at >= onboarding.onboarding_at
-    `,
+    // Average completion time across all GameCompletion records.
+    // Stored per-completion at submit time (lib/final-report/submit.ts), survives game restarts
+    // since restartGame() does not touch GameCompletion.
+    prisma.gameCompletion.aggregate({
+      where: { durationSeconds: { not: null } },
+      _avg: { durationSeconds: true },
+    }),
 
     prisma.missionSlot.findMany({
       where: { isActive: true },
@@ -274,7 +255,7 @@ export default async function AdminPage(): Promise<React.ReactElement> {
   const monthData = fillMonth(monthRaw);
   const yearData = fillYear(yearRaw);
 
-  const avgSeconds = avgTimeRaw[0]?.avg_seconds ?? null;
+  const avgSeconds = avgTimeRaw._avg.durationSeconds ?? null;
   const avgDuration = formatDuration(avgSeconds ?? 0);
 
   // ── Player progress gauge ──
