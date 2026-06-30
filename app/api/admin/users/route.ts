@@ -26,14 +26,26 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     search: sp.get('search') ?? undefined,
     status: sp.get('status') ?? undefined,
     sort: sp.get('sort') ?? undefined,
+    completions: sp.get('completions') ?? undefined,
   });
 
   if (!parsedQuery.success) {
     return validationErrorResponse();
   }
 
-  const { page, limit, search, status, sort } = parsedQuery.data;
-  const where = buildUsersWhere({ search, status });
+  const { page, limit, search, status, sort, completions } = parsedQuery.data;
+
+  let idIn: string[] | undefined;
+  if (completions === '5plus') {
+    const grouped = await prisma.gameCompletion.groupBy({
+      by: ['userId'],
+      _count: { userId: true },
+      having: { userId: { _count: { gte: 5 } } },
+    });
+    idIn = grouped.map((g) => g.userId);
+  }
+
+  const where = buildUsersWhere({ search, status, completions, idIn });
   const orderBy = { createdAt: sort === 'createdAt_asc' ? 'asc' : 'desc' } as const;
 
   const [users, total] = await prisma.$transaction([

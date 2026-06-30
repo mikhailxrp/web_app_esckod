@@ -166,10 +166,20 @@ export async function submitReport(userId: string, body: SubmitBody, context?: S
     throw err;
   }
 
+  const onboardingLog = await prisma.operationLog.findFirst({
+    where: { userId, message: 'Подключение установлено' },
+    orderBy: { createdAt: 'asc' },
+    select: { createdAt: true },
+  });
+  const durationSeconds = onboardingLog
+    ? Math.round((Date.now() - onboardingLog.createdAt.getTime()) / 1000)
+    : null;
+
   await prisma.gameCompletion.create({
     data: {
       userId,
       finalScore: percent,
+      durationSeconds,
       ipAddress: context?.ip ?? null,
       userAgent: context?.userAgent ?? null,
     },

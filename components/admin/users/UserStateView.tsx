@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import type { UserStateSnapshot } from '@/types/admin-users';
+import { formatDuration } from '@/lib/formatDuration';
 import { BanUserDialog } from './BanUserDialog';
 
 interface UserStateViewProps {
@@ -292,6 +293,7 @@ export function UserStateView({ snapshot }: UserStateViewProps): React.ReactElem
                 <th className="text-left py-2 text-admin-placeholder font-medium">#</th>
                 <th className="text-left py-2 text-admin-placeholder font-medium">Дата завершения</th>
                 <th className="text-left py-2 text-admin-placeholder font-medium">Счёт</th>
+                <th className="text-left py-2 text-admin-placeholder font-medium">Время прохождения</th>
                 <th className="text-left py-2 text-admin-placeholder font-medium">IP</th>
                 <th className="text-left py-2 text-admin-placeholder font-medium">User-Agent</th>
               </tr>
@@ -303,6 +305,9 @@ export function UserStateView({ snapshot }: UserStateViewProps): React.ReactElem
                   <td className="py-2 text-admin-label whitespace-nowrap">{formatDateTime(c.completedAt)}</td>
                   <td className="py-2 text-admin-label">
                     {c.finalScore !== null ? `${c.finalScore}%` : '—'}
+                  </td>
+                  <td className="py-2 text-admin-label">
+                    {c.durationSeconds !== null ? formatDuration(c.durationSeconds) : '—'}
                   </td>
                   <td className="py-2 text-admin-label font-mono text-xs">{c.ipAddress ?? '—'}</td>
                   <td className="py-2 text-admin-placeholder text-xs max-w-xs truncate" title={c.userAgent ?? ''}>

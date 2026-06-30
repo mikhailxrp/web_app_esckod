@@ -44,6 +44,7 @@ type View =
   | { phase: "loading" }
   | { phase: "error"; message: string }
   | { phase: "playing"; data: PlayingState }
+  | { phase: "failed"; data: PlayingState }
   | { phase: "completed"; data: CompletedState };
 
 interface DecipherGamePanelProps {
@@ -62,7 +63,6 @@ export function DecipherGamePanel({
 }: DecipherGamePanelProps): ReactElement {
   const [view, setView] = useState<View>({ phase: "loading" });
   const [busy, setBusy] = useState(false);
-  const [isError, setIsError] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
   const refreshLogs = useLogStore((s) => s.refreshLogs);
@@ -190,7 +190,6 @@ export function DecipherGamePanel({
 
       const playing = view.data;
       setBusy(true);
-      setIsError(false);
 
       try {
         const res = await fetch(`/api/missions/decipher/${slotKey}/attempt`, {
@@ -211,11 +210,7 @@ export function DecipherGamePanel({
           return;
         }
 
-        setIsError(true);
-        setView({
-          phase: "playing",
-          data: { ...playing, canSkip: result.canSkip },
-        });
+        setView({ phase: "failed", data: { ...playing, canSkip: result.canSkip } });
       } catch (error) {
         console.error("[DecipherGamePanel.handleSubmit]", error);
         toast.error("Ошибка соединения.");
@@ -226,9 +221,19 @@ export function DecipherGamePanel({
     [busy, view, slotKey, completeMission, demo],
   );
 
+  const handleRestart = useCallback((): void => {
+    if (view.phase !== "failed") return;
+    setInputValue("");
+    setView({ phase: "playing", data: view.data });
+  }, [view]);
+
   const handleSkip = useCallback(async (): Promise<boolean> => {
-    if (demo || view.phase !== "playing") return false;
-    const playing = view.data;
+    if (demo) return false;
+    const playing =
+      view.phase === "playing" ? view.data
+      : view.phase === "failed" ? view.data
+      : null;
+    if (!playing) return false;
 
     try {
       const res = await fetch(`/api/missions/decipher/${slotKey}/skip`, {
@@ -261,11 +266,10 @@ export function DecipherGamePanel({
   }, [view, slotKey, refreshLogs, refreshChat, demo]);
 
   const hintText =
-    view.phase === "playing"
-      ? view.data.hintText
-      : view.phase === "completed"
-        ? view.data.hintText
-        : null;
+    view.phase === "playing" ? view.data.hintText
+    : view.phase === "failed" ? view.data.hintText
+    : view.phase === "completed" ? view.data.hintText
+    : null;
 
   return (
     <article
@@ -394,6 +398,52 @@ export function DecipherGamePanel({
           </div>
         )}
 
+        {view.phase === "failed" && (
+          <div className="flex flex-1 items-center justify-center px-6 py-8">
+            <div
+              className="flex flex-col items-center gap-5 rounded-game-lg border border-semantic-error bg-bg-primary p-8 text-center shadow-game-card"
+              role="alert"
+              aria-live="assertive"
+            >
+              <svg
+                width="44"
+                height="44"
+                viewBox="0 0 44 44"
+                fill="none"
+                aria-hidden="true"
+                className="text-semantic-error"
+              >
+                <circle cx="22" cy="22" r="21" stroke="currentColor" strokeWidth="2" />
+                <path d="M22 12v12" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                <circle cx="22" cy="31" r="1.5" fill="currentColor" />
+              </svg>
+
+              <div className="flex flex-col gap-1">
+                <h2 className="font-mono text-game-panel uppercase tracking-game-wide text-semantic-error">
+                  Доступ запрещен
+                </h2>
+                <p className="font-mono text-game-sm text-content-muted">
+                  Миссия провалена.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleRestart}
+                className="h-input-height w-full max-w-[200px] rounded-game-full bg-accent font-mono text-game-sm uppercase tracking-game-wide text-content-inverse transition-opacity hover:opacity-90"
+              >
+                Начать заново
+              </button>
+
+              {view.data.canSkip ? (
+                <div className="flex justify-center">
+                  <DecipherSkipButton onSkip={handleSkip} disabled={busy} />
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )}
+
         {view.phase === "completed" && (
           <div
             className="flex flex-1 items-center justify-center px-6 py-8"
@@ -451,12 +501,11 @@ export function DecipherGamePanel({
                 <DecipherInput
                   onSubmit={handleSubmit}
                   isLoading={busy}
-                  isError={isError}
+                  isError={false}
                   disabled={busy}
                   externalValue={inputValue}
                   onExternalChange={(val) => {
                     setInputValue(val);
-                    if (isError) setIsError(false);
                   }}
                 />
               </div>
@@ -480,7 +529,6 @@ export function DecipherGamePanel({
                   table={view.data.playfairTable}
                   onLetterClick={(letter) => {
                     setInputValue((prev) => prev + letter);
-                    if (isError) setIsError(false);
                   }}
                 />
               ) : null}
