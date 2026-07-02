@@ -201,7 +201,8 @@ export function RdpGamePanel({
       ? DEMO_RDP_INSTRUCTION_HINT
       : stage.phase === "puzzle" ||
           stage.phase === "loading" ||
-          stage.phase === "error"
+          stage.phase === "error" ||
+          stage.phase === "completed"
         ? hintText
         : null;
 

@@ -6,7 +6,8 @@ export const logTemplates = {
     'Ошибка доступа: проверьте корректность данных {targetUrl}, {targetEmail}',
   crack_access_granted:
     'Доступ к {targetUrl} получен. Пароль: {resultPassword}',
-  decipher_launch_failed: 'Не удалось расшифровать путь к папке: {folderPath}',
+  decipher_launch_failed:
+    'Не удалось расшифровать путь к папке: {folderPath} c ключом {cipherKey}',
   decipher_access_granted:
     'Папка {folderPath} расшифрована. Пароль: {folderPassword}',
   rdp_invalid_ip: 'Неверный IP-адрес: {ip}',
