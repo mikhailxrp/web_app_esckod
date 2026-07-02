@@ -17,13 +17,11 @@ const AUTH_CARD_PATTERN = "/".repeat(60);
 const FALLBACK_DEFAULTS = {
   defaultMarketingConsent: false,
   supportEmail: "support@example.com",
-  privacyPolicyUrl: "https://example.com/privacy",
 } as const;
 
 interface RegistrationDefaults {
   defaultMarketingConsent: boolean;
   supportEmail: string;
-  privacyPolicyUrl: string;
 }
 
 type RegisterErrorCode =
@@ -265,14 +263,14 @@ export function RegisterForm(): React.ReactElement {
                 />
                 <span>
                   Я согласен(-на) на обработку персональных данных (
-                  <a
-                    href={defaults.privacyPolicyUrl}
+                  <Link
+                    href="/privacy-policy"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-accent hover:text-accent-hover"
                   >
                     политика конфиденциальности
-                  </a>
+                  </Link>
                   )
                 </span>
               </label>

@@ -169,7 +169,7 @@ export default async function AdminLayout({ children }) {
 ### `AdminBanners` — глобальные предупреждения
 
 Server Component, дёргает несколько проверок:
-1. Есть ли заглушки в `AppSettings` (`example.com` в `supportEmail` или `privacyPolicyUrl`)
+1. Есть ли заглушки в `AppSettings` (`example.com` в `supportEmail` или пустой `privacyPolicyText`)
 2. Валидатор связности chats ↔ report (см. `final-report.md`)
 3. Есть ли необработанные ошибки в системе (опционально, на старте не делаем)
 
@@ -453,11 +453,11 @@ async function deleteAdmin(adminId: string, currentAdminId: string) {
 
 См. отдельный модуль `app-settings.md`.
 
-UI и эндпоинты описаны там. В навигации админки — пункт `/admin/settings`.
+UI и эндпоинты описаны там. В навигации админки — пункты `/admin/settings` и `/admin/privacy-policy`.
 
 Краткое напоминание:
 - `GET/PATCH /api/admin/app-settings`
-- 3 поля: `defaultMarketingConsent`, `supportEmail`, `privacyPolicyUrl`
+- 3 поля: `defaultMarketingConsent`, `supportEmail` (форма на `/admin/settings`), `privacyPolicyText` (Tiptap-редактор на `/admin/privacy-policy`)
 - Баннер при заглушках, модалка при `defaultMarketingConsent=true`
 
 ---

@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import type { ReactElement } from 'react';
-import { createPortal } from 'react-dom';
-import { ParagraphText } from './ParagraphText';
+import Image from "next/image";
+import type { ReactElement } from "react";
+import { createPortal } from "react-dom";
+import { ParagraphText } from "./ParagraphText";
 
 interface HintTooltipProps {
   text: string;
@@ -17,7 +17,11 @@ const GAP = 8;
 
 /** Тултип «Инструкция» — заголовок + текст с абзацами + кнопка «ОК». Используется в HintButton миссий.
  *  Рендерится порталом в document.body, чтобы не обрезаться overflow-hidden игровой панели. */
-export function HintTooltip({ text, anchorRect, onClose }: HintTooltipProps): ReactElement {
+export function HintTooltip({
+  text,
+  anchorRect,
+  onClose,
+}: HintTooltipProps): ReactElement {
   const top = anchorRect.bottom + window.scrollY + GAP;
   const left = anchorRect.right + window.scrollX - TOOLTIP_WIDTH;
 
@@ -33,17 +37,12 @@ export function HintTooltip({ text, anchorRect, onClose }: HintTooltipProps): Re
       />
 
       <div className="mb-2 flex items-start justify-between gap-2">
-        <span className="text-game-xs font-bold uppercase text-white" style={{ letterSpacing: '1.50px' }}  >
+        <span
+          className="text-game-xs font-bold uppercase text-white"
+          style={{ letterSpacing: "1.50px" }}
+        >
           Инструкция
         </span>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Закрыть подсказку"
-          className="shrink-0"
-        >
-          <Image src="/assets/icons/close.svg" alt="" width={14} height={14} aria-hidden="true" />
-        </button>
       </div>
 
       <div className="text-[13px] leading-[18px] text-white">

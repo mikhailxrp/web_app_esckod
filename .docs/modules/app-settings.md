@@ -21,10 +21,11 @@
 ## Цели модуля
 
 После завершения этого модуля:
-- Существует singleton-таблица `AppSettings` с тремя полями
+- Существует singleton-таблица `AppSettings` с тремя настраиваемыми полями
 - При первом деплое сидер создаёт ровно одну запись с дефолтами-заглушками
 - Публичный эндпоинт `GET /api/settings/registration-defaults` отдаёт нужные поля для формы регистрации
-- Админ через `/admin/settings` видит и может редактировать все поля
+- Админ через `/admin/settings` видит и редактирует `supportEmail`/`defaultMarketingConsent`, а через отдельную страницу `/admin/privacy-policy` (Tiptap-редактор) — текст политики конфиденциальности (`privacyPolicyText`)
+- Публичная страница `/privacy-policy` рендерит сохранённый текст политики для незалогиненных пользователей (ссылка с формы регистрации)
 - Админка предупреждает о юридических рисках (`defaultMarketingConsent=true`) и о незаполненных продакшен-значениях
 
 **Не входит в модуль:**
@@ -58,9 +59,9 @@
 
 ### 3. Заглушки для разработки, валидация для прода
 
-Сидер ставит заглушки (`support@example.com`, `https://example.com/privacy`). Это:
+Сидер ставит заглушку email (`support@example.com`) и оставляет `privacyPolicyText` пустой строкой. Это:
 - Позволяет разработке идти без блокировки
-- Делает явным факт «это надо заменить перед продом» — UI админки показывает баннер-предупреждение
+- Делает явным факт «это надо заполнить перед продом» — UI админки показывает баннер-предупреждение
 
 Запрет деплоя в прод с заглушками **не реализуется на уровне приложения** — это операционная задача чек-листа перед релизом.
 
@@ -98,17 +99,19 @@
 
 ---
 
-### `privacyPolicyUrl: String`
+### `privacyPolicyText: String`
 
-**Что это:** ссылка на политику обработки персональных данных. Открывается рядом с обязательной галкой согласия в форме регистрации.
+**Что это:** HTML-текст страницы политики обработки персональных данных, редактируемый через Tiptap-редактор на `/admin/privacy-policy`. Рендерится на публичной странице `/privacy-policy`, ссылка на которую открывается рядом с обязательной галкой согласия в форме регистрации.
 
-**Дефолт:** `"https://example.com/privacy"` (заглушка)
+**Дефолт:** `""` (не заполнено)
 
 **Юридический контекст:**
-- Без рабочей ссылки регистрация юридически не валидна (152-ФЗ ст. 9 ч. 4: согласие должно быть конкретным, информированным).
-- Админка показывает **постоянный баннер-предупреждение**, пока поле содержит заглушку (`example.com` подстрока) или невалидный URL.
+- Без заполненного текста регистрация юридически не валидна (152-ФЗ ст. 9 ч. 4: согласие должно быть конкретным, информированным).
+- Админка показывает **постоянный баннер-предупреждение**, пока поле пустое.
 
-**Формат:** валидный URL (http/https). Валидация на сервере через Zod при PATCH.
+**Формат:** HTML, генерируемый `editor.getHTML()` (Tiptap `StarterKit`: заголовки, списки, цитаты, ссылки, форматирование текста). Валидация на сервере через Zod при PATCH — принимается любая непустая строка (санитизация не требуется, поле редактируется только админом через контролируемый редактор, а не произвольным HTML с клиента).
+
+**Редактируется НЕ на `/admin/settings`** — у поля отдельная страница `/admin/privacy-policy`, так как это content-редактирование, а не конфигурационное значение.
 
 ---
 
@@ -131,14 +134,12 @@ export async function GET() {
     return Response.json({
       defaultMarketingConsent: false,
       supportEmail: 'support@example.com',
-      privacyPolicyUrl: 'https://example.com/privacy',
     });
   }
 
   return Response.json({
     defaultMarketingConsent: settings.defaultMarketingConsent,
     supportEmail: settings.supportEmail,
-    privacyPolicyUrl: settings.privacyPolicyUrl,
   });
 }
 ```
@@ -147,10 +148,11 @@ export async function GET() {
 ```json
 {
   "defaultMarketingConsent": false,
-  "supportEmail": "support@example.com",
-  "privacyPolicyUrl": "https://example.com/privacy"
+  "supportEmail": "support@example.com"
 }
 ```
+
+`privacyPolicyText` этому эндпоинту не нужен — форма регистрации ссылается на статичный роут `/privacy-policy`, который сам читает `AppSettings` на сервере.
 
 **Что НЕ возвращается:**
 - `id`, `createdAt`, `updatedAt` — внутренние поля, нет необходимости их публиковать
@@ -186,7 +188,7 @@ export async function GET() {
   "id": "clx...",
   "defaultMarketingConsent": false,
   "supportEmail": "support@example.com",
-  "privacyPolicyUrl": "https://example.com/privacy",
+  "privacyPolicyText": "<p>...</p>",
   "createdAt": "2026-05-01T10:00:00.000Z",
   "updatedAt": "2026-05-08T14:30:00.000Z"
 }
@@ -210,11 +212,11 @@ export async function GET() {
 const updateSettingsSchema = z.object({
   defaultMarketingConsent: z.boolean().optional(),
   supportEmail: z.string().email().optional(),
-  privacyPolicyUrl: z.string().url().optional(),
+  privacyPolicyText: z.string().optional(),
 });
 ```
 
-Все поля опциональны — клиент может прислать только то, что меняет.
+Все поля опциональны — клиент может прислать только то, что меняет. `AppSettingsForm` (`/admin/settings`) шлёт `supportEmail`/`defaultMarketingConsent`; `PrivacyPolicyEditorForm` (`/admin/privacy-policy`) шлёт только `privacyPolicyText` — оба используют один и тот же `PATCH`-эндпоинт с частичным телом.
 
 **Алгоритм:**
 ```typescript
@@ -246,13 +248,11 @@ export async function PATCH(req: NextRequest) {
 
 **Response 200:** обновлённый объект (как в GET).
 
-**Response 400:** если Zod не прошёл (невалидный email, невалидный URL).
+**Response 400:** если Zod не прошёл (невалидный email).
 
 ---
 
 ## UI-предупреждения в админке
-
-На странице `/admin/settings` обязательны два визуальных предупреждения:
 
 ### 1. Предупреждение при `defaultMarketingConsent === true`
 
@@ -266,23 +266,15 @@ export async function PATCH(req: NextRequest) {
 >
 > [Отмена] [Я понимаю и сохраняю]
 
-### 2. Постоянный баннер при заглушках
+### 2. Баннеры при незаполненных значениях
 
-Над формой настроек, пока выполняется хотя бы одно из условий:
-- `supportEmail` содержит подстроку `example.com`
-- `privacyPolicyUrl` содержит подстроку `example.com` или невалидный URL
+Два независимых источника, оба реализованы в `AdminBanners` (Server Component, виден во всём сайдбаре админки — не только на странице настроек):
+- `supportEmail` содержит подстроку `example.com` → баннер со ссылкой на `/admin/settings`
+- `privacyPolicyText` пустая строка → баннер со ссылкой на `/admin/privacy-policy`
 
-Текст баннера:
+Плюс `PlaceholderWarningBanner` (Client Component, только на `/admin/settings`) дублирует проверку `supportEmail` прямо над формой, с учётом live-значения из `watch()`.
 
-> ⚠️ **Заглушки в продакшен-настройках**
->
-> Перед запуском в прод необходимо заменить значения по умолчанию:
-> - Email техподдержки: текущий `{supportEmail}` — это заглушка
-> - URL политики обработки данных: текущий `{privacyPolicyUrl}` — это заглушка
->
-> Без замены регистрация юридически не валидна (152-ФЗ ст. 9 ч. 4).
-
-Реализация — Client Component с проверкой подстроки `example.com` после получения `GET /api/admin/app-settings`.
+Без заполненного текста политики регистрация юридически не валидна (152-ФЗ ст. 9 ч. 4).
 
 ---
 
@@ -292,8 +284,13 @@ export async function PATCH(req: NextRequest) {
 app/
 ├── (admin)/
 │   └── admin/
-│       └── settings/
-│           └── page.tsx                      # Server Component, рендер AppSettingsForm
+│       ├── settings/
+│       │   └── page.tsx                      # Server Component, рендер AppSettingsForm
+│       └── privacy-policy/
+│           └── page.tsx                      # Server Component, рендер PrivacyPolicyEditorForm
+├── (auth)/
+│   └── privacy-policy/
+│       └── page.tsx                          # Server Component, публичный рендер текста политики
 ├── api/
 │   ├── settings/
 │   │   └── registration-defaults/
@@ -304,15 +301,20 @@ app/
 
 components/
 └── admin/
-    └── app-settings/
-        ├── AppSettingsForm.tsx               # Client Component, форма редактирования
-        ├── PlaceholderWarningBanner.tsx      # Client Component, баннер про заглушки
-        └── MarketingConsentWarningModal.tsx  # Client Component, модалка про юр.риск
+    ├── app-settings/
+    │   ├── AppSettingsForm.tsx               # Client Component, форма редактирования
+    │   ├── PlaceholderWarningBanner.tsx      # Client Component, баннер про заглушку email
+    │   └── MarketingConsentWarningModal.tsx  # Client Component, модалка про юр.риск
+    └── privacy-policy/
+        ├── PrivacyPolicyEditorForm.tsx       # Client Component, Tiptap-редактор + сохранение
+        └── EditorToolbar.tsx                 # Client Component, панель форматирования Tiptap
 
 lib/
 └── validations/
     └── app-settings.ts                       # Zod schema: updateSettingsSchema
 ```
+
+`.tiptap-content` — общий CSS-класс в `app/globals.css`, стилизует и зону редактора (`/admin/privacy-policy`), и публичный рендер (`/privacy-policy`), чтобы WYSIWYG совпадал с итоговым видом.
 
 ---
 
@@ -331,7 +333,7 @@ lib/
        data: {
          defaultMarketingConsent: false,
          supportEmail: 'support@example.com',
-         privacyPolicyUrl: 'https://example.com/privacy',
+         privacyPolicyText: '',
        }
      });
    }
@@ -355,6 +357,6 @@ lib/
 
 ## Связи с другими модулями
 
-- **`auth.md`** — публичный эндпоинт `GET /api/settings/registration-defaults` используется в форме регистрации (`/register`) и в логике auth (тексты ошибок с `supportEmail`).
-- **`admin.md`** — общий обзор админки, страница `/admin/settings` входит в общую навигацию админки.
+- **`auth.md`** — публичный эндпоинт `GET /api/settings/registration-defaults` используется в форме регистрации (`/register`) и в логике auth (тексты ошибок с `supportEmail`). Ссылка согласия на политику ведёт на статичный `/privacy-policy`, а не на значение из этого эндпоинта.
+- **`admin.md`** — общий обзор админки, страницы `/admin/settings` и `/admin/privacy-policy` входят в общую навигацию админки.
 - **`database.md`** — модель `AppSettings` и сидер описаны там, здесь только применение.

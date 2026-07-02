@@ -187,9 +187,9 @@ export const proxy = auth((req) => {
    - Имя (латиница или кириллица + цифры + `_`, ≥3 символа)
    - Email
    - Ключ доступа (из коробки)
-   - **Обязательная** галка: согласие на обработку персональных данных (с ссылкой из `AppSettings.privacyPolicyUrl`)
+   - **Обязательная** галка: согласие на обработку персональных данных (со ссылкой на статичную страницу `/privacy-policy`, рендерящую `AppSettings.privacyPolicyText`)
    - **Необязательная** галка: согласие на маркетинговые рассылки (дефолт берётся из `AppSettings.defaultMarketingConsent`)
-3. Клиент при загрузке страницы дёргает `GET /api/settings/registration-defaults` и получает `{ defaultMarketingConsent, supportEmail, privacyPolicyUrl }`
+3. Клиент при загрузке страницы дёргает `GET /api/settings/registration-defaults` и получает `{ defaultMarketingConsent, supportEmail }`
 4. Заполняет форму, нажимает «Зарегистрироваться»
 5. **Возможные ответы:**
    - Успех: страница «Проверьте почту, мы прислали пароль» → редирект на `/login` через 5 секунд
@@ -752,8 +752,7 @@ const ip =
 ```json
 {
   "defaultMarketingConsent": false,
-  "supportEmail": "support@example.com",
-  "privacyPolicyUrl": "https://example.com/privacy"
+  "supportEmail": "support@example.com"
 }
 ```
 

@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   Lightbulb,
   MessageSquare,
+  Scale,
   ScrollText,
   Settings,
   Shield,
@@ -76,6 +77,11 @@ const NAV_ENTRIES: NavEntry[] = [
     label: 'Настройки',
     href: '/admin/settings',
     icon: <Settings size={16} />,
+  },
+  {
+    label: 'Политика конфиденциальности',
+    href: '/admin/privacy-policy',
+    icon: <Scale size={16} />,
   },
   {
     label: 'Подсказки',
