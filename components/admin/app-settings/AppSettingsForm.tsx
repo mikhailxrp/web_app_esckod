@@ -14,7 +14,6 @@ import { MarketingConsentWarningModal } from './MarketingConsentWarningModal';
 interface AppSettingsData {
   id: string;
   supportEmail: string;
-  privacyPolicyUrl: string;
   defaultMarketingConsent: boolean;
   updatedAt: string;
 }
@@ -42,13 +41,11 @@ export function AppSettingsForm({
     resolver: zodResolver(updateSettingsSchema),
     defaultValues: {
       supportEmail: initialData.supportEmail,
-      privacyPolicyUrl: initialData.privacyPolicyUrl,
       defaultMarketingConsent: initialData.defaultMarketingConsent,
     },
   });
 
   const watchedEmail = watch('supportEmail') ?? initialData.supportEmail;
-  const watchedUrl = watch('privacyPolicyUrl') ?? initialData.privacyPolicyUrl;
 
   const showToast = (type: 'success' | 'error', message: string): void => {
     setToast({ type, message });
@@ -67,7 +64,7 @@ export function AppSettingsForm({
 
       if (!res.ok) {
         if (json.error === 'VALIDATION_ERROR') {
-          showToast('error', 'Некорректные данные. Проверьте email и URL.');
+          showToast('error', 'Некорректные данные. Проверьте email.');
         } else {
           showToast('error', 'Не удалось сохранить настройки. Попробуйте еще раз.');
         }
@@ -76,7 +73,6 @@ export function AppSettingsForm({
 
       reset({
         supportEmail: json.supportEmail,
-        privacyPolicyUrl: json.privacyPolicyUrl,
         defaultMarketingConsent: json.defaultMarketingConsent,
       });
 
@@ -112,7 +108,6 @@ export function AppSettingsForm({
   const handleReset = (): void => {
     reset({
       supportEmail: initialData.supportEmail,
-      privacyPolicyUrl: initialData.privacyPolicyUrl,
       defaultMarketingConsent: initialData.defaultMarketingConsent,
     });
   };
@@ -122,10 +117,7 @@ export function AppSettingsForm({
 
   return (
     <>
-      <PlaceholderWarningBanner
-        supportEmail={watchedEmail}
-        privacyPolicyUrl={watchedUrl}
-      />
+      <PlaceholderWarningBanner supportEmail={watchedEmail} />
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <div className="bg-white rounded-xl shadow-admin-card border border-admin-card-border p-8 max-w-3xl">
@@ -153,31 +145,6 @@ export function AppSettingsForm({
               {errors.supportEmail && (
                 <p className="mt-1 text-xs text-red-500">
                   {errors.supportEmail.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* privacyPolicyUrl */}
-          <div className="grid grid-cols-[220px_1fr] items-start gap-4 mb-5">
-            <label className="text-sm text-admin-label pt-2.5">
-              Ссылка на политику обработки ПД
-            </label>
-            <div>
-              <input
-                type="url"
-                placeholder="https://example.com/privacy"
-                {...register('privacyPolicyUrl')}
-                className={[
-                  inputBase,
-                  errors.privacyPolicyUrl
-                    ? 'border-red-400'
-                    : 'border-transparent focus:border-admin-accent',
-                ].join(' ')}
-              />
-              {errors.privacyPolicyUrl && (
-                <p className="mt-1 text-xs text-red-500">
-                  {errors.privacyPolicyUrl.message}
                 </p>
               )}
             </div>

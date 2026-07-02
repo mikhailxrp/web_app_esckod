@@ -788,7 +788,7 @@ model AppSettings {
   id                       String   @id @default(cuid())
   defaultMarketingConsent  Boolean  @default(false)   // дефолт для галки согласия на маркетинг
   supportEmail             String   @default("support@example.com")  // email техподдержки
-  privacyPolicyUrl         String   @default("https://example.com/privacy")  // ссылка на политику обработки данных
+  privacyPolicyText        String   @default("")  // HTML-текст политики обработки данных (Tiptap-редактор в админке)
   finalReportQuestionId    String?  // указатель на финальный вопрос «Обвинить / Защитить»
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
@@ -805,13 +805,13 @@ model AppSettings {
 | ------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `defaultMarketingConsent` | Начальное состояние галки маркетинга в форме регистрации                                | `GET /api/settings/registration-defaults` |
 | `supportEmail`            | Email техподдержки в сообщениях об ошибках регистрации (неверный ключ, лимит активаций) | `GET /api/settings/registration-defaults` |
-| `privacyPolicyUrl`        | Ссылка на политику обработки данных (рядом с обязательной галкой согласия)              | `GET /api/settings/registration-defaults` |
+| `privacyPolicyText`       | HTML-текст политики обработки данных, редактируется на `/admin/privacy-policy`          | `GET/PATCH /api/admin/app-settings`, рендерится на публичной `/privacy-policy` |
 | `finalReportQuestionId`   | ID вопроса с вариантами «Обвинить / Защитить», используемого в финальном отчёте         | `GET/PUT /api/admin/report/history`, `GET /api/admin/report/validate` |
 
 ⚠️ **Юридические требования:**
 
 - `defaultMarketingConsent` по умолчанию `false` — закон 152-ФЗ ст. 9 и GDPR ст. 7 требуют активный opt-in. Заказчик может изменить на `true` через админку — это его осознанная юридическая ответственность. UI админки показывает предупреждение.
-- `privacyPolicyUrl` **обязателен для запуска в прод** — без рабочей ссылки регистрация юридически не валидна. Админка показывает баннер-предупреждение, пока поле содержит заглушку `https://example.com/privacy`.
+- `privacyPolicyText` **обязателен для запуска в прод** — без заполненного текста регистрация юридически не валидна. Админка показывает баннер-предупреждение, пока поле пустое.
 
 ---
 
@@ -910,11 +910,11 @@ AdminAuditLog            (аудит — без каскада, пережива
 
 | Поле                      | Значение                                   |
 | ------------------------- | ------------------------------------------ |
-| `defaultMarketingConsent` | `false`                                    |
-| `supportEmail`            | `"support@example.com"` (заглушка)         |
-| `privacyPolicyUrl`        | `"https://example.com/privacy"` (заглушка) |
+| `defaultMarketingConsent` | `false`                            |
+| `supportEmail`            | `"support@example.com"` (заглушка) |
+| `privacyPolicyText`       | `""` (не заполнено)                |
 
-Заказчик меняет `supportEmail` и `privacyPolicyUrl` через админку **до запуска в прод**. Без замены — UI админки показывает баннер-предупреждение.
+Заказчик меняет `supportEmail` на `/admin/settings` и заполняет `privacyPolicyText` через Tiptap-редактор на `/admin/privacy-policy` **до запуска в прод**. Без замены — UI админки показывает баннер-предупреждение.
 
 ---
 

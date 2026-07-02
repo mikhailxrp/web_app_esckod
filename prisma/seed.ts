@@ -135,7 +135,7 @@ const FINAL_REPORT_CONTENT: Prisma.FinalReportContentCreateManyInput[] = [
 const DEFAULT_APP_SETTINGS = {
   defaultMarketingConsent: false,
   supportEmail: 'support@example.com',
-  privacyPolicyUrl: 'https://example.com/privacy',
+  privacyPolicyText: '',
 } as const;
 
 async function seedAdminUser(): Promise<void> {

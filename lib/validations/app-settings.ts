@@ -5,10 +5,7 @@ export const updateSettingsSchema = z.object({
     .string()
     .email('Некорректный email')
     .optional(),
-  privacyPolicyUrl: z
-    .string()
-    .url('Некорректный URL')
-    .optional(),
+  privacyPolicyText: z.string().optional(),
   defaultMarketingConsent: z.boolean().optional(),
 });
 

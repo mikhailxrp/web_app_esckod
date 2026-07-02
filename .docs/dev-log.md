@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-07-02 — Политика конфиденциальности: Tiptap-редактор в админке
+
+**Сделано:**
+
+- `AppSettings.privacyPolicyUrl` переименовано в `privacyPolicyText`, семантика поля изменена с внешней ссылки на HTML-текст (миграция вручную через `RENAME COLUMN`, данные сохранены, дефолт `""`).
+- Новая страница `/admin/privacy-policy` — Tiptap-редактор (`@tiptap/react` + `StarterKit` v3: жирный/курсив/подчёркнутый/зачёркнутый, заголовки H1–H3, списки, цитата, ссылка, undo/redo) с сохранением через существующий `PATCH /api/admin/app-settings`.
+- Поле убрано с общей страницы `/admin/settings` (`AppSettingsForm`, `PlaceholderWarningBanner`) — у него теперь отдельная страница и отдельный баннер-предупреждение в `AdminBanners` (проверка пустоты вместо `example.com`).
+- Новая публичная страница `/privacy-policy` (в группе `(auth)`, без авторизации) рендерит сохранённый текст; ссылка согласия в `RegisterForm` теперь статична (`/privacy-policy`) вместо динамического URL из `AppSettings`.
+- `GET /api/settings/registration-defaults` больше не отдаёт поле политики (форме регистрации оно не нужно).
+- Общий CSS-класс `.tiptap-content` в `globals.css` — используется и в зоне редактора, и в публичном рендере, чтобы WYSIWYG совпадал.
+
+**Документация** (обновлена):
+
+- `.docs/modules/app-settings.md`, `.docs/database.md`, `.docs/prd.md`, `.docs/modules/admin.md`, `.docs/modules/auth.md` — все упоминания `privacyPolicyUrl` заменены на `privacyPolicyText` с новой семантикой.
+
+**Новые зависимости:** `@tiptap/react`, `@tiptap/pm`, `@tiptap/starter-kit` (`^3.27.1`).
+
+---
+
 ## 2026-06-23 — Phase 19 / Таск 2 — UI перезапуска через «Переиграть» в финальном отчёте
 
 **Сделано:**

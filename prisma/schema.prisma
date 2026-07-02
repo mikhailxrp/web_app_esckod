@@ -373,7 +373,7 @@ model AppSettings {
   id                       String   @id @default(cuid())
   defaultMarketingConsent  Boolean  @default(false)
   supportEmail             String   @default("support@example.com")
-  privacyPolicyUrl         String   @default("https://example.com/privacy")
+  privacyPolicyText        String   @default("")
   finalReportQuestionId    String?
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
