@@ -1,18 +1,31 @@
+'use client';
+
 import Image from 'next/image';
 import type { ReactElement } from 'react';
+import { createPortal } from 'react-dom';
 import { ParagraphText } from './ParagraphText';
 
 interface HintTooltipProps {
   text: string;
+  /** Прямоугольник кнопки-триггера (getBoundingClientRect) — тултип выравнивается по ней */
+  anchorRect: DOMRect;
   onClose: () => void;
 }
 
-/** Тултип «Инструкция» — заголовок + текст с абзацами + кнопка «ОК». Используется в HintButton миссий. */
-export function HintTooltip({ text, onClose }: HintTooltipProps): ReactElement {
-  return (
+const TOOLTIP_WIDTH = 256; // w-64
+const GAP = 8;
+
+/** Тултип «Инструкция» — заголовок + текст с абзацами + кнопка «ОК». Используется в HintButton миссий.
+ *  Рендерится порталом в document.body, чтобы не обрезаться overflow-hidden игровой панели. */
+export function HintTooltip({ text, anchorRect, onClose }: HintTooltipProps): ReactElement {
+  const top = anchorRect.bottom + window.scrollY + GAP;
+  const left = anchorRect.right + window.scrollX - TOOLTIP_WIDTH;
+
+  return createPortal(
     <div
       role="tooltip"
-      className="absolute right-0 top-9 z-card w-64 rounded-[8px] bg-white/30 p-3 font-mono shadow-game-card backdrop-blur-[20px]"
+      className="absolute z-card w-64 rounded-[8px] bg-white/30 p-3 font-mono shadow-game-card backdrop-blur-[20px]"
+      style={{ top, left }}
     >
       <span
         aria-hidden="true"
@@ -44,6 +57,7 @@ export function HintTooltip({ text, onClose }: HintTooltipProps): ReactElement {
       >
         ОК
       </button>
-    </div>
+    </div>,
+    document.body,
   );
 }
