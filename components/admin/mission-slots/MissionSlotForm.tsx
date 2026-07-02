@@ -421,16 +421,16 @@ export function MissionSlotForm({
             <Field
               label="Инструкция"
               htmlFor="hintText"
-              hint="Текст подсказки, отображаемой игроку (необязательно)"
+              hint="Текст подсказки, отображаемой игроку (необязательно). Пустая строка между строками — новый абзац"
               error={errors.hintText?.message}
               className="sm:col-span-2"
             >
               <textarea
                 {...register('hintText')}
                 id="hintText"
-                rows={3}
-                placeholder="Текст подсказки..."
-                className="input-field resize-none"
+                rows={6}
+                placeholder="Текст подсказки...&#10;&#10;Новый абзац — через пустую строку"
+                className="input-field resize-y"
               />
             </Field>
           </div>

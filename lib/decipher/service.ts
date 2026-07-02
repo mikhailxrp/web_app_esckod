@@ -334,12 +334,12 @@ async function finalizeDecipherMission(
   options: { skipped: boolean },
 ): Promise<{ folderPassword: string | null; folderPath: string | null }> {
   await prisma.$transaction(async (tx) => {
-    if (options.skipped) {
-      const existing = await tx.missionProgress.findUnique({
-        where: { userId_slotId: { userId, slotId: slot.id } },
-      });
-      const meta = parseMetadata(existing?.metadata ?? null);
+    const existing = await tx.missionProgress.findUnique({
+      where: { userId_slotId: { userId, slotId: slot.id } },
+    });
+    const meta = parseMetadata(existing?.metadata ?? null);
 
+    if (options.skipped) {
       await tx.missionProgress.update({
         where: { userId_slotId: { userId, slotId: slot.id } },
         data: {
@@ -364,6 +364,15 @@ async function finalizeDecipherMission(
         },
       });
     }
+
+    await tx.missionCompletionStats.create({
+      data: {
+        userId,
+        slotId: slot.id,
+        skipped: options.skipped,
+        failedAttempts: meta.failedAttempts,
+      },
+    });
 
     await tx.operationLog.create({
       data: {

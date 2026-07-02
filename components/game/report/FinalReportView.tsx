@@ -101,6 +101,13 @@ export function FinalReportView({
   const allAnswered =
     questions.length > 0 && Object.keys(answers).length === questions.length;
 
+  // Смена стадии (вопросы → результат) меняет высоту контента,
+  // но браузер сохраняет прежний scrollTop — из-за этого страница
+  // открывается на середине. Возвращаем скролл к началу.
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [stage]);
+
   // =============================================================
   // Data fetching
   // =============================================================

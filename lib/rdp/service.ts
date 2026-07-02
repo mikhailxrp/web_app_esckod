@@ -1179,6 +1179,15 @@ export async function handleComplete(
         },
       });
 
+      await tx.missionCompletionStats.create({
+        data: {
+          userId,
+          slotId: slot.id,
+          skipped: meta.skipped,
+          failedAttempts: meta.timerExpiredCount,
+        },
+      });
+
       await tx.operationLog.create({
         data: {
           userId,

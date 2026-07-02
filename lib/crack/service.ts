@@ -401,6 +401,15 @@ async function finalizeMission(
       },
     });
 
+    await tx.missionCompletionStats.create({
+      data: {
+        userId,
+        slotId: slot.id,
+        skipped: options.skipped,
+        failedAttempts: meta.failedSessionsCount,
+      },
+    });
+
     await tx.crackSession.deleteMany({
       where: { userId, slotId: slot.id },
     });

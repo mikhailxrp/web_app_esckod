@@ -52,7 +52,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       await writeLog({
         userId: session.user.id,
         templateKey: 'decipher_launch_failed',
-        params: { folderPath },
+        params: { folderPath, cipherKey },
         type: 'ERROR',
       });
 

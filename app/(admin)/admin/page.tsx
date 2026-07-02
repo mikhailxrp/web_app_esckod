@@ -189,49 +189,43 @@ export default async function AdminPage(): Promise<React.ReactElement> {
   ]);
 
   // ── Mission slot stats (batch query) ──
+  // Считаются по MissionCompletionStats — снапшот, который пишется один раз при
+  // реальном завершении миссии (успехом или пропуском) и не трогается restartGame(),
+  // в отличие от живого MissionProgress. Поэтому в знаменатель попадают только
+  // завершённые прохождения, не игроки на середине текущего прохождения
+  // (та же логика, что и у среднего времени прохождения в GameCompletion).
   const slotIds = activeSlots.map((s) => s.id);
 
-  const allProgresses =
+  const allStats =
     slotIds.length > 0
-      ? await prisma.missionProgress.findMany({
+      ? await prisma.missionCompletionStats.findMany({
           where: { slotId: { in: slotIds } },
-          select: { slotId: true, completed: true, metadata: true },
+          select: { slotId: true, skipped: true, failedAttempts: true },
         })
       : [];
 
   const slotStatsMap = new Map<string, SlotStats>();
 
   for (const slot of activeSlots) {
-    const records = allProgresses.filter((p) => p.slotId === slot.id);
+    const records = allStats.filter((s) => s.slotId === slot.id);
     const total = records.length;
 
-    const skipped = records.filter((p) => {
-      const meta = p.metadata as Record<string, unknown> | null;
-      return meta?.skipped === true;
-    }).length;
+    const skipped = records.filter((s) => s.skipped).length;
 
     // Неудачные попытки прохождения = проваленные прогоны мини-игры:
     //   CRACK — пересоздания поля (failedSessionsCount),
     //   DECIPHER — накопительные неверные вводы (failedAttempts),
     //   RDP — истечения таймера со сбросом пазла (timerExpiredCount; только сценарий 2,
     //         в сценарии 1 пазл бесконечный и провалить его нельзя → всегда 0).
-    // Успешная попытка = миссия пройдена не пропуском (completed && !skipped) — ровно одна.
+    // Успешная попытка = миссия пройдена не пропуском — ровно одна.
     // Общее число попыток = failedAttempts + successfulAttempts.
     let failedAttempts = 0;
     let successfulAttempts = 0;
 
-    for (const p of records) {
-      const meta = p.metadata as Record<string, unknown> | null;
+    for (const s of records) {
+      failedAttempts += s.failedAttempts;
 
-      if (slot.missionType === 'CRACK') {
-        failedAttempts += Number(meta?.failedSessionsCount ?? 0);
-      } else if (slot.missionType === 'DECIPHER') {
-        failedAttempts += Number(meta?.failedAttempts ?? 0);
-      } else if (slot.missionType === 'RDP') {
-        failedAttempts += Number(meta?.timerExpiredCount ?? 0);
-      }
-
-      if (p.completed && meta?.skipped !== true) {
+      if (!s.skipped) {
         successfulAttempts += 1;
       }
     }
