@@ -18,7 +18,7 @@ type FilterActive = 'true' | 'false' | 'ALL';
 const MISSION_TYPE_LABELS: Record<MissionType, string> = {
   CRACK: 'Взлом сайта',
   DECIPHER: 'Дешифратор',
-  RDP: 'Удалённый доступ',
+  RDP: 'Удаленный доступ',
 };
 
 const MISSION_TYPE_BADGE: Record<MissionType, string> = {
@@ -82,7 +82,7 @@ export function MissionSlotsTable({ initialSlots }: MissionSlotsTableProps): Rea
                 <option value="ALL">Все</option>
                 <option value="CRACK">Взлом сайта</option>
                 <option value="DECIPHER">Дешифратор</option>
-                <option value="RDP">Удалённый доступ</option>
+                <option value="RDP">Удаленный доступ</option>
               </select>
             </div>
 
@@ -101,7 +101,7 @@ export function MissionSlotsTable({ initialSlots }: MissionSlotsTableProps): Rea
               >
                 <option value="ALL">Все</option>
                 <option value="true">Активен</option>
-                <option value="false">Отключён</option>
+                <option value="false">Отключен</option>
               </select>
             </div>
           </div>

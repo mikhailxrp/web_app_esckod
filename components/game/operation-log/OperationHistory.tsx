@@ -4,18 +4,28 @@ import { useEffect } from 'react';
 import Image from 'next/image';
 import { LogEntry } from '@/components/game/operation-log/LogEntry';
 import { useLogStore } from '@/store/logStore';
+import type { OperationLogEntry } from '@/store/logStore';
 
-export function OperationHistory(): React.ReactElement {
-  const logs = useLogStore((state) => state.logs);
+interface OperationHistoryProps {
+  /** Бутафорские записи в demo — не вызывает API */
+  demoEntries?: OperationLogEntry[];
+}
+
+export function OperationHistory({
+  demoEntries,
+}: OperationHistoryProps): React.ReactElement {
+  const storeLogs = useLogStore((state) => state.logs);
   const refreshLogs = useLogStore((state) => state.refreshLogs);
+  const logs = demoEntries ?? storeLogs;
 
   useEffect(() => {
+    if (demoEntries) return;
     void refreshLogs();
-  }, [refreshLogs]);
+  }, [refreshLogs, demoEntries]);
 
   return (
     <section
-      className="rounded-game-lg border border-border px-5 py-4"
+      className="flex h-[320px] flex-col rounded-game-lg border border-border px-5 py-4"
       aria-label="История действий"
     >
       <div className="mb-4 flex items-center gap-2.5">
@@ -26,14 +36,14 @@ export function OperationHistory(): React.ReactElement {
           height={24}
           aria-hidden="true"
         />
-        <h2 className="font-mono text-game-sm uppercase tracking-game-wide text-content-secondary">
+        <h2 className="font-mono text-game-panel tracking-game-wide text-accent">
           История действий
         </h2>
       </div>
 
-      <div className="max-h-[40vh] overflow-y-auto">
+      <div className="log-scrollbar flex-1 overflow-y-auto">
         {logs.length === 0 ? (
-          <p className="font-mono text-game-sm text-content-muted" role="status">
+          <p className="font-mono text-[13px] text-content-muted" role="status">
             Нет записей
           </p>
         ) : (

@@ -6,31 +6,36 @@ interface StatusItem {
 }
 
 interface StatusBarProps {
-  targetName: string;
+  playerLogin: string;
 }
 
-export function StatusBar({ targetName }: StatusBarProps): React.ReactElement {
+const STATUS_CONNECTED = 'СОЕДИНЕНО';
+const TARGET_SERVER = 'ESC-СЕРВЕР';
+
+const LABEL_CLASS =
+  'w-[4.5rem] shrink-0 font-mono text-game-base uppercase text-accent';
+const VALUE_CLASS = 'font-mono text-game-base uppercase text-white';
+const SEPARATOR_CLASS = 'inline-block h-[14px] w-[2px] shrink-0 bg-accent';
+const ROW_CLASS = 'flex items-center gap-2 py-1.5';
+const ROW_BORDER_CLASS = 'border-b border-white';
+
+export function StatusBar({ playerLogin }: StatusBarProps): React.ReactElement {
   const STATUS_ITEMS: StatusItem[] = [
-    { label: 'СТАТУС', value: 'АКТИВЕН' },
-    { label: 'ЦЕЛЬ', value: targetName },
-    { label: 'ДОСТУП', value: 'ПОДКЛЮЧЕНО' },
+    { label: 'СТАТУС', value: STATUS_CONNECTED },
+    { label: 'ЦЕЛЬ', value: TARGET_SERVER },
+    { label: 'ДОСТУП', value: playerLogin },
   ];
 
   return (
-    <div
-      className="flex flex-col gap-1 rounded-game-md border border-border bg-bg-secondary px-4 py-3"
-      role="status"
-      aria-label="Статус соединения"
-    >
-      {STATUS_ITEMS.map(({ label, value }) => (
-        <div key={label} className="flex items-center gap-3">
-          <span className="w-16 font-mono text-game-sm uppercase tracking-game-wider text-content-secondary">
-            {label}
-          </span>
-          <span className="font-mono text-game-sm text-content-muted">|</span>
-          <span className="font-mono text-game-sm uppercase tracking-game-wide text-accent">
-            {value}
-          </span>
+    <div className="pb-3" role="status" aria-label="Статус соединения">
+      {STATUS_ITEMS.map(({ label, value }, index) => (
+        <div
+          key={label}
+          className={`${ROW_CLASS}${index < STATUS_ITEMS.length - 1 ? ` ${ROW_BORDER_CLASS}` : ''}`}
+        >
+          <span className={LABEL_CLASS}>{label}</span>
+          <span className={SEPARATOR_CLASS} aria-hidden="true" />
+          <span className={VALUE_CLASS}>{value}</span>
         </div>
       ))}
     </div>

@@ -27,7 +27,7 @@ export function DeleteUserDialog({
       onSuccess();
       onClose();
     } catch {
-      setError('Не удалось удалить пользователя. Попробуйте ещё раз.');
+      setError('Не удалось удалить пользователя. Попробуйте еще раз.');
     } finally {
       setLoading(false);
     }

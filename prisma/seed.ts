@@ -29,7 +29,7 @@ const CHAT_SCRIPTS: Prisma.ChatScriptCreateManyInput[] = [
     code: 'detective_greeting',
     chatType: ChatType.DETECTIVE,
     author: ChatAuthor.DETECTIVE,
-    text: 'Здравствуйте, детектив. Начнём.',
+    text: 'Здравствуйте, детектив. Начнем.',
     isStart: true,
     isEnd: false,
     hasChoices: false,
@@ -135,7 +135,7 @@ const FINAL_REPORT_CONTENT: Prisma.FinalReportContentCreateManyInput[] = [
 const DEFAULT_APP_SETTINGS = {
   defaultMarketingConsent: false,
   supportEmail: 'support@example.com',
-  privacyPolicyUrl: 'https://example.com/privacy',
+  privacyPolicyText: '',
 } as const;
 
 async function seedAdminUser(): Promise<void> {
@@ -205,7 +205,7 @@ const MISSION_SLOT_SEEDS: MissionSlotSeedData[] = [
     missionType: 'RDP',
     orderIndex: 20,
     isActive: true,
-    displayName: 'Удалённый доступ к компьютеру Виктора',
+    displayName: 'Удаленный доступ к компьютеру Виктора',
     correctIp: '192.168.1.10',
     rdpScenario: 1,
     logSubjectName: 'Виктор',
@@ -261,7 +261,7 @@ const MISSION_SLOT_SEEDS: MissionSlotSeedData[] = [
     missionType: 'RDP',
     orderIndex: 60,
     isActive: true,
-    displayName: 'Удалённый доступ к компьютеру Марины',
+    displayName: 'Удаленный доступ к компьютеру Марины',
     correctIp: '10.0.0.42',
     rdpScenario: 2,
     logSubjectName: 'Неизвестно',
@@ -342,6 +342,40 @@ async function seedFinalReportContent(): Promise<void> {
   console.log('Created 2 FinalReportContent stubs');
 }
 
+const FINAL_REPORT_QUESTIONS: Prisma.FinalReportQuestionCreateManyInput[] = [
+  {
+    orderIndex: 1,
+    questionText: 'Кто инициировал доведение до самоубийства? (заглушка)',
+    options: ['Виктор', 'Евгений', 'Елена', 'Марина'],
+    correctOption: 0,
+  },
+  {
+    orderIndex: 2,
+    questionText: 'Какой документ стал ключевым в расследовании? (заглушка)',
+    options: ['Договор', 'Переписка', 'Аудиозапись', 'Фотография'],
+    correctOption: 1,
+  },
+  {
+    orderIndex: 3,
+    questionText: 'Где был найден решающий след? (заглушка)',
+    options: ['На сервере', 'В архиве', 'В почте', 'В мессенджере'],
+    correctOption: 2,
+  },
+];
+
+async function seedFinalReportQuestion(): Promise<void> {
+  const questionCount = await prisma.finalReportQuestion.count();
+
+  if (questionCount > 0) {
+    console.log('FinalReportQuestion already exists, skipping');
+    return;
+  }
+
+  await prisma.finalReportQuestion.createMany({ data: FINAL_REPORT_QUESTIONS });
+
+  console.log('Created 3 FinalReportQuestion stubs');
+}
+
 async function seedDetectiveHint(): Promise<void> {
   await prisma.detectiveHint.upsert({
     where: { orderIndex: 1 },
@@ -356,13 +390,31 @@ async function seedDetectiveHint(): Promise<void> {
   console.log('Ensured DetectiveHint stub (orderIndex: 1)');
 }
 
+async function seedFinalReportLinkBlock(): Promise<void> {
+  const count = await prisma.finalReportLinkBlock.count();
+
+  if (count === 0) {
+    await prisma.finalReportLinkBlock.createMany({
+      data: [
+        { blockIndex: 1, text: '', images: [] },
+        { blockIndex: 2, text: '', images: [] },
+      ],
+    });
+    console.log('Created 2 FinalReportLinkBlock stubs');
+  } else {
+    console.log(`FinalReportLinkBlock already seeded (${count} blocks, skipped)`);
+  }
+}
+
 async function main(): Promise<void> {
   await seedAdminUser();
   await seedAppSettings();
   await seedMissionSlots();
   await seedChatGraph();
   await seedFinalReportContent();
+  await seedFinalReportQuestion();
   await seedDetectiveHint();
+  await seedFinalReportLinkBlock();
 }
 
 main()

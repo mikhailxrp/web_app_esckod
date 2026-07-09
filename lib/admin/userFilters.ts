@@ -1,10 +1,14 @@
 import type { Prisma } from '@prisma/client';
 import type { ExportUsersQuery, ListUsersQuery } from '@/lib/validations/admin-users';
 
-type UserFilterParams = Pick<ListUsersQuery, 'search' | 'status'> & { consent?: boolean };
+type UserFilterParams = Pick<ListUsersQuery, 'search' | 'status'> & {
+  completions?: ListUsersQuery['completions'];
+  consent?: boolean;
+  idIn?: string[];
+};
 
 export function buildUsersWhere(params: UserFilterParams): Prisma.UserWhereInput {
-  const { search, status, consent } = params;
+  const { search, status, consent, completions, idIn } = params;
 
   return {
     ...(search && {
@@ -17,6 +21,9 @@ export function buildUsersWhere(params: UserFilterParams): Prisma.UserWhereInput
     ...(status === 'active' && { isBlocked: false }),
     ...(status === 'blocked' && { isBlocked: true }),
     ...(consent === true && { consentMarketing: true }),
+    ...(completions === '0' && { gameCompletions: { none: {} } }),
+    ...(completions === '1plus' && { gameCompletions: { some: {} } }),
+    ...(idIn !== undefined && { id: { in: idIn } }),
   };
 }
 

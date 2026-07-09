@@ -5,8 +5,8 @@ export default function DashboardLoading(): React.ReactElement {
       aria-label="Загрузка"
       aria-busy="true"
     >
-      <p className="font-mono text-game-base tracking-game-wide text-content-primary">
-        Loading...
+      <p className="font-mono text-game-base text-content-primary">
+        Загрузка...
       </p>
 
       {/* Track */}

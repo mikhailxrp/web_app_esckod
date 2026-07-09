@@ -65,8 +65,9 @@ export async function deleteObject(key: string): Promise<void> {
 export function buildPublicUrl(key: string): string {
   const endpoint = getEnv('S3_ENDPOINT');
   const bucket = getEnv('S3_BUCKET');
+  const encodedKey = key.split('/').map(encodeURIComponent).join('/');
 
-  return `${endpoint}/${bucket}/${key}`;
+  return `${endpoint}/${bucket}/${encodedKey}`;
 }
 
 export function extractKeyFromUrl(url: string): string {
@@ -78,5 +79,7 @@ export function extractKeyFromUrl(url: string): string {
     return url;
   }
 
-  return url.slice(prefix.length);
+  const rawKey = url.slice(prefix.length);
+
+  return rawKey.split('/').map(decodeURIComponent).join('/');
 }

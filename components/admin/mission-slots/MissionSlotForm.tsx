@@ -64,7 +64,7 @@ interface MissionSlotFormProps {
 const MISSION_TYPE_LABELS: Record<MissionType, string> = {
   CRACK: 'Взлом сайта',
   DECIPHER: 'Дешифратор',
-  RDP: 'Удалённый доступ',
+  RDP: 'Удаленный доступ',
 };
 
 // ── Default values builder ────────────────────────────────────────────────────
@@ -236,7 +236,7 @@ export function MissionSlotForm({
       });
 
       const data = (await response.json()) as {
-        warnings?: string[];
+        warnings?: Array<{ code: string; message: string } | string>;
         error?: string;
         message?: string;
       };
@@ -246,7 +246,9 @@ export function MissionSlotForm({
         return;
       }
 
-      const warnings = data.warnings ?? [];
+      const warnings = (data.warnings ?? []).map((w) =>
+        typeof w === 'string' ? w : w.message,
+      );
       if (warnings.length > 0) {
         setApiWarnings(warnings);
         setTimeout(() => router.push('/admin/mission-slots'), 1500);
@@ -326,7 +328,7 @@ export function MissionSlotForm({
               >
                 <option value="CRACK">Взлом сайта</option>
                 <option value="DECIPHER">Дешифратор</option>
-                <option value="RDP">Удалённый доступ</option>
+                <option value="RDP">Удаленный доступ</option>
               </select>
             </Field>
           ) : (
@@ -346,7 +348,7 @@ export function MissionSlotForm({
             <Field
               label="Ключ слота"
               htmlFor="slotKey"
-              hint={mode === 'create' ? 'Формат: CRACK_НАЗВАНИЕ (латиница + подчёркивание)' : undefined}
+              hint={mode === 'create' ? 'Формат: CRACK_НАЗВАНИЕ (латиница + подчеркивание)' : undefined}
               error={errors.slotKey?.message}
               required={mode === 'create'}
             >
@@ -419,16 +421,16 @@ export function MissionSlotForm({
             <Field
               label="Инструкция"
               htmlFor="hintText"
-              hint="Текст подсказки, отображаемой игроку (необязательно)"
+              hint="Текст подсказки, отображаемой игроку (необязательно). Пустая строка между строками — новый абзац"
               error={errors.hintText?.message}
               className="sm:col-span-2"
             >
               <textarea
                 {...register('hintText')}
                 id="hintText"
-                rows={3}
-                placeholder="Текст подсказки..."
-                className="input-field resize-none"
+                rows={6}
+                placeholder="Текст подсказки...&#10;&#10;Новый абзац — через пустую строку"
+                className="input-field resize-y"
               />
             </Field>
           </div>

@@ -121,7 +121,7 @@ export function DeleteScriptDialog({
         </div>
 
         <p className="mb-2 text-sm text-gray-600 dark:text-gray-300">
-          Реплика и все её переходы будут удалены.
+          Реплика и все ее переходы будут удалены.
         </p>
         <p className="mb-6 text-sm text-gray-600 dark:text-gray-300">{affectedMessage}</p>
 

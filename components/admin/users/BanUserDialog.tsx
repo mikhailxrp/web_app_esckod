@@ -40,7 +40,7 @@ export function BanUserDialog({
       onSuccess(newIsBlocked);
       onClose();
     } catch {
-      setError('Не удалось выполнить операцию. Попробуйте ещё раз.');
+      setError('Не удалось выполнить операцию. Попробуйте еще раз.');
     } finally {
       setLoading(false);
     }

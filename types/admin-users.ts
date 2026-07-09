@@ -44,6 +44,15 @@ export interface UserStateSnapshot {
     maxAttempts: number;
   }[];
   hintProgress: { lastSeenHintIndex: number } | null;
+  completions: {
+    id: string;
+    completedAt: string;
+    finalScore: number | null;
+    durationSeconds: number | null;
+    ipAddress: string | null;
+    userAgent: string | null;
+  }[];
+  totalActiveSlots: number;
   logsCount: number;
   recentLogs: {
     id: string;
@@ -55,3 +64,4 @@ export interface UserStateSnapshot {
 
 export type UserStatusFilter = 'all' | 'active' | 'blocked';
 export type UserSortValue = 'createdAt_desc' | 'createdAt_asc';
+export type UserCompletionsFilter = 'all' | '0' | '1plus' | '5plus';

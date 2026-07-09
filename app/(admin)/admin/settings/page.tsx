@@ -24,7 +24,6 @@ export default async function SettingsPage(): Promise<React.ReactElement> {
   const initialData = {
     id: settings.id,
     supportEmail: settings.supportEmail,
-    privacyPolicyUrl: settings.privacyPolicyUrl,
     defaultMarketingConsent: settings.defaultMarketingConsent,
     updatedAt: settings.updatedAt.toISOString(),
   };

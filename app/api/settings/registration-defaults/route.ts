@@ -4,7 +4,6 @@ import { prisma } from '@/lib/prisma';
 const FALLBACK_DEFAULTS = {
   defaultMarketingConsent: false,
   supportEmail: 'support@example.com',
-  privacyPolicyUrl: 'https://example.com/privacy',
 } as const;
 
 export async function GET(): Promise<NextResponse> {
@@ -18,7 +17,6 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({
       defaultMarketingConsent: settings.defaultMarketingConsent,
       supportEmail: settings.supportEmail,
-      privacyPolicyUrl: settings.privacyPolicyUrl,
     });
   } catch (error) {
     console.error('Failed to load registration defaults:', error);

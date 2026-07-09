@@ -8,6 +8,29 @@ import {
   RDP_TIMER_SECONDS_MIN,
 } from '@/constants/missionSlotLimits';
 
+const PLAYFAIR_RESTRICTED_RE = /[ЮЯ]/;
+
+function playfairRefine(
+  data: { cipherType: string; encryptedWord: string; cipherKey: string },
+  ctx: z.RefinementCtx,
+): void {
+  if (data.cipherType !== CipherType.PLAYFAIR) return;
+  if (PLAYFAIR_RESTRICTED_RE.test(data.encryptedWord)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['encryptedWord'],
+      message: 'Playfair: буквы Ю и Я недопустимы — они не входят в таблицу 6×6',
+    });
+  }
+  if (PLAYFAIR_RESTRICTED_RE.test(data.cipherKey)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['cipherKey'],
+      message: 'Playfair: буквы Ю и Я недопустимы — они не входят в таблицу 6×6',
+    });
+  }
+}
+
 const ipAddressSchema = z
   .string()
   .trim()
@@ -82,7 +105,8 @@ const createDecipherMissionSlotSchema = commonSlotFieldsSchema
     slotKey: slotKeySchema,
     missionType: z.literal('DECIPHER'),
   })
-  .merge(decipherSlotSchema);
+  .merge(decipherSlotSchema)
+  .superRefine(playfairRefine);
 
 const createRdpMissionSlotSchema = z.intersection(
   commonSlotFieldsSchema.extend({
@@ -103,7 +127,9 @@ export const createMissionSlotSchema = z.union([
 ]);
 
 export const updateCrackMissionSlotSchema = commonSlotFieldsSchema.merge(crackSlotSchema);
-export const updateDecipherMissionSlotSchema = commonSlotFieldsSchema.merge(decipherSlotSchema);
+export const updateDecipherMissionSlotSchema = commonSlotFieldsSchema
+  .merge(decipherSlotSchema)
+  .superRefine(playfairRefine);
 export const updateRdpMissionSlotSchema = z.intersection(commonSlotFieldsSchema, rdpSlotSchema);
 
 export const updateMissionSlotSchema = z.union([

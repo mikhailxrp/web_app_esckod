@@ -39,7 +39,7 @@ export function AdminForm(): React.ReactElement {
         if (data.error === 'EMAIL_EXISTS') {
           setServerError('Администратор с таким email уже существует.');
         } else {
-          setServerError('Не удалось создать администратора. Попробуйте ещё раз.');
+          setServerError('Не удалось создать администратора. Попробуйте еще раз.');
         }
 
         return;
@@ -47,7 +47,7 @@ export function AdminForm(): React.ReactElement {
 
       setGeneratedPassword(data.password as string);
     } catch {
-      setServerError('Не удалось создать администратора. Попробуйте ещё раз.');
+      setServerError('Не удалось создать администратора. Попробуйте еще раз.');
     }
   };
 

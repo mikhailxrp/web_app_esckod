@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   Lightbulb,
   MessageSquare,
+  Scale,
   ScrollText,
   Settings,
   Shield,
@@ -59,8 +60,13 @@ const NAV_ENTRIES: NavEntry[] = [
   { label: 'Файлы РДП', href: '/admin/files', icon: <FileText size={16} /> },
   {
     label: 'Финальный отчет',
-    href: '/admin/report',
     icon: <ClipboardList size={16} />,
+    basePath: '/admin/report',
+    children: [
+      { label: 'Вопросы', href: '/admin/report' },
+      { label: 'История', href: '/admin/report/history' },
+      { label: 'Ссылки', href: '/admin/report/links' },
+    ],
   },
   {
     label: 'Администраторы',
@@ -71,6 +77,11 @@ const NAV_ENTRIES: NavEntry[] = [
     label: 'Настройки',
     href: '/admin/settings',
     icon: <Settings size={16} />,
+  },
+  {
+    label: 'Политика конфиденциальности',
+    href: '/admin/privacy-policy',
+    icon: <Scale size={16} />,
   },
   {
     label: 'Подсказки',

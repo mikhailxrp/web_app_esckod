@@ -170,7 +170,7 @@ export function KeyRowDetails({
               <p className="text-xs text-red-500">{limitError}</p>
             )}
             {limitSuccess && (
-              <p className="text-xs text-green-600">Лимит сохранён</p>
+              <p className="text-xs text-green-600">Лимит сохранен</p>
             )}
           </div>
         </div>

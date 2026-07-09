@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import type { UserStateSnapshot } from '@/types/admin-users';
+import { formatDuration } from '@/lib/formatDuration';
 import { BanUserDialog } from './BanUserDialog';
 
 interface UserStateViewProps {
@@ -20,10 +21,15 @@ function formatDateTime(dateStr: string): string {
 
 function calcProgress(
   missionProgress: UserStateSnapshot['missionProgress'],
-): number | null {
-  if (missionProgress.length === 0) return null;
+  totalActiveSlots: number,
+): { percent: number; completed: number; total: number } | null {
+  if (totalActiveSlots === 0) return null;
   const completed = missionProgress.filter((m) => m.completed).length;
-  return Math.round((completed / missionProgress.length) * 100);
+  return {
+    percent: Math.round((completed / totalActiveSlots) * 100),
+    completed,
+    total: totalActiveSlots,
+  };
 }
 
 function MissionStatusLabel({ completed, inProgress }: { completed: boolean; inProgress: boolean }): React.ReactElement {
@@ -41,7 +47,7 @@ export function UserStateView({ snapshot }: UserStateViewProps): React.ReactElem
   const [isBlocked, setIsBlocked] = useState(snapshot.user.isBlocked);
   const [showBanDialog, setShowBanDialog] = useState(false);
 
-  const progressPercent = calcProgress(snapshot.missionProgress);
+  const progress = calcProgress(snapshot.missionProgress, snapshot.totalActiveSlots);
 
   const missionList = snapshot.missionProgress;
   const currentMissionIndex = missionList.findIndex((m) => !m.completed);
@@ -104,8 +110,10 @@ export function UserStateView({ snapshot }: UserStateViewProps): React.ReactElem
         <h2 className="text-base font-semibold text-admin-input-text mb-1">
           Прогресс
         </h2>
-        {progressPercent !== null && (
-          <p className="text-sm text-admin-placeholder mb-4">{progressPercent}%</p>
+        {progress !== null && (
+          <p className="text-sm text-admin-placeholder mb-4">
+            {progress.completed} / {progress.total} миссий ({progress.percent}%)
+          </p>
         )}
 
         <div className="divide-y divide-admin-card-border">
@@ -166,7 +174,7 @@ export function UserStateView({ snapshot }: UserStateViewProps): React.ReactElem
               value={snapshot.gameProgress.marinaTriggered ? 'да' : 'нет'}
             />
             <DataRow
-              label="Финальный отчёт"
+              label="Финальный отчет"
               value={snapshot.gameProgress.finalReportDone ? 'пройден' : 'не пройден'}
             />
             <DataRow
@@ -209,7 +217,7 @@ export function UserStateView({ snapshot }: UserStateViewProps): React.ReactElem
               value={snapshot.chatState.finalChoice ?? '—'}
             />
             <DataRow
-              label="Детектив завершён"
+              label="Детектив завершен"
               value={snapshot.chatState.detectiveFinished ? 'да' : 'нет'}
             />
             <DataRow
@@ -265,6 +273,51 @@ export function UserStateView({ snapshot }: UserStateViewProps): React.ReactElem
             ? `Последний просмотренный индекс: ${snapshot.hintProgress.lastSeenHintIndex}`
             : 'Нет записи'}
         </p>
+      </div>
+
+      {/* История прохождений */}
+      <div className="bg-white rounded-xl shadow-admin-card border border-admin-card-border p-6 mb-6">
+        <h2 className="text-base font-semibold text-admin-input-text mb-1">
+          История прохождений
+        </h2>
+        <p className="text-sm text-admin-placeholder mb-4">
+          Завершённых игр: {snapshot.completions.length}
+        </p>
+
+        {snapshot.completions.length === 0 ? (
+          <p className="text-sm text-admin-placeholder">Игра ещё не завершена</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-admin-card-border">
+                <th className="text-left py-2 text-admin-placeholder font-medium">#</th>
+                <th className="text-left py-2 text-admin-placeholder font-medium">Дата завершения</th>
+                <th className="text-left py-2 text-admin-placeholder font-medium">Счёт</th>
+                <th className="text-left py-2 text-admin-placeholder font-medium">Время прохождения</th>
+                <th className="text-left py-2 text-admin-placeholder font-medium">IP</th>
+                <th className="text-left py-2 text-admin-placeholder font-medium">User-Agent</th>
+              </tr>
+            </thead>
+            <tbody>
+              {snapshot.completions.map((c, index) => (
+                <tr key={c.id} className="border-b border-admin-card-border last:border-0">
+                  <td className="py-2 text-admin-placeholder">{snapshot.completions.length - index}</td>
+                  <td className="py-2 text-admin-label whitespace-nowrap">{formatDateTime(c.completedAt)}</td>
+                  <td className="py-2 text-admin-label">
+                    {c.finalScore !== null ? `${c.finalScore}%` : '—'}
+                  </td>
+                  <td className="py-2 text-admin-label">
+                    {c.durationSeconds !== null ? formatDuration(c.durationSeconds) : '—'}
+                  </td>
+                  <td className="py-2 text-admin-label font-mono text-xs">{c.ipAddress ?? '—'}</td>
+                  <td className="py-2 text-admin-placeholder text-xs max-w-xs truncate" title={c.userAgent ?? ''}>
+                    {c.userAgent ?? '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Логи */}

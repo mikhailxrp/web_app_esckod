@@ -157,7 +157,7 @@ await prisma.$transaction(async (tx) => {
 | Таблица | Поля | Что значит |
 |---|---|---|
 | `ChatState` | `currentDetectiveMessageId=null`, `currentMarinaMessageId=null`, `playerChoices={}`, `finalChoice=null`, `detectiveFinished=false`, `marinaFinished=false` | Чаты начинаются с `isStart`-реплик. Чат Марины снова скрыт (т.к. зависит от `GameProgress.marinaTriggered`). |
-| `GameProgress` | `marinaTriggered=false`, `finalReportDone=false`, `finalScore=null` | Чат Марины скрыт, отчёт можно сдать заново. |
+| `GameProgress` | `marinaTriggered=false`, `finalReportDone=false`, `finalScore=null`, `finalReportChoice=null`, `finalReportAnswers=null` | Чат Марины скрыт, отчёт можно сдать заново. |
 
 ### Создаётся (INSERT)
 
@@ -187,11 +187,16 @@ await prisma.$transaction(async (tx) => {
 import { prisma } from '@/lib/prisma';
 import { renderLogMessage } from '@/lib/operationLog';
 
-export async function restartGame(userId: string, userEmail: string): Promise<void> {
+export async function restartGame(userId: string): Promise<void> {
   await prisma.$transaction(async (tx) => {
     // Advisory lock — блокирует параллельные restart'ы на одного userId.
     // Освобождается автоматически в COMMIT/ROLLBACK.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}))`;
+
+    const { email } = await tx.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { email: true },
+    });
 
     // === DELETE — записи, которые полностью удаляются ===
 
@@ -222,6 +227,7 @@ export async function restartGame(userId: string, userEmail: string): Promise<vo
         finalChoice: null,
         detectiveFinished: false,
         marinaFinished: false,
+        version: { increment: 1 },
       },
     });
 
@@ -231,6 +237,9 @@ export async function restartGame(userId: string, userEmail: string): Promise<vo
         marinaTriggered: false,
         finalReportDone: false,
         finalScore: null,
+        finalReportChoice: null,
+        finalReportAnswers: null,
+        version: { increment: 1 },
       },
     });
 
@@ -250,7 +259,7 @@ export async function restartGame(userId: string, userEmail: string): Promise<vo
       data: {
         type: 'user_restart',
         userId,
-        message: `Игрок ${userEmail} выполнил перезапуск игры`,
+        message: `Игрок ${email} выполнил перезапуск игры`,
       },
     });
   });
@@ -292,7 +301,6 @@ export async function POST() {
   }
 
   const userId = session.user.id;
-  const userEmail = session.user.email;
 
   // Rate limit
   const allowed = checkRateLimit(`game-restart:${userId}`, 3, 60_000);
@@ -301,7 +309,7 @@ export async function POST() {
   }
 
   try {
-    await restartGame(userId, userEmail);
+    await restartGame(userId);
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error('[Restart] Failed for user:', userId, e);
@@ -465,7 +473,7 @@ components/
 
 lib/
 └── game/
-    └── restart.ts                          # restartGame(userId, userEmail) — основная функция
+    └── restart.ts                          # restartGame(userId) — основная функция
 ```
 
 **Изменения в существующих файлах:**
@@ -496,7 +504,7 @@ constants/logTemplates.ts                      # уже содержит 'game_r
 
 9. **При неудаче транзакции — клиент не видит частичных изменений.** ROLLBACK гарантирует, что игрок останется в прежнем состоянии до момента нажатия «Начать заново». Возвращаем 500.
 
-10. **`router.refresh()` после успеха** — обновляет Server Components без полной перезагрузки страницы. Альтернатива `window.location.reload()` — тоже работает, но грубее.
+10. **`window.location.reload()` после успеха** — обязателен для полного сброса клиентских Zustand-сторов (`chatStore`, `logStore`). `router.refresh()` обновляет только Server Components и оставит чат в устаревшем состоянии.
 
 11. **Никаких side-effects вне транзакции.** Например, `advanceTriggerListeners` не вызывается — потому что чаты только что обнулены, никаких триггеров слушать не должно. То же с email-нотификациями.
 

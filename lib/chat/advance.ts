@@ -3,7 +3,7 @@ import 'server-only';
 import { ChatAuthor, ChatScript, ChatState, ChatTransition, ChatType, Prisma } from '@prisma/client';
 
 import { CHAT_TRIGGER_EVENTS } from '@/constants/chatTriggerEvents';
-import { advanceTriggerListeners } from '@/lib/chat/triggers';
+import { advanceTriggerListeners, reapplyFiredTriggers } from '@/lib/chat/triggers';
 import { prisma } from '@/lib/prisma';
 import { parseChoices, type ChatChoice } from '@/lib/validations/admin-chats';
 
@@ -367,11 +367,38 @@ export async function advanceChatState(
           finalVersion = fresh.version;
         }
 
+        // If the new message is waiting for a trigger, check if any previously fired
+        // trigger (logged while the player was blocked on a choice) can advance it now
+        let finalMessage = next;
+        let finalIsWaiting = isWaiting;
+        let finalIsFinished = next.isEnd;
+
+        if (isWaiting) {
+          const afterReapply = await reapplyFiredTriggers(tx, userId);
+
+          if (afterReapply) {
+            finalVersion = afterReapply.version;
+            const newCurrentId = getCurrentMessageId(afterReapply, chatType);
+
+            if (newCurrentId && newCurrentId !== next.id) {
+              const newMsg = await tx.chatScript.findUnique({ where: { id: newCurrentId } });
+
+              if (newMsg) {
+                finalMessage = newMsg;
+                finalIsFinished = newMsg.isEnd;
+                finalIsWaiting = finalIsFinished
+                  ? false
+                  : await messageIsWaitingOnly(tx, newCurrentId);
+              }
+            }
+          }
+        }
+
         return {
           status: 'ok',
-          currentMessage: toChatMessageView(next),
-          isWaiting,
-          isFinished: next.isEnd,
+          currentMessage: toChatMessageView(finalMessage),
+          isWaiting: finalIsWaiting,
+          isFinished: finalIsFinished,
           version: finalVersion,
         };
       } catch (error) {

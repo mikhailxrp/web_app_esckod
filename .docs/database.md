@@ -173,10 +173,12 @@ model GameProgress {
   id                String    @id @default(cuid())
   userId            String    @unique
 
-  marinaTriggered   Boolean   @default(false)  // появился чат Марины (единственный источник правды)
-  finalReportDone   Boolean   @default(false)
-  finalScore        Int?      // процент правильных ответов
-  version           Int       @default(0)  // optimistic locking — см. .docs/modules/concurrency.md
+  marinaTriggered      Boolean   @default(false)  // появился чат Марины (единственный источник правды)
+  finalReportDone      Boolean   @default(false)
+  finalScore           Int?      // процент правильных ответов (только контрольные вопросы)
+  finalReportChoice    String?   // UPPERCASE: ACCUSE | PROTECT — выбор концовки
+  finalReportAnswers   Json?     // снапшот [{ questionText, selectedLabel, isCorrect, isFinalQuestion }]
+  version              Int       @default(0)  // optimistic locking — см. .docs/modules/concurrency.md
 
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -188,10 +190,10 @@ model GameProgress {
 
 `**marinaTriggered` — единственный источник правды для видимости чата Марины.\*\* Раньше был дубль в `ChatState.marinaVisible` — удалён.
 
-- Сервер устанавливает `marinaTriggered = true` в `POST /api/missions/rdp/[slotKey]/file-viewed` для слотов с `rdpScenario === 2`, в момент автоматической активации триггера (когда игрок просмотрел все доступные файлы). См. `.docs/modules/missions-rdp.md` → раздел «Шаг 4 — сюжетный триггер».
+- Сервер устанавливает `marinaTriggered = true` в `POST /api/missions/rdp/[slotKey]/file-viewed` для слотов с `rdpScenario === 2`, в момент автоматической активации триггера (когда игрок просмотрел все файлы слота). См. `.docs/modules/missions-rdp.md` → раздел «Шаг 4 — сюжетный триггер».
 - Клиент при загрузке через `GET /api/progress` получает `marinaTriggered` и решает, рендерить ли чат Марины.
 
-**При перезапуске игры:** UPDATE на дефолты (`marinaTriggered=false`, `finalReportDone=false`, `finalScore=null`).
+**При перезапуске игры:** UPDATE на дефолты (`marinaTriggered=false`, `finalReportDone=false`, `finalScore=null`, `finalReportChoice=null`, `finalReportAnswers=null`).
 
 ---
 
@@ -376,7 +378,6 @@ model MissionSlot {
   displayName   String       // человекочитаемое имя для админки и логов: "Взлом сайта P2 Digital"
 
   // Crack — контент
-  targetWord       String?
   targetUrl        String?
   targetEmail      String?
   resultPassword   String?
@@ -559,9 +560,9 @@ model MissionProgress {
 | `timerStartedAt`    | `string` (ISO datetime), только для `rdpScenario === 2` | Устанавливается при создании `puzzleField`. Обновляется в `/timer-expired` при перегенерации поля.                  | Используется в `/timer-expired` для проверки реальности истечения таймера (защита от досрочного вызова через DevTools).                                                                    |
 | `timerExpiredCount` | `number`, только для `rdpScenario === 2`                | Инкрементится в `/timer-expired` при каждом истечении.                                                              | Не блокирует прохождение — попытки бесконечные. UI показывает кнопку «Пропустить» при `timerExpiredCount >= 2` И `rdpScenario === 2`.                                                      |
 | `skipped`           | `boolean`, только для `rdpScenario === 2`               | Сервер ставит `true` в `/skip`. Для сценария 1 пропуск недоступен — поле не используется.                           | UI рендерит финальную модалку «Сеанс прерван» автоматически (как при честном прохождении).                                                                                                 |
-| `unlockedFolders`   | `string[]`                                              | Сервер добавляет имя папки в `/unlock-folder` после успешной проверки пароля.                                       | Используется в `/files` (отдаёт ли URL файлов в запароленных папках) и в `/file-viewed` (входит ли файл в подсчёт «доступных»).                                                            |
-| `viewedFileIds`     | `string[]`                                              | Сервер добавляет `fileId` в `/file-viewed` при каждом закрытии PDF игроком.                                         | Используется в `/file-viewed` для определения «все ли доступные файлы просмотрены» — момент автоматической активации сюжетного триггера.                                                   |
-| `triggerActivated`  | `boolean`                                               | Сервер ставит `true` в `/file-viewed`, когда `viewedFileIds` покрыли все доступные файлы.                           | Защищает `/complete` — без `triggerActivated=true` финальный эндпоинт возвращает 400. Также используется на клиенте для рендера финальной модалки («2 активных сеанса» / «Сеанс прерван»). |
+| `unlockedFolders`   | `string[]`                                              | Сервер добавляет имя папки в `/unlock-folder` после успешной проверки пароля.                                       | Используется в `/files` (отдаёт ли URL файлов запароленных папок) и в `/file-viewed` (разрешено ли просматривать файл запароленной папки).                                                |
+| `viewedFileIds`     | `string[]`                                              | Сервер добавляет `fileId` в `/file-viewed` при каждом закрытии PDF игроком.                                         | Используется в `/file-viewed` для определения «все ли файлы слота (всех папок) просмотрены» — момент автоматической активации сюжетного триггера.                                          |
+| `triggerActivated`  | `boolean`                                               | Сервер ставит `true` в `/file-viewed`, когда `viewedFileIds` покрыли все файлы слота (всех папок).                  | Защищает `/complete` — без `triggerActivated=true` финальный эндпоинт возвращает 400. Также используется на клиенте для рендера финальной модалки («2 активных сеанса» / «Сеанс прерван»). |
 
 **Инвариант:** все поля `metadata` для RDP пишутся ТОЛЬКО сервером изнутри игровых эндпоинтов. Клиент НЕ может писать в `metadata` напрямую — это предохранитель защиты от обхода через DevTools (см. `missions-rdp.md` → раздел «Защита от обхода»).
 
@@ -584,7 +585,7 @@ model CrackSession {
   id            String       @id @default(cuid())
   userId        String
   slotId        String
-  targetWord    String       // загаданное слово (копия из MissionSlot на момент старта сессии)
+  targetWord    String       // загаданное слово — генерируется случайно из wordList5letters при старте сессии, НЕ берётся из MissionSlot
   maxAttempts   Int          @default(6)  // лимит попыток (копия из MissionSlot.crackMaxAttempts на момент старта)
   wordList      Json         // массив 25-30 слов, показываемых игроку
   attemptsUsed  Int          @default(0)  // 0..maxAttempts
@@ -605,9 +606,9 @@ model CrackSession {
 
 **Жизненный цикл:**
 
-1. **Создаётся** при первом обращении игрока к слоту. На момент старта копируются `targetWord` и `maxAttempts` из `MissionSlot` — становятся «слепком» параметров (защита от изменений в админке посреди игры).
+1. **Создаётся** при первом обращении игрока к слоту. `targetWord` генерируется случайно из `wordList5letters`. `maxAttempts` копируется из `MissionSlot.crackMaxAttempts` — становится «слепком» параметра (защита от изменений в админке посреди игры).
 2. **При успехе** (слово угадано → `/complete`) — **удаляется** (миссия пройдена, сессия не нужна).
-3. **При провале** (попытка `#(maxAttempts+1)`) — **пересоздаётся**: новый `wordList`, `attemptsUsed=0`, `attempts=[]`. `targetWord` и `maxAttempts` остаются прежними.
+3. **При провале** (попытка `#(maxAttempts+1)`) — **пересоздаётся**: новый `targetWord` (случайный), новый `wordList`, `attemptsUsed=0`, `attempts=[]`. `maxAttempts` остаётся прежним.
 
 **Инвариант:** даже если админ изменит `MissionSlot.crackMaxAttempts` посреди игры — у игрока с активной сессией лимит остаётся прежним. Игрок доигрывает по правилам, увиденным в начале. Новое значение применится только к новым сессиям.
 
@@ -679,7 +680,7 @@ model FinalReportQuestion {
 ```prisma
 model FinalReportContent {
   id                String    @id @default(cuid())
-  finalChoiceValue  String    @unique  // совпадает с value из choices финальной реплики Марины (UPPERCASE: "PROTECT", "ACCUSE")
+  finalChoiceValue  String    @unique  // UPPERCASE-ключ выбора из REPORT_FINAL_CHOICES (например, "ACCUSE", "PROTECT")
   title             String    // заголовок финального текста
   bodyText          String    // полный текст истории
   createdAt         DateTime  @default(now())
@@ -687,13 +688,34 @@ model FinalReportContent {
 }
 ```
 
-**Назначение:** Тексты двух концовок (расширяется до большего числа). По одной записи на каждый возможный финал.
+**Назначение:** Тексты концовок (по одной записи на каждый возможный выбор в форме отчёта).
 
-**Связь с чатом Марины** — через `finalChoiceValue`. При сдаче отчёта сервер ищет запись по `ChatState.finalChoice` — благодаря `@unique` найдёт ровно одну.
+**`finalChoiceValue`** — UPPERCASE-ключ выбора из `REPORT_FINAL_CHOICES` (например, `ACCUSE`, `PROTECT`). При сдаче отчёта выбор приходит в теле `POST /submit` (Phase 17). Сервер ищет запись по `finalChoiceValue` — благодаря `@unique` найдёт ровно одну.
 
-⚠️ **Инвариант:** для каждого возможного `finalChoiceValue`, который может быть установлен через чат Марины, должна существовать запись в `FinalReportContent`. Если игрок сделает выбор, для которого нет записи — `/submit` вернёт 500 «Контент финала не настроен».
+⚠️ **Инвариант:** для каждого значения из `REPORT_FINAL_CHOICES` должна существовать запись в `FinalReportContent`. Если игрок выберет вариант, для которого нет записи — `/submit` вернёт 500 «Контент финала не настроен».
 
-**Конвенция UPPERCASE:** `"PROTECT"`, `"ACCUSE"` — обязательное соответствие между `ChatScript.choices` финальной реплики Марины и `FinalReportContent.finalChoiceValue`. Админка имеет валидатор `GET /api/admin/report/validate`, который проверяет это соответствие.
+**Конвенция UPPERCASE:** `"PROTECT"`, `"ACCUSE"` — обязательное соответствие между `REPORT_FINAL_CHOICES` и `FinalReportContent.finalChoiceValue`. Админка имеет валидатор `GET /api/admin/report/validate`, который проверяет это соответствие.
+
+---
+
+### `FinalReportLinkBlock` — блоки ссылок финального отчёта
+
+```prisma
+model FinalReportLinkBlock {
+  id         String   @id @default(cuid())
+  blockIndex Int      @unique          // 1 | 2 — фиксированные позиции
+  text       String   @default("")     // текстовое содержимое блока
+  images     Json     @default("[]")   // [{ url: string, key: string }]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+```
+
+**Назначение:** Два фиксированных блока контента для страницы финального отчёта (Phase 17). Каждый блок содержит текст и список изображений, загруженных в Beget Cloud Storage (S3).
+
+**`images`** — JSON-массив объектов `{ url: string, key: string }`, где `url` — публичная CDN-ссылка, `key` — ключ объекта в S3 (нужен для удаления через `deleteObject`).
+
+**Инвариант:** всегда ровно 2 записи (`blockIndex: 1` и `blockIndex: 2`). Создаются сидером (`seedFinalReportLinkBlock()`), только редактируются — не создаются/удаляются через UI.
 
 ---
 
@@ -766,9 +788,12 @@ model AppSettings {
   id                       String   @id @default(cuid())
   defaultMarketingConsent  Boolean  @default(false)   // дефолт для галки согласия на маркетинг
   supportEmail             String   @default("support@example.com")  // email техподдержки
-  privacyPolicyUrl         String   @default("https://example.com/privacy")  // ссылка на политику обработки данных
+  privacyPolicyText        String   @default("")  // HTML-текст политики обработки данных (Tiptap-редактор в админке)
+  finalReportQuestionId    String?  // указатель на финальный вопрос «Обвинить / Защитить»
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
+
+  finalReportQuestion      FinalReportQuestion? @relation(fields: [finalReportQuestionId], references: [id], onDelete: SetNull)
 }
 ```
 
@@ -780,12 +805,13 @@ model AppSettings {
 | ------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------- |
 | `defaultMarketingConsent` | Начальное состояние галки маркетинга в форме регистрации                                | `GET /api/settings/registration-defaults` |
 | `supportEmail`            | Email техподдержки в сообщениях об ошибках регистрации (неверный ключ, лимит активаций) | `GET /api/settings/registration-defaults` |
-| `privacyPolicyUrl`        | Ссылка на политику обработки данных (рядом с обязательной галкой согласия)              | `GET /api/settings/registration-defaults` |
+| `privacyPolicyText`       | HTML-текст политики обработки данных, редактируется на `/admin/privacy-policy`          | `GET/PATCH /api/admin/app-settings`, рендерится на публичной `/privacy-policy` |
+| `finalReportQuestionId`   | ID вопроса с вариантами «Обвинить / Защитить», используемого в финальном отчёте         | `GET/PUT /api/admin/report/history`, `GET /api/admin/report/validate` |
 
 ⚠️ **Юридические требования:**
 
 - `defaultMarketingConsent` по умолчанию `false` — закон 152-ФЗ ст. 9 и GDPR ст. 7 требуют активный opt-in. Заказчик может изменить на `true` через админку — это его осознанная юридическая ответственность. UI админки показывает предупреждение.
-- `privacyPolicyUrl` **обязателен для запуска в прод** — без рабочей ссылки регистрация юридически не валидна. Админка показывает баннер-предупреждение, пока поле содержит заглушку `https://example.com/privacy`.
+- `privacyPolicyText` **обязателен для запуска в прод** — без заполненного текста регистрация юридически не валидна. Админка показывает баннер-предупреждение, пока поле пустое.
 
 ---
 
@@ -884,11 +910,11 @@ AdminAuditLog            (аудит — без каскада, пережива
 
 | Поле                      | Значение                                   |
 | ------------------------- | ------------------------------------------ |
-| `defaultMarketingConsent` | `false`                                    |
-| `supportEmail`            | `"support@example.com"` (заглушка)         |
-| `privacyPolicyUrl`        | `"https://example.com/privacy"` (заглушка) |
+| `defaultMarketingConsent` | `false`                            |
+| `supportEmail`            | `"support@example.com"` (заглушка) |
+| `privacyPolicyText`       | `""` (не заполнено)                |
 
-Заказчик меняет `supportEmail` и `privacyPolicyUrl` через админку **до запуска в прод**. Без замены — UI админки показывает баннер-предупреждение.
+Заказчик меняет `supportEmail` на `/admin/settings` и заполняет `privacyPolicyText` через Tiptap-редактор на `/admin/privacy-policy` **до запуска в прод**. Без замены — UI админки показывает баннер-предупреждение.
 
 ---
 
@@ -925,7 +951,7 @@ AdminAuditLog            (аудит — без каскада, пережива
 
 > **Имена папок для сидера** (`Шантаж`, `Маркова`) — заглушки. Реальные имена и распределение по RDP-слотам определит заказчик при наполнении контента через админку.
 
-**Контентные поля** (`targetWord`, `encryptedWord`, `correctIp`, `resultPassword`, `folderPath` и т.д.) заполняются заглушками — реальный контент админ загружает через админку. Шаги `orderIndex` с интервалом 10 — для гибкости вставок.
+**Контентные поля** (`encryptedWord`, `correctIp`, `resultPassword`, `folderPath` и т.д.) заполняются заглушками — реальный контент админ загружает через админку. Шаги `orderIndex` с интервалом 10 — для гибкости вставок.
 
 ---
 
@@ -962,11 +988,24 @@ AdminAuditLog            (аудит — без каскада, пережива
 | `PROTECT`          | "Защита"           | "Заглушка финала: защитить Марину" |
 | `ACCUSE`           | "Обвинение"        | "Заглушка финала: обвинить Марину" |
 
-Реальные тексты загружаются админом через UI админки. Значения `PROTECT`/`ACCUSE` должны **совпадать** с `value` в choices `marina_final_choice`.
+Реальные тексты загружаются админом через UI админки. Значения `PROTECT`/`ACCUSE` должны **совпадать** с `REPORT_FINAL_CHOICES` в `constants/reportFinalChoices.ts`.
 
 ---
 
-### 7. `DetectiveHint` — минимум одна заглушка
+### 7. `FinalReportLinkBlock` — два пустых блока ссылок
+
+Создаются функцией `seedFinalReportLinkBlock()` (Phase 16 / Task 3):
+
+| `blockIndex` | `text` | `images` |
+| ------------ | ------ | -------- |
+| `1`          | `""`   | `[]`     |
+| `2`          | `""`   | `[]`     |
+
+Upsert по `blockIndex` — повторный запуск сидера безопасен.
+
+---
+
+### 8. `DetectiveHint` — минимум одна заглушка
 
 > **Статус: ⏳ ещё не в `prisma/seed.ts`.** Функция `seedDetectiveHint()` добавляется в **Phase 8 / Task 1** (вместе с CRUD подсказок). До этого момента таблица `DetectiveHint` пуста — это ожидаемо и ничего не ломает: модель не используется в фазах 0–7. Не путать с уже реализованными сидерами (`seedAdminUser`, `seedAppSettings`, `seedMissionSlots`, `seedChatGraph`, `seedFinalReportContent`).
 
@@ -1047,6 +1086,11 @@ await prisma.$transaction(async (tx) => {
   // Освобождается автоматически в COMMIT/ROLLBACK.
   await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${userId}))`;
 
+  const { email } = await tx.user.findUniqueOrThrow({
+    where: { id: userId },
+    select: { email: true },
+  });
+
   // DELETE — записи, которые полностью удаляются
   await tx.missionProgress.deleteMany({ where: { userId } });
   await tx.crackSession.deleteMany({ where: { userId } });
@@ -1063,6 +1107,7 @@ await prisma.$transaction(async (tx) => {
       finalChoice: null,
       detectiveFinished: false,
       marinaFinished: false,
+      version: { increment: 1 },
     },
   });
   await tx.gameProgress.update({
@@ -1071,12 +1116,19 @@ await prisma.$transaction(async (tx) => {
       marinaTriggered: false,
       finalReportDone: false,
       finalScore: null,
+      finalReportChoice: null,
+      finalReportAnswers: null,
+      version: { increment: 1 },
     },
   });
 
   // INSERT — стартовая запись в новом OperationLog
   await tx.operationLog.create({
-    data: { userId, type: "INFO", message: "Игра начата заново" },
+    data: {
+      userId,
+      type: "INFO",
+      message: renderLogMessage("game_restarted", {}),
+    },
   });
 
   // INSERT — аудит
@@ -1084,7 +1136,7 @@ await prisma.$transaction(async (tx) => {
     data: {
       type: "user_restart",
       userId,
-      message: `Игрок ${userEmail} выполнил перезапуск игры`,
+      message: `Игрок ${email} выполнил перезапуск игры`,
     },
   });
 });
@@ -1115,20 +1167,23 @@ await writeLog(userId, "mission_completed_overview", { displayName });
 
 ---
 
-### 4. Crack — провал на 6-й попытке
+### 4. Crack — провал на последней попытке
 
-Пересоздание сессии: новый `wordList`, обнуление попыток, сохранение `targetWord` и `maxAttempts`. Запись лога.
+Пересоздание сессии: новый `targetWord` (случайный) + новый `wordList`, обнуление попыток. `maxAttempts` сохраняется. Запись лога.
 
 ```typescript
-const newWordList = generateWordList(targetWord);
+// Новое случайное слово и поле при каждом пересоздании (см. missions-crack.md, правило 9).
+const { targetWord: newTargetWord, wordList: newWordList } = generateCrackField();
 
 await prisma.crackSession.update({
-  where: { userId_slotId: { userId, slotId } },
+  where: { id: session.id, version: expectedVersion },
   data: {
+    targetWord: newTargetWord, // новое случайное слово при пересоздании
     wordList: newWordList,
     attemptsUsed: 0,
     attempts: [],
-    // targetWord и maxAttempts НЕ меняются
+    version: { increment: 1 },
+    // maxAttempts НЕ меняется
   },
 });
 

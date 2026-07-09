@@ -41,7 +41,9 @@
 
 **Не входит в модуль:**
 
-- Конкретная реализация генерации поля Pipes — точный алгоритм выбирается на этапе Фазы 7a (см. раздел [Шаг 2 — пазл-трубопровод](#шаг-2--пазл-трубопровод)). На уровне спецификации задана минимально необходимая логика.
+- Конкретная реализация генерации поля Pipes — точный алгоритм выбирается в Phase 14 (Research-таск, см. раздел [Шаг 2 — пазл-трубопровод](#шаг-2--пазл-трубопровод)). На уровне спецификации задана минимально необходимая логика.
+
+> **Нумерация:** в более ранних редакциях этот этап назывался «Фаза 7a». Актуальная нумерация по `.docs/phases/_status.md` — **Phase 14** (пазл) и **Phase 15** (симуляция Windows + триггеры).
 - PDF-документы и иконки — предоставляет заказчик, грузятся через админку
 - Дизайн «Windows-подобной» симуляции — верстается на Tailwind по ходу фазы
 
@@ -98,7 +100,7 @@
 
 **Альтернатива «всё на клиенте, проверка только в конце»** — отвергнута: при перезагрузке страницы прогресс терялся бы. Серверное состояние позволяет продолжить пазл с того же места.
 
-**Упрощение:** для MVP можно хранить только **финальное** состояние (после нажатия игрока «Проверить» — отправляется всё поле сразу). Это решается на этапе реализации Фазы 7a.
+**Решение (зафиксировано при планировании Phase 14):** состояние обновляется **per-tile** — каждый поворот идёт отдельным `POST /rotate-tile`, а не batch'ем при «Проверить». Причины: сохранение прогресса при reload и соответствие контракту optimistic locking в `concurrency.md` (где `/rotate-tile` уже числится защищённым version-эндпоинтом). На клиенте — оптимистичный UI: поворот применяется локально мгновенно, запрос уходит в фоне, на 409 — рефетч поля.
 
 ### 5. Симуляция Windows = список `RdpFile` + поле `folder`
 
@@ -110,26 +112,26 @@
 
 ### 6. Триггер — автоматический по факту изучения всех файлов
 
-В отличие от первого замысла («клик на приманку»), сюжетный триггер срабатывает **автоматически на сервере**, когда игрок просмотрел все файлы во всех когда-либо доступных папках. Это согласуется с ТЗ заказчика: сюжет диктует «после ознакомления с файлами появляется сообщение об ошибке».
+В отличие от первого замысла («клик на приманку»), сюжетный триггер срабатывает **автоматически на сервере**, когда игрок просмотрел **все файлы всех папок слота** (запароленные предварительно разблокированы). Это согласуется с ТЗ заказчика: сюжет диктует «после ознакомления с файлами появляется сообщение об ошибке», причём ознакомление включает содержимое запароленной папки.
 
 Клиент сообщает серверу о каждом закрытии PDF через `POST /file-viewed { fileId }`. Сервер:
 1. Записывает `fileId` в `metadata.viewedFileIds`
-2. Подсчитывает все доступные файлы: из папок с `isLocked=false` + из папок, которые присутствуют в `metadata.unlockedFolders`
-3. Если `viewedFileIds` покрывает все доступные — активирует триггер (`triggerActivated=true`) и выполняет сценарийную логику
+2. Берёт **все** `RdpFile` слота (всех папок, независимо от `isLocked`)
+3. Если `viewedFileIds` покрывает каждый файл слота — активирует триггер (`triggerActivated=true`) и выполняет сценарийную логику. Пока хотя бы один файл (в т.ч. в ещё не разблокированной папке) не просмотрен — триггер не срабатывает.
 
 **Сценарий 1:** пишет лог «доступ потерян, два активных сеанса». Возвращает `scenarioFinal: 'session_lost'`. После этого игрок может вызвать `/complete`.
 
-**Сценарий 2:** активирует чат Марины (`marinaTriggered=true` + `advanceTriggerListeners(rdp_marina_triggered)`). Возвращает `scenarioFinal: 'session_terminated'`. После этого `/complete`.
+**Сценарий 2:** активирует чат Марины (`marinaTriggered=true` + `advanceTriggerListeners(tx, rdp_marina_triggered)` в транзакции). Возвращает `scenarioFinal: 'session_terminated'`. После этого `/complete`.
 
 После активации в `metadata.triggerActivated=true` — `/complete` это проверяет.
 
-**Защита от пропуска:** игрок не может «обойти» триггер — он сработает, как только все доступные файлы будут отмечены просмотренными. Если игрок не разблокировал запароленную папку, триггер сработает после прочтения только незапароленных. Это допустимое поведение по ТЗ.
+**Защита от пропуска:** игрок не может «обойти» содержимое запароленной папки — триггер срабатывает только после просмотра **всех** файлов слота. Чтобы просмотреть файлы запароленной папки, её нужно сперва разблокировать паролем из соответствующей миссии Decipher. Софт-лока нет: каждая запароленная папка слота обязана иметь рабочий Decipher-слот для разблокировки (контент-инвариант, проверяется в админке).
 
 ### 7. Бесконечные попытки пазла
 
 В сценарии 2 — есть таймер 120 секунд. По истечении — пишется лог `rdp_timer_expired`, инкрементится `metadata.timerExpiredCount`, генерируется **новое** поле пазла, таймер запускается заново. **Не блокирует прохождение** — игрок может пробовать сколько угодно раз.
 
-**Для сценария 2** после **2 истечений таймера** (`metadata.timerExpiredCount >= 2`) клиент показывает кнопку «Пропустить». При нажатии → `POST /api/missions/rdp/<slotKey>/skip`. Сервер пишет `completed=true, metadata.skipped=true`, активирует триггер (`triggerActivated=true`), записывает логи как при честном прохождении сценария 2 (включая `marinaTriggered=true` и `advanceTriggerListeners('rdp_marina_triggered')`). **Для сценария 1 пропуск недоступен** — миссия считается несложной.
+**Для сценария 2** после **2 истечений таймера** (`metadata.timerExpiredCount >= 2`) клиент показывает кнопку «Пропустить». При нажатии → `POST /api/missions/rdp/<slotKey>/skip`. Сервер пишет `completed=true, metadata.skipped=true`, активирует триггер (`triggerActivated=true`), записывает логи как при честном прохождении сценария 2 (включая `marinaTriggered=true` и `advanceTriggerListeners(tx, 'rdp_marina_triggered')` в транзакции). **Для сценария 1 пропуск недоступен** — миссия считается несложной.
 
 В сценарии 1 — таймера нет. Игрок может крутить плитки сколько угодно.
 
@@ -214,13 +216,13 @@
 [Игрок открывает PDF, читает, закрывает окно с PDF]
    POST /api/missions/rdp/[slotKey]/file-viewed { fileId }
    → сервер записывает fileId в metadata.viewedFileIds
-   → сервер проверяет: все ли файлы из всех когда-либо доступных папок просмотрены?
+   → сервер проверяет: все ли файлы всех папок слота просмотрены?
    ↓
 [Если ещё не все]
    → возвращает { triggered: false }
    → игрок может открыть следующий файл, разблокировать новую папку, свернуть окно
 
-[Если все доступные файлы просмотрены]
+[Если все файлы слота просмотрены]
    → сервер автоматически активирует триггер
    → metadata.triggerActivated = true
    ↓
@@ -228,7 +230,7 @@
 
 [Сценарий 1]                              [Сценарий 2]
    лог rdp_session_lost                       GameProgress.marinaTriggered=true
-   (с {nextIp} из nextRdpSlotKey)             advanceTriggerListeners(rdp_marina_triggered)
+   (с {nextIp} из nextRdpSlotKey)             advanceTriggerListeners(tx, rdp_marina_triggered)
    возвращает { triggered: true,             возвращает { triggered: true,
                   scenarioFinal: 'session_lost' }    scenarioFinal: 'session_terminated' }
    ↓                                          ↓
@@ -241,13 +243,14 @@
    ↓
    Транзакция: MissionProgress(completed=true, skipped=true, triggerActivated=true)
              + GameProgress(marinaTriggered=true) + 2 лога
-   advanceTriggerListeners(rdp_completed:<slotKey>) + advanceTriggerListeners(rdp_marina_triggered)
+             + advanceTriggerListeners(tx, rdp_completed:<slotKey>)
+             + advanceTriggerListeners(tx, rdp_marina_triggered)
 
 [Игрок закрывает финальное окно]
    POST /api/missions/rdp/[slotKey]/complete
    ↓
    Транзакция: MissionProgress(completed=true) + 2 лога
-   advanceTriggerListeners(rdp_completed:<slotKey>)
+             + advanceTriggerListeners(tx, rdp_completed:<slotKey>)
 ```
 
 ---
@@ -375,17 +378,19 @@ type PuzzleField = {
 
 **Проверка решения** — DFS/BFS от каждой `entry` до соответствующего `exit`. Если все пары соединены → `isSolved=true`.
 
-**Точная реализация выбирается в Фазе 7a — Research-таск первым:**
+**Точная реализация выбирается в Phase 14 — Research-таск первым:**
 
-Первый таск Фазы 7a — research-таск (1 рабочий день максимум):
+Первый таск Phase 14 — research-таск (1 рабочий день максимум):
 
 1. Поиск и оценка готовых npm-библиотек:
-   - Кандидаты: `pipes-puzzle`, `flow-game-engine`, `react-pipes`, прочие из npm с ключевыми словами «pipe», «flow», «puzzle»
+   - Кандидаты (имена иллюстративны, проверяются по факту): пакеты из npm с ключевыми словами «pipe», «flow», «puzzle»
    - Критерии оценки: поддержка кастомного UI, размер бандла, последний релиз < 2 лет, лицензия совместима с MIT
 2. Если найдена подходящая либа — задача №2 фазы: интеграция с нашими типами `Tile`/`PuzzleField`
 3. Если за 1 день не найдено — переход к собственной реализации:
    - Вариант B: собственный генератор + solver (среднее усилие, ~4-6 дней для junior+/middle)
    - Вариант B обязательно должен пройти ревью архитектурой перед началом работы
+
+> **Решение при планировании Phase 14:** ядро (генератор + solver) — **собственная реализация** на чистом серверном TS (`lib/rdp/`), независимая от рендера. Рендер пазла — **DOM/CSS Grid** (плитки = кликабельные `<button>`, поворот через `transform: rotate`); PIXI.js/Canvas не используются (оверкилл для сетки 6×6/7×7). Механику можно подсмотреть в open-source `pipe-dream` / `evolution-pipes`, но генерацию и проверку пишем сами под наши типы и серверное хранение. Research-таск подтверждает отсутствие подходящей готовой либы и фиксирует это решение.
 
 **Что важно для спецификации (независимо от варианта):** алгоритм должен генерировать **разрешимое** поле — существует ориентация плиток, при которой все пары входов/выходов соединены. Стандартный приём: сначала строится корректное решение (известная конфигурация), затем плитки случайно поворачиваются с гарантией, что решение остаётся возможным.
 
@@ -412,7 +417,7 @@ type PuzzleField = {
 
 ### `GET /api/missions/rdp/[slotKey]/puzzle-state`
 
-Возвращает текущее состояние пазла. Если пазла ещё нет — генерирует и сохраняет.
+Возвращает текущее состояние пазла. Если пазла ещё нет — создаёт `MissionProgress` через `upsert` (по аналогии с `CrackSession`), генерирует `puzzleField` и сохраняет. **Всегда возвращает `version`** записи `MissionProgress` — без неё клиент не сможет инициализировать `expectedVersion` для `/rotate-tile` (требование `concurrency.md`, GET защищённого ресурса обязан отдавать `version`). Правильная ориентация плиток (solution) клиенту **не передаётся** — отдаётся только текущая (перемешанная) расстановка.
 
 **Response 200:**
 
@@ -440,7 +445,7 @@ type PuzzleField = {
 
 Сервер обновляет `puzzleField.tiles[i].rotation` (поворот на +90° по модулю 360°). Возвращает обновлённое поле.
 
-**Альтернатива batch:** отправлять всё поле в `/check-puzzle`. Решается на этапе реализации.
+**Подход зафиксирован (Phase 14): per-tile**, а не batch — см. раздел «Состояние пазла на сервере» → «Архитектурные решения» п.4.
 
 ### `POST /api/missions/rdp/[slotKey]/check-puzzle`
 
@@ -566,6 +571,7 @@ async function getFiles(userId: string, slotKey: string) {
       "folderName": "Маркова",
       "isLocked": true,
       "isUnlocked": false,
+      "folderPath": "C:\\Users\\Markova\\Private",
       "files": [
         { "id": "f2", "name": "secret.pdf", "url": null, "size": 89000 }
       ]
@@ -689,7 +695,7 @@ async function unlockFolder(
 
 **Опциональность полей:** оба поля `unlocksRdpFolder` и `unlocksRdpSlotKey` могут быть `null` (для Decipher-слотов, не связанных с RDP — если такие появятся в будущем).
 
-**`folderPath` сохраняется** как отображаемая строка для копирования игроком в UI («путь к папке»). Это не используется в логике разблокировки.
+**`folderPath` сохраняется** как отображаемая строка для копирования игроком в UI («путь к папке»). Это не используется в логике разблокировки. `GET /files` возвращает `folderPath` для запароленной папки — клиент показывает его под полем ввода пароля с кнопкой копирования (требование ТЗ).
 
 **Инвариант для админа:** при сохранении Decipher-слота с заполненными `unlocksRdpFolder`/`unlocksRdpSlotKey` админка проверяет существование соответствующего RDP-слота и `RdpFile` с `folder === unlocksRdpFolder, isLocked === true`. Если связь невалидна — баннер-предупреждение, но НЕ блокирует сохранение (см. `admin.md`).
 
@@ -697,7 +703,7 @@ async function unlockFolder(
 
 ## Шаг 4 — сюжетный триггер
 
-Сюжетный триггер срабатывает **автоматически на сервере**, когда игрок просмотрел все файлы во всех когда-либо доступных папках. Игрок не «нажимает на приманку» — триггер вычисляется самим сервером после каждого закрытия PDF.
+Сюжетный триггер срабатывает **автоматически на сервере**, когда игрок просмотрел все файлы всех папок слота (запароленные предварительно разблокированы). Игрок не «нажимает на приманку» — триггер вычисляется самим сервером после каждого закрытия PDF.
 
 ### Эндпоинт `POST /api/missions/rdp/[slotKey]/file-viewed`
 
@@ -760,16 +766,12 @@ async function handleFileViewed(userId: string, slotKey: string, fileId: string)
     ? viewedFileIds
     : [...viewedFileIds, fileId];
 
-  // Подсчёт всех доступных файлов:
-  // - все файлы из папок с isLocked=false
-  // - все файлы из папок, которые есть в unlockedFolders
-  const accessibleFiles = slot.rdpFiles.filter(f =>
-    !f.isLocked || unlockedFolders.includes(f.folder)
-  );
-  const accessibleFileIds = accessibleFiles.map(f => f.id);
+  // Триггер требует просмотра ВСЕХ файлов слота (всех папок).
+  // Запароленные папки нужно сперва разблокировать и просмотреть.
+  const allFileIds = slot.rdpFiles.map(f => f.id);
 
-  // Все ли доступные файлы просмотрены?
-  const allViewed = accessibleFileIds.every(id => updatedViewed.includes(id));
+  // Все ли файлы слота просмотрены?
+  const allViewed = allFileIds.every(id => updatedViewed.includes(id));
 
   if (!allViewed) {
     // Просто обновляем metadata, триггер не активируем
@@ -822,11 +824,14 @@ async function handleFileViewed(userId: string, slotKey: string, fileId: string)
   }
 
   if (slot.rdpScenario === 2) {
-    await prisma.gameProgress.update({
-      where: { userId },
-      data: { marinaTriggered: true },
+    // marinaTriggered и продвижение чата — в одной транзакции (atomicity).
+    await prisma.$transaction(async (tx) => {
+      await tx.gameProgress.update({
+        where: { userId },
+        data: { marinaTriggered: true, version: { increment: 1 } },
+      });
+      await advanceTriggerListeners(tx, userId, 'rdp_marina_triggered');
     });
-    await advanceTriggerListeners(userId, 'rdp_marina_triggered');
     // Лог про активацию Марины не пишется — это сюжетный момент,
     // отражается в чате
     return { triggered: true, scenarioFinal: 'session_terminated' };
@@ -938,20 +943,21 @@ async function handleComplete(userId: string, slotKey: string) {
   });
   const techMessage = renderLogMessage("rdp_completed", {});
 
-  await prisma.$transaction([
-    prisma.missionProgress.update({
+  // Callback-форма транзакции: advanceTriggerListeners принимает tx
+  // и продвигает чат В ТОЙ ЖЕ транзакции, что и фиксация прогресса.
+  await prisma.$transaction(async (tx) => {
+    await tx.missionProgress.update({
       where: { userId_slotId: { userId, slotId: slot.id } },
-      data: { completed: true, completedAt: new Date() },
-    }),
-    prisma.operationLog.create({
+      data: { completed: true, completedAt: new Date(), version: { increment: 1 } },
+    });
+    await tx.operationLog.create({
       data: { userId, type: "SUCCESS", message: techMessage },
-    }),
-    prisma.operationLog.create({
+    });
+    await tx.operationLog.create({
       data: { userId, type: "SUCCESS", message: overviewMessage },
-    }),
-  ]);
-
-  await advanceTriggerListeners(userId, `rdp_completed:${slotKey}`);
+    });
+    await advanceTriggerListeners(tx, userId, `rdp_completed:${slotKey}`);
+  });
 
   return { success: true };
 }
@@ -965,7 +971,7 @@ async function handleComplete(userId: string, slotKey: string) {
 
 **Response 400:**
 
-- `TRIGGER_NOT_ACTIVATED` — `metadata.triggerActivated` не установлен (игрок не закрыл все доступные файлы или пазл не пройден). Защита от прямого вызова `/complete`.
+- `TRIGGER_NOT_ACTIVATED` — `metadata.triggerActivated` не установлен (игрок не просмотрел все файлы слота или пазл не пройден). Защита от прямого вызова `/complete`.
 
 ---
 
@@ -982,15 +988,15 @@ async function handleComplete(userId: string, slotKey: string) {
 2. `rdpScenario === 2` — иначе 400 `SKIP_NOT_ALLOWED_SCENARIO_1`.
 3. `metadata.timerExpiredCount >= 2` — иначе 400 `CANNOT_SKIP`.
 
-**Транзакция:**
-- UPDATE `MissionProgress`: `completed=true, completedAt=now, metadata.skipped=true, metadata.triggerActivated=true`
-- UPDATE `GameProgress`: `marinaTriggered=true`
+**Транзакция (callback-форма `prisma.$transaction(async (tx) => { … })`):**
+- UPDATE `MissionProgress`: `completed=true, completedAt=now, metadata.skipped=true, metadata.triggerActivated=true, version++`
+- UPDATE `GameProgress`: `marinaTriggered=true, version++`
 - INSERT `OperationLog` `rdp_completed`
 - INSERT `OperationLog` `mission_completed_overview`
+- `advanceTriggerListeners(tx, userId, 'rdp_completed:<slotKey>')`
+- `advanceTriggerListeners(tx, userId, 'rdp_marina_triggered')`
 
-**Вне транзакции:**
-- `advanceTriggerListeners(userId, 'rdp_completed:<slotKey>')`
-- `advanceTriggerListeners(userId, 'rdp_marina_triggered')`
+> Триггеры вызываются **внутри** транзакции — `advanceTriggerListeners` принимает транзакционный клиент `tx` (актуальная сигнатура `lib/chat/triggers.ts`). Это гарантирует атомарность завершения миссии и продвижения чатов и корректную итоговую `version` у `ChatState`. Идемпотентность: повторный вызов уже завершённой миссии — success без повторных логов и триггеров.
 
 **Response 200:**
 ```json
@@ -1116,10 +1122,10 @@ switch (stage) {
 
 - Иконки папок (с ключом 🔒 если `isLocked`)
 - Двойной клик по папке → раскрытие списка файлов внутри
-- Запароленная папка → попап «Введите пароль» → `/unlock-folder`
+- Запароленная папка → попап «Введите пароль» → `/unlock-folder`. **Под полем ввода — путь к папке (`folderPath` из ответа `/files`) с кнопкой копирования** (требование ТЗ).
 - Клик по PDF → открывается просмотрщик (встроенный `<iframe>` / `<embed>` или модалка с PDF.js)
 - При закрытии просмотрщика клиент вызывает `POST /api/missions/rdp/[slotKey]/file-viewed { fileId }`
-- Сервер автоматически отслеживает прогресс просмотра. Когда все доступные файлы просмотрены — возвращает `triggered: true`
+- Сервер автоматически отслеживает прогресс просмотра. Когда все файлы слота просмотрены — возвращает `triggered: true`
 - Клиент при `triggered: true`:
   - Сценарий 1: скрывает все файлы из UI, показывает модалку «2 активных сеанса, Новый IP: {nextIp}» (с возможностью копировать IP)
   - Сценарий 2: сразу показывает модалку «Сеанс прерван»
@@ -1196,13 +1202,13 @@ lib/
 
 4. **`/unlock-folder` проверяет совпадение с Decipher-слотом по структурной FK** — через одновременное равенство трёх полей: `folderPassword === password`, `unlocksRdpFolder === folderName`, `unlocksRdpSlotKey === slotKey`. Никаких сравнений по подстрокам или сегментам пути — связь определяется явными полями FK на уровне БД.
 
-5. **`marinaTriggered` пишется ТОЛЬКО в `/file-viewed` для слотов с `rdpScenario=2`** при автоматической активации триггера (после изучения всех доступных файлов). Никаких других точек записи. См. `chats.md` → серверное правило 4.
+5. **`marinaTriggered` пишется ТОЛЬКО в `/file-viewed` для слотов с `rdpScenario=2`** при автоматической активации триггера (после изучения всех файлов слота). Никаких других точек записи. См. `chats.md` → серверное правило 4.
 
 6. **Лог `rdp_session_lost` пишется ТОЛЬКО в `/file-viewed` для слотов с `rdpScenario=1`** при автоматической активации триггера.
 
 7. **`/complete` для RDP пишет ДВА лога** в одной транзакции: `rdp_completed` (технический) + `mission_completed_overview` (обзорный).
 
-8. **`advanceTriggerListeners` вызывается ВНЕ транзакции** — side-effect.
+8. **`advanceTriggerListeners(tx, userId, code)` вызывается ВНУТРИ транзакции** завершения (`/complete`, `/skip`) и активации триггера (`/file-viewed`), получая транзакционный клиент `tx`. Это соответствует актуальной реализации `lib/chat/triggers.ts` (Phase 7) и поведению Crack/Decipher: продвижение чат-триггера и фиксация прогресса либо проходят вместе, либо откатываются вместе (важно для atomicity и корректной итоговой `version` у `ChatState`).
 
 9. **При перезапуске игры** — все `MissionProgress` (включая RDP) удаляются. См. `restart.md`.
 
@@ -1210,7 +1216,7 @@ lib/
 
 11. **Состояние пазла на сервере:** хранится в `metadata.puzzleField`. При reload страницы — восстанавливается.
 
-12. **Точная реализация генерации Pipes** — в Фазе 7a выбирается между npm-библиотекой и собственной реализацией. Обязательное требование: поле должно быть гарантированно решаемым.
+12. **Точная реализация генерации Pipes** — выбрана в Phase 14 (Research-таск): собственная реализация (генератор + solver на TS), рендер на DOM/CSS Grid, PIXI не используется. Обязательные требования: поле гарантированно решаемо (строится из реального решения, затем плитки перемешиваются поворотом); правильная ориентация (solution) клиенту не передаётся.
 
 13. **Skip доступен только для `rdpScenario=2` и только при `timerExpiredCount >= 2`.** Skip пишет те же логи и вызывает те же триггеры (включая `marinaTriggered`). Различие только в `metadata.skipped=true` (для аналитики).
 
@@ -1228,7 +1234,7 @@ lib/
 
 - **`database.md`** — модели `MissionSlot` (включая новое поле `nextRdpSlotKey`), `MissionProgress`, `RdpFile`, `GameProgress` описаны там; здесь только применение.
 - **`concurrency.md`** — все mutate-эндпоинты используют optimistic locking. Поля `version` на `MissionProgress` и `GameProgress` инкрементируются при UPDATE.
-- **`chats.md`** — после `/complete` или `/skip` вызывается `advanceTriggerListeners(userId, 'rdp_completed:<slotKey>')`. Дополнительно: `/file-viewed` и `/skip` для сценария 2 устанавливают `marinaTriggered=true` и вызывают `rdp_marina_triggered`.
+- **`chats.md`** — после `/complete` или `/skip` вызывается `advanceTriggerListeners(tx, userId, 'rdp_completed:<slotKey>')` внутри транзакции эндпоинта. Дополнительно: `/file-viewed` и `/skip` для сценария 2 устанавливают `marinaTriggered=true` и вызывают `advanceTriggerListeners(tx, userId, 'rdp_marina_triggered')` в той же транзакции.
 - **`logs.md`** — используются шаблоны `rdp_invalid_ip`, `rdp_puzzle_solved`, `rdp_timer_expired`, `rdp_session_lost` (расширен параметром `nextIp`), `rdp_completed`, `rdp_folder_unlocked`, `mission_completed_overview`.
 - **`missions-decipher.md`** — `folderPassword` из Decipher-слотов используется для разблокировки папок в RDP. Структурная связь через FK-поля `MissionSlot.unlocksRdpFolder` + `MissionSlot.unlocksRdpSlotKey`.
 - **`mobile-block.md`** — общая заглушка перехватывает на уровне корневого layout. Точечной RDP-заглушки больше нет — игрок не дойдёт до открытия RDP-модалки на устройстве, не удовлетворяющем минимальным требованиям экрана.

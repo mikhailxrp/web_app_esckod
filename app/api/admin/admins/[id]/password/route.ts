@@ -51,7 +51,7 @@ export async function PATCH(
   try {
     await sendAdminPasswordResetEmail(existing.email, plain);
   } catch {
-    // Письмо не отправлено — пароль всё равно возвращаем в ответе
+    // Письмо не отправлено — пароль все равно возвращаем в ответе
   }
 
   return NextResponse.json({ password: plain });

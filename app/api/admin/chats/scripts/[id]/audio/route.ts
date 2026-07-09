@@ -27,6 +27,7 @@ const SCRIPT_SELECT = {
   createdAt: true,
   updatedAt: true,
 } as const;
+const MAX_AUDIO_SIZE_MB = MAX_AUDIO_SIZE_BYTES / (1024 * 1024);
 
 function serializeScript(script: {
   id: string;
@@ -97,7 +98,7 @@ export async function POST(
 
   if (file.size > MAX_AUDIO_SIZE_BYTES) {
     return NextResponse.json(
-      { error: 'FILE_TOO_LARGE', message: 'Файл превышает 5 МБ' },
+      { error: 'FILE_TOO_LARGE', message: `Файл превышает ${MAX_AUDIO_SIZE_MB} МБ` },
       { status: 400 },
     );
   }

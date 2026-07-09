@@ -66,6 +66,8 @@ model User {
   missionProgress   MissionProgress[]
   crackSessions     CrackSession[]
   hintProgress      UserHintProgress?
+  gameCompletions   GameCompletion[]
+  missionCompletionStats MissionCompletionStats[]
 
   @@index([accessKeyId])
 }
@@ -97,10 +99,12 @@ model GameProgress {
   id                String    @id @default(cuid())
   userId            String    @unique
 
-  marinaTriggered   Boolean   @default(false)
-  finalReportDone   Boolean   @default(false)
-  finalScore        Int?
-  version           Int       @default(0)
+  marinaTriggered      Boolean   @default(false)
+  finalReportDone      Boolean   @default(false)
+  finalScore           Int?
+  finalReportChoice    String?
+  finalReportAnswers   Json?
+  version              Int       @default(0)
 
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -168,6 +172,7 @@ model ChatState {
   finalChoice              String?
   detectiveFinished        Boolean      @default(false)
   marinaFinished           Boolean      @default(false)
+  firedTriggers            String[]     @default([])
   version                  Int          @default(0)
   createdAt                DateTime     @default(now())
   updatedAt                DateTime     @updatedAt
@@ -290,6 +295,8 @@ model FinalReportQuestion {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  appSettings   AppSettings[]
+
   @@index([orderIndex])
 }
 
@@ -329,15 +336,58 @@ model UserHintProgress {
   @@index([userId])
 }
 
+// ==================== GAME COMPLETIONS ====================
+
+model GameCompletion {
+  id              String   @id @default(cuid())
+  userId          String
+  completedAt     DateTime @default(now())
+  finalScore      Int?
+  durationSeconds Int?
+  ipAddress       String?
+  userAgent       String?
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([completedAt])
+}
+
+model MissionCompletionStats {
+  id             String   @id @default(cuid())
+  userId         String
+  slotId         String
+  skipped        Boolean
+  failedAttempts Int
+  completedAt    DateTime @default(now())
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([slotId])
+}
+
 // ==================== ADMIN AND SETTINGS ====================
 
 model AppSettings {
   id                       String   @id @default(cuid())
   defaultMarketingConsent  Boolean  @default(false)
   supportEmail             String   @default("support@example.com")
-  privacyPolicyUrl         String   @default("https://example.com/privacy")
+  privacyPolicyText        String   @default("")
+  finalReportQuestionId    String?
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
+
+  finalReportQuestion      FinalReportQuestion? @relation(fields: [finalReportQuestionId], references: [id], onDelete: SetNull)
+}
+
+model FinalReportLinkBlock {
+  id         String   @id @default(cuid())
+  blockIndex Int      @default(0)
+  text       String   @default("")
+  images     Json     @default("[]")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model AdminAuditLog {

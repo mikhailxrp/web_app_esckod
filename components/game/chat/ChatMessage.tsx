@@ -10,6 +10,7 @@ interface ChatMessageProps {
   author: ChatAuthor;
   text: string | null;
   audioUrl: string | null;
+  isAwaiting?: boolean;
 }
 
 const AUTHOR_LABEL: Record<ChatAuthor, string> = {
@@ -29,6 +30,9 @@ const IS_RIGHT: Record<ChatAuthor, boolean> = {
 };
 
 const URL_PATTERN = /(https?:\/\/[^\s]+)/g;
+const CHAT_BUBBLE_FONT_SIZE = 14;
+const CHAT_BUBBLE_LINE_HEIGHT = 22;
+const CHAT_BUBBLE_LETTER_SPACING = 1.15;
 
 function renderTextWithLinks(text: string): ReactNode[] {
   const parts = text.split(URL_PATTERN);
@@ -57,10 +61,12 @@ export function ChatMessage({
   author,
   text,
   audioUrl,
+  isAwaiting = false,
 }: ChatMessageProps): React.ReactElement | null {
   if (!text && !audioUrl) return null;
 
   const isRight = IS_RIGHT[author];
+  const awaitingClass = isAwaiting && !isRight ? 'animate-message-await' : '';
 
   return (
     <div className={`flex flex-col gap-1 ${isRight ? 'items-end' : 'items-start'}`}>
@@ -72,22 +78,28 @@ export function ChatMessage({
         <>
           <div
             className={[
-              'max-w-[85%] rounded-game-md px-4 py-3',
-              isRight ? 'bg-accent text-content-inverse' : 'bg-bg-tertiary text-content-primary',
+              'max-w-[85%]',
+              awaitingClass,
             ].join(' ')}
           >
             <AudioPlayer src={audioUrl} />
           </div>
 
-          {text && <TranscriptToggle text={text} messageId={id} />}
+          {text && <TranscriptToggle text={text} messageId={id} letterSpacing={CHAT_BUBBLE_LETTER_SPACING} />}
         </>
       ) : (
         <div
           className={[
             'max-w-[85%] rounded-game-md px-4 py-3',
-            'font-mono text-game-sm leading-relaxed whitespace-pre-wrap',
-            isRight ? 'bg-accent text-content-inverse' : 'bg-bg-tertiary text-content-primary',
+            'font-mono whitespace-pre-wrap',
+            isRight ? 'bg-[rgba(164,244,240,0.60)] text-content-inverse' : 'bg-[rgba(255,255,255,0.30)] text-content-primary',
+            awaitingClass,
           ].join(' ')}
+          style={{
+            fontSize: `${CHAT_BUBBLE_FONT_SIZE}px`,
+            lineHeight: `${CHAT_BUBBLE_LINE_HEIGHT}px`,
+            letterSpacing: `${CHAT_BUBBLE_LETTER_SPACING}px`,
+          }}
         >
           {text ? renderTextWithLinks(text) : null}
         </div>

@@ -51,6 +51,7 @@ interface ChatStore {
   advance: (chatType: ChatType) => Promise<void>;
   choice: (chatType: ChatType, value: string) => Promise<void>;
   markRead: (chatType: ChatType) => void;
+  showTriggeredMessage: (chatType: ChatType) => Promise<void>;
 }
 
 // =============================================================
@@ -185,14 +186,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         state.marina.isVisible ? fetchMessages('MARINA') : Promise.resolve([]),
       ]);
 
-      set({
+      set((s) => ({
         version: state.version,
         finalChoice: state.finalChoice,
         detective: {
           messages: detectiveMessages,
           isTyping: false,
           pendingMessage: null,
-          unreadCount: 0,
+          unreadCount: Math.max(0, detectiveMessages.length - s.detective.messages.length),
           isWaiting: state.detective.isWaiting,
           isFinished: state.detective.isFinished,
           isVisible: true,
@@ -202,14 +203,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           messages: marinaMessages,
           isTyping: false,
           pendingMessage: null,
-          unreadCount: 0,
+          unreadCount: Math.max(0, marinaMessages.length - s.marina.messages.length),
           isWaiting: state.marina.isWaiting,
           isFinished: state.marina.isFinished,
           isVisible: state.marina.isVisible,
           status: 'ready',
         },
         error: null,
-      });
+      }));
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Ошибка загрузки чатов';
       console.error('[chatStore.refresh]', error);
@@ -276,9 +277,9 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           };
         }
 
-        // Skip typing delay: first message or choices prompt (no text to "type")
+        // Skip typing delay: first message, choices prompt, last message before trigger, or chat finished
         const skipTyping =
-          current.messages.length === 0 || data.currentMessage.hasChoices;
+          current.messages.length === 0 || data.currentMessage.hasChoices || data.isWaiting || data.isFinished;
 
         if (skipTyping) {
           const isFirstMessage = current.messages.length === 0;
@@ -389,8 +390,24 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           };
         }
 
-        // Skip typing delay for choices prompt (no text to "type")
-        if (data.currentMessage.hasChoices) {
+        // Skip typing delay for choices prompt, or when the chat is finished
+        if (data.currentMessage.hasChoices || data.isFinished) {
+          return {
+            version: data.version,
+            finalChoice: chatType === 'MARINA' ? (s.finalChoice ?? null) : s.finalChoice,
+            [slotKey(chatType)]: {
+              ...current,
+              messages: [...current.messages, playerMessage, data.currentMessage],
+              unreadCount: current.unreadCount + 1,
+              isWaiting: data.isWaiting,
+              isFinished: data.isFinished,
+              status: 'ready',
+            },
+          };
+        }
+
+        // Skip typing delay when next message only waits for a trigger
+        if (data.isWaiting) {
           return {
             version: data.version,
             finalChoice: chatType === 'MARINA' ? (s.finalChoice ?? null) : s.finalChoice,
@@ -422,6 +439,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           },
         };
       });
+
+      // Выбор в чате Марины может сдвинуть чат детектива через кросс-чат триггер
+      // (final_choice_made). Ответ /choice описывает только активный чат, поэтому
+      // отдельно подтягиваем состояние детектива, чтобы его новая реплика появилась
+      // сразу, а не после перезагрузки страницы.
+      if (chatType === 'MARINA') {
+        void get().showTriggeredMessage('DETECTIVE');
+      }
     } catch (error) {
       console.error('[chatStore.choice]', error);
       toast.error('Ошибка соединения');
@@ -436,5 +461,63 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         unreadCount: 0,
       },
     }));
+  },
+
+  showTriggeredMessage: async (chatType) => {
+    try {
+      const stateRes = await fetch('/api/chat/state');
+
+      if (!stateRes.ok) {
+        return;
+      }
+
+      const state = (await stateRes.json()) as StateResponse;
+      const slotState = chatType === 'DETECTIVE' ? state.detective : state.marina;
+      const currentMsg = slotState.currentMessage;
+
+      if (!currentMsg) {
+        return;
+      }
+
+      set((s) => {
+        const current = s[slotKey(chatType)];
+        const lastId = current.messages.at(-1)?.id;
+
+        if (currentMsg.id === lastId) {
+          return { version: state.version };
+        }
+
+        // No animation when next state is also waiting for a trigger
+        if (slotState.isWaiting) {
+          return {
+            version: state.version,
+            [slotKey(chatType)]: {
+              ...current,
+              messages: [...current.messages, currentMsg],
+              unreadCount: current.unreadCount + 1,
+              isWaiting: slotState.isWaiting,
+              isFinished: slotState.isFinished,
+              status: 'ready',
+            },
+          };
+        }
+
+        schedulePendingMessage(chatType, currentMsg.id);
+
+        return {
+          version: state.version,
+          [slotKey(chatType)]: {
+            ...current,
+            isTyping: true,
+            pendingMessage: currentMsg,
+            isWaiting: slotState.isWaiting,
+            isFinished: slotState.isFinished,
+            status: 'ready',
+          },
+        };
+      });
+    } catch (error) {
+      console.error('[chatStore.showTriggeredMessage]', error);
+    }
   },
 }));
