@@ -6,7 +6,7 @@ import {
   KeyRound,
   Monitor,
 } from 'lucide-react';
-import { DevResetAllButton } from '@/components/admin/DevResetAllButton';
+// import { DevResetAllButton } from '@/components/admin/DevResetAllButton'; // скрыто, функционал не удалён
 import { MetricsAutoRefresh } from '@/components/admin/MetricsAutoRefresh';
 import { RegistrationChart, type DayData } from '@/components/admin/analytics/RegistrationChart';
 import { formatDuration } from '@/lib/formatDuration';
@@ -450,13 +450,14 @@ export default async function AdminPage(): Promise<React.ReactElement> {
         </div>
       </div>
 
-      {/* ── Dev tools ── */}
+      {/* ── Dev tools ── (скрыто, функционал не удалён)
       <div className="mt-6 pt-6 border-t border-admin-card-border">
         <p className="text-xs text-admin-label mb-3 uppercase tracking-wide font-medium">
           Инструменты разработки
         </p>
         <DevResetAllButton />
       </div>
+      */}
     </>
   );
 }
