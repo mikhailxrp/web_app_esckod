@@ -52,3 +52,5 @@ example-sql.md
 app/api/debug/
 components/game/chat/DebugTriggerPanel.tsx
 debug-module.md
+
+.gigacode
