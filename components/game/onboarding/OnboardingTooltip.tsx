@@ -1,7 +1,6 @@
 "use client";
 
 import type { BubbleTextAlign, OnboardingStep } from "@/types/onboarding";
-import { MISSION_TILES_OVERLAY_STEP_COUNT } from "@/constants/onboardingSteps";
 import { OnboardingBubble } from "./OnboardingBubble";
 
 interface OnboardingTooltipProps {
@@ -133,7 +132,7 @@ export function OnboardingTooltip({
   const stepNumber = currentIndex + 1;
   const resolvedText = resolveText(step.text, playerLogin);
 
-  if (currentIndex < MISSION_TILES_OVERLAY_STEP_COUNT) {
+  if (step.missionTilesOverlay) {
     return (
       <MissionTilesOverlayStep
         stepNumber={stepNumber}
@@ -145,7 +144,7 @@ export function OnboardingTooltip({
         textLineHeight={step.bubbleLineHeight ?? 22}
         textLetterSpacing={step.bubbleLetterSpacing ?? 0}
         textAlign={step.bubbleTextAlign ?? "center"}
-        centerTextVertically={currentIndex === 0}
+        centerTextVertically={step.bubbleCenterVertically ?? false}
         onNext={onNext}
         isVisible={isVisible}
       />

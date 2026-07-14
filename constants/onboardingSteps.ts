@@ -22,9 +22,6 @@ export const ONBOARDING_TARGETS = {
   RDP_INSTRUCTION_BUTTON: "rdp-instruction-button",
 } as const;
 
-/** Шаги с frosted-glass плашкой поверх mission-tiles (без кнопки «Назад») */
-export const MISSION_TILES_OVERLAY_STEP_COUNT = 2;
-
 /** Крупный размер текста для приветствия в шаге 1 */
 const BUBBLE_FONT_SIZE_HERO = 20;
 /** Размер шрифта пузырька по умолчанию */
@@ -55,6 +52,8 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     scene: "base",
     target: ONBOARDING_TARGETS.MISSION_TILES,
     placement: "center",
+    missionTilesOverlay: true,
+    bubbleCenterVertically: true,
     bubbleFontSize: BUBBLE_FONT_SIZE_HERO,
     bubbleLineHeight: BUBBLE_LINE_HEIGHT_HERO,
     bubbleLetterSpacing: BUBBLE_LETTER_SPACING_DEFAULT,
@@ -68,6 +67,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     scene: "base",
     target: ONBOARDING_TARGETS.MISSION_TILES,
     placement: "center",
+    missionTilesOverlay: true,
     bubbleFontSize: BUBBLE_FONT_SIZE_HERO,
     bubbleLineHeight: BUBBLE_LINE_HEIGHT_HERO,
     bubbleLetterSpacing: BUBBLE_LETTER_SPACING_DEFAULT,
@@ -314,9 +314,24 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 11: Подсветка плашки Дешифратора ─────────────────────────────────
+  // ─── Шаг 11: Доступные в любой момент инструменты помощи ──────────────────
   {
     id: 11,
+    scene: "base",
+    target: ONBOARDING_TARGETS.MISSION_TILES,
+    placement: "center",
+    missionTilesOverlay: true,
+    bubbleCenterVertically: true,
+    bubbleFontSize: BUBBLE_FONT_SIZE_HERO,
+    bubbleLineHeight: BUBBLE_LINE_HEIGHT_HERO,
+    bubbleLetterSpacing: BUBBLE_LETTER_SPACING_DEFAULT,
+    bubbleTextAlign: BUBBLE_TEXT_ALIGN_LEFT,
+    text: "Если вы чувствуете, что на вас уже обрушилось много информации, не переживайте. Во всего время расследования вам будут доступны:\n\n1. Подсказки.\n2. Инструкции к миссиям.\n3. Возможность пропуска миссии (после второй неудачной попытки).",
+  },
+
+  // ─── Шаг 12: Подсветка плашки Дешифратора ─────────────────────────────────
+  {
+    id: 12,
     scene: "base",
     target: ONBOARDING_TARGETS.DECIPHER_MISSION_CARD,
     placement: "top",
@@ -330,9 +345,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     text: "Перейдем к дешифратору.",
   },
 
-  // ─── Шаг 12: Форма запуска Дешифратора ────────────────────────────────────
+  // ─── Шаг 13: Форма запуска Дешифратора ────────────────────────────────────
   {
-    id: 12,
+    id: 13,
     scene: "decipher-launch",
     target: ONBOARDING_TARGETS.DECIPHER_FORM,
     placement: "top",
@@ -348,9 +363,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 13: Таблица Playfair + ЛМОПРС ────────────────────────────────────
+  // ─── Шаг 14: Таблица Playfair + ЛМОПРС ────────────────────────────────────
   {
-    id: 13,
+    id: 14,
     scene: "decipher-game",
     target: ONBOARDING_TARGETS.DECIPHER_TABLE,
     placement: "top",
@@ -374,9 +389,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 14: Правила Playfair ──────────────────────────────────────────────
+  // ─── Шаг 15: Правила Playfair ──────────────────────────────────────────────
   {
-    id: 14,
+    id: 15,
     scene: "decipher-game",
     target: ONBOARDING_TARGETS.DECIPHER_TABLE,
     placement: "bottom",
@@ -401,9 +416,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 15: РАКЕТА + «Подтвердить» ───────────────────────────────────────
+  // ─── Шаг 16: РАКЕТА + «Подтвердить» ───────────────────────────────────────
   {
-    id: 15,
+    id: 16,
     scene: "decipher-game",
     target: ONBOARDING_TARGETS.DECIPHER_CONFIRM,
     placement: "bottom",
@@ -427,9 +442,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 16: «Доступ предоставлен» + пароль папки ─────────────────────────
+  // ─── Шаг 17: «Доступ предоставлен» + пароль папки ─────────────────────────
   {
-    id: 16,
+    id: 17,
     scene: "decipher-done",
     target: ONBOARDING_TARGETS.DECIPHER_RESULT,
     placement: "bottom",
@@ -453,9 +468,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 17: Подсветка плашки Удаленного доступа ──────────────────────────
+  // ─── Шаг 18: Подсветка плашки Удаленного доступа ──────────────────────────
   {
-    id: 17,
+    id: 18,
     scene: "base",
     target: ONBOARDING_TARGETS.RDP_MISSION_CARD,
     placement: "top",
@@ -470,9 +485,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     text: "И, наконец, перейдем к удаленному доступу.\n\nОсталось чуть-чуть. Не увольняйтесь, пожалуйста.",
   },
 
-  // ─── Шаг 18: Форма запуска RDP ────────────────────────────────────────────
+  // ─── Шаг 19: Форма запуска RDP ────────────────────────────────────────────
   {
-    id: 18,
+    id: 19,
     scene: "rdp-launch",
     target: ONBOARDING_TARGETS.RDP_FORM,
     placement: "top",
@@ -488,9 +503,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 19: Пазл-трубопровод + правила ───────────────────────────────────
+  // ─── Шаг 20: Пазл-трубопровод + правила ───────────────────────────────────
   {
-    id: 19,
+    id: 20,
     scene: "rdp-game",
     target: ONBOARDING_TARGETS.RDP_PUZZLE,
     placement: "top",
@@ -508,9 +523,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 20: Кнопка инструкции внутри RDP ─────────────────────────────────
+  // ─── Шаг 21: Кнопка инструкции внутри RDP ─────────────────────────────────
   {
-    id: 20,
+    id: 21,
     scene: "rdp-game",
     target: ONBOARDING_TARGETS.RDP_INSTRUCTION_BUTTON,
     placement: "top",
@@ -528,9 +543,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 21: Кнопка «ПОДСКАЗКА» ──────────────────────────────────────────
+  // ─── Шаг 22: Кнопка «ПОДСКАЗКА» ──────────────────────────────────────────
   {
-    id: 21,
+    id: 22,
     scene: "base",
     target: ONBOARDING_TARGETS.HINTS_BUTTON,
     placement: "bottom",
@@ -545,9 +560,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     text: "Если инструкция не помогла и вы не знаете, что делать дальше, можете обратиться к подсказкам.",
   },
 
-  // ─── Шаг 22: Чат Детектива + завершение ───────────────────────────────────
+  // ─── Шаг 23: Чат Детектива + завершение ───────────────────────────────────
   {
-    id: 22,
+    id: 23,
     scene: "chat-final",
     target: ONBOARDING_TARGETS.CHAT_DETECTIVE,
     placement: "bottom",
