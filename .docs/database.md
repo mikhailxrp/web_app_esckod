@@ -1168,7 +1168,7 @@ await prisma.$transaction([
 ]);
 
 // Логи пишутся через writeLog() после транзакции
-await writeLog(userId, "crack_access_granted", { targetUrl, resultPassword });
+await writeLog(userId, "crack_access_granted", { targetUrl, targetEmail, resultPassword });
 await writeLog(userId, "mission_completed_overview", { displayName });
 ```
 

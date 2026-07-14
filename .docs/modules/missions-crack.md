@@ -609,6 +609,7 @@ async function handleComplete(userId: string, slotKey: string) {
   // Транзакция: прогресс + удаление сессии + логи
   const techMessage = renderLogMessage('crack_access_granted', {
     targetUrl: slot.targetUrl ?? '—',
+    targetEmail: slot.targetEmail ?? '—',
     resultPassword: slot.resultPassword ?? '—',
   });
   const overviewMessage = renderLogMessage('mission_completed_overview', {

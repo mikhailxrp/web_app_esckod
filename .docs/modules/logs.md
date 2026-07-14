@@ -48,7 +48,7 @@
 export const logTemplates = {
   onboarding_completed: 'Подключение установлено',
   crack_attempt_failed: 'Ошибка доступа: проверьте корректность данных {targetUrl}, {targetEmail}',
-  crack_access_granted: 'Доступ к {targetUrl} получен. Пароль: {resultPassword}',
+  crack_access_granted: 'Доступ к {targetUrl} получен. Логин: {targetEmail}. Пароль: {resultPassword}',
   // ...
 } as const;
 
@@ -162,7 +162,7 @@ import { writeLog } from '@/lib/operationLog';
 await writeLog({
   userId,
   templateKey: 'crack_access_granted',
-  params: { targetUrl: 'https://p2.com', resultPassword: 'XYZ123' },
+  params: { targetUrl: 'https://p2.com', targetEmail: 'agent@p2.com', resultPassword: 'XYZ123' },
   type: 'SUCCESS',
 });
 ```
@@ -175,7 +175,7 @@ await writeLog({
 // Пример: завершение Crack
 const techMessage = renderTemplate(
   logTemplates.crack_access_granted,
-  { targetUrl, resultPassword }
+  { targetUrl, targetEmail, resultPassword }
 );
 const overviewMessage = renderTemplate(
   logTemplates.mission_completed_overview,
@@ -219,7 +219,7 @@ export function renderLogMessage(templateKey: LogTemplateKey, params: Record<str
 |---|---|---|---|
 | `crack_launch_failed` | Ошибка доступа к сайту {targetUrl} с логином {targetEmail} | ERROR | targetUrl, targetEmail |
 | `crack_attempt_failed` | Ошибка доступа: проверьте корректность данных {targetUrl}, {targetEmail} | ERROR | targetUrl, targetEmail |
-| `crack_access_granted` | Доступ к {targetUrl} получен. Пароль: {resultPassword} | SUCCESS | targetUrl, resultPassword |
+| `crack_access_granted` | Доступ к {targetUrl} получен. Логин: {targetEmail}. Пароль: {resultPassword} | SUCCESS | targetUrl, targetEmail, resultPassword |
 
 ### Decipher (дешифратор)
 | Ключ | Шаблон | Type | Параметры |
@@ -465,7 +465,7 @@ store/
    });
 
    // ✅ МОЖНО:
-   await writeLog({ userId, templateKey: 'crack_access_granted', params: { targetUrl: url, resultPassword: pwd }, type: 'SUCCESS' });
+   await writeLog({ userId, templateKey: 'crack_access_granted', params: { targetUrl: url, targetEmail: email, resultPassword: pwd }, type: 'SUCCESS' });
    ```
 
 6. **Лог пишется только при реальном событии.** Не писать «спекулятивно» (например, при загрузке страницы миссии — записать «Игрок открыл миссию X»). Логи должны соответствовать действиям игрока, отражённым в результатах эндпоинтов.
