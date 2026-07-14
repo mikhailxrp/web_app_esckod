@@ -181,7 +181,7 @@ export function PdfViewer({
       {file.url ? (
         isImageFile(file) ? (
           <div
-            className="flex-1 bg-white overflow-auto p-2"
+            className="bg-white overflow-auto p-2"
             style={{ height: maximized ? '100%' : '420px' }}
           >
             <NextImage

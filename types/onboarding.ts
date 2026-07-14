@@ -59,6 +59,10 @@ export interface OnboardingStep {
   bubbleTextAlign?: BubbleTextAlign;
   /** Переопределить сторону хвостика (по умолчанию выводится из placement) */
   bubbleTailSide?: BubbleTailSide;
+  /** Рендерить как frosted-glass оверлей поверх mission-tiles (стиль шага 1), а не как обычный пузырёк */
+  missionTilesOverlay?: boolean;
+  /** Внутри оверлея mission-tiles — центрировать текст по вертикали (стиль шага 1) */
+  bubbleCenterVertically?: boolean;
   demoPayload?: DemoPayload;
 }
 

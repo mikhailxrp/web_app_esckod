@@ -4,7 +4,7 @@ import { CRACK_WORD_LENGTH } from '@/constants/gameConfig';
 
 export const crackLaunchSchema = z.object({
   targetUrl: z.string().url('Введите корректный URL'),
-  targetEmail: z.string().min(1, 'Введите логин'),
+  targetEmail: z.string().min(1, 'Введите корректную почту'),
 });
 
 export const crackAttemptSchema = z.object({
@@ -14,7 +14,7 @@ export const crackAttemptSchema = z.object({
 
 export const decipherLaunchSchema = z.object({
   folderPath: z.string().min(1, 'Укажите ссылку или путь к папке'),
-  cipherKey: z.string().min(1, 'Укажите ключ').transform((v) => v.toUpperCase()),
+  cipherKey: z.string().min(1, 'Укажите корректное кодовое слово').transform((v) => v.toUpperCase()),
 });
 
 export const decipherAttemptSchema = z.object({

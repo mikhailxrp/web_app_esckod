@@ -94,12 +94,14 @@ interface DashboardClientProps {
   activeMissionTypes: MissionType[];
   playerLogin: string;
   onboardingDone: boolean;
+  missionLaunchHints: Record<MissionType, string | null>;
 }
 
 export function DashboardClient({
   activeMissionTypes,
   playerLogin,
   onboardingDone,
+  missionLaunchHints,
 }: DashboardClientProps): React.ReactElement {
   const refresh = useChatStore((s) => s.refresh);
   const refreshLogs = useLogStore((s) => s.refreshLogs);
@@ -208,6 +210,7 @@ export function DashboardClient({
                           onDecipherLaunched={setActiveDecipherSlotKey}
                           onRdpLaunched={setActiveRdpConnect}
                           demo={onboardingActive}
+                          instructionHint={missionLaunchHints[type]}
                         />
                       ))}
                     </div>
@@ -235,7 +238,7 @@ export function DashboardClient({
             <div data-onboarding-id="chat-detective">
               <ChatPanel
                 chatType="DETECTIVE"
-                demoTyping={onboardingActive && currentStepId === 22}
+                demoTyping={onboardingActive && currentStepId === 23}
               />
             </div>
             {marinaVisible && (

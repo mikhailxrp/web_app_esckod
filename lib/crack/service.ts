@@ -420,6 +420,7 @@ async function finalizeMission(
         type: LogType.SUCCESS,
         message: renderLogMessage('crack_access_granted', {
           targetUrl: slot.targetUrl ?? PLACEHOLDER,
+          targetEmail: slot.targetEmail ?? PLACEHOLDER,
           resultPassword: slot.resultPassword ?? PLACEHOLDER,
         }),
       },

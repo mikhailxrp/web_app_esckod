@@ -64,7 +64,7 @@ export function DecipherSlotFields({
       </Field>
 
       <Field
-        label="Ключ шифра"
+        label="Кодовое слово шифра"
         htmlFor="decipher-cipherKey"
         error={errors.cipherKey?.message}
         required

@@ -338,12 +338,12 @@ export function DecipherGamePanel({
               </div>
               <div className="flex flex-col gap-2">
                 <span className="font-mono text-game-base text-content-secondary">
-                  Ключ
+                  Кодовое слово
                 </span>
                 <input
                   readOnly
                   value=""
-                  aria-label="Ключ шифрования"
+                  aria-label="Кодовое слово шифрования"
                   className="h-input-height w-full rounded-game-lg border border-border bg-bg-input px-4 font-mono text-game-base text-content-primary focus:outline-none"
                 />
               </div>

@@ -2,7 +2,7 @@
 
 ## Обзор
 
-При первом входе игрок проходит 22-шаговый интерактивный инструктаж:  
+При первом входе игрок проходит 23-шаговый интерактивный инструктаж:  
 приветствие → демонстрация трёх мини-игр (Взломщик, Дешифратор, Удалённый доступ) в demo-режиме → подсказки по интерфейсу.
 
 **Первое сообщение в чате Детектива приходит только по завершении инструктажа.**  
@@ -14,7 +14,7 @@
 
 1. `app/(game)/dashboard/page.tsx` считывает `user.onboardingDone` из БД и передаёт в `DashboardClient` пропом.
 2. `DashboardClient` рендерит `<OnboardingController>` **только при `!onboardingDone`**.
-3. При завершении (шаг 22, «Завершить инструктаж») `OnboardingController` вызывает `POST /api/onboarding/complete`, затем — колбэк `onComplete` в `DashboardClient`.
+3. При завершении (шаг 23, «Завершить инструктаж») `OnboardingController` вызывает `POST /api/onboarding/complete`, затем — колбэк `onComplete` в `DashboardClient`.
 4. `onComplete` вызывает `chatStore.refresh()`, чтобы первая реплика Детектива пришла без перезагрузки страницы.
 5. При перезапуске игры `onboardingDone` **не сбрасывается** (учитывается в Phase 19).
 
@@ -48,7 +48,8 @@ interface OnboardingStep {
   target?: string;          // data-onboarding-id целевого элемента
   text: string;
   placement: 'top' | 'bottom' | 'left' | 'right' | 'center';
-  blurBackground?: boolean;
+  missionTilesOverlay?: boolean;      // frosted-glass оверлей поверх mission-tiles (стиль шага 1)
+  bubbleCenterVertically?: boolean;   // внутри оверлея — центрировать текст по вертикали
   demoPayload?: DemoPayload;
 }
 ```
@@ -232,12 +233,12 @@ interface DemoPayload {
 
 ---
 
-## Карта 22 шагов
+## Карта 23 шагов
 
 | Шаг | Сцена | Подсветка | Таск |
 |-----|-------|-----------|------|
-| 1 | `base` (blur) | — | 2 |
-| 2 | `base` | — | 2 |
+| 1 | `base` (overlay) | — | 2 |
+| 2 | `base` (overlay) | — | 2 |
 | 3 | `base` | `mission-tiles` | 2 |
 | 4 | `crack-launch` | `crack-mission-card` | 3 |
 | 5 | `crack-game` | `crack-wordle-board` | 3 |
@@ -246,18 +247,21 @@ interface DemoPayload {
 | 8 | `crack-game` | `crack-wordle-board` | 3 |
 | 9 | `crack-done` | `crack-result` | 3 |
 | 10 | `crack-done` | `operation-history` | 3 |
-| 11 | `base` | `mission-tiles` | 2 |
-| 12 | `decipher-launch` | `decipher-mission-card` | 3 |
-| 13 | `decipher-game` | `decipher-table` | 3 |
+| 11 | `base` (overlay) | — | — |
+| 12 | `base` | `mission-tiles` | 2 |
+| 13 | `decipher-launch` | `decipher-mission-card` | 3 |
 | 14 | `decipher-game` | `decipher-table` | 3 |
 | 15 | `decipher-game` | `decipher-table` | 3 |
-| 16 | `decipher-done` | `decipher-result` | 3 |
-| 17 | `base` | `mission-tiles` | 2 |
-| 18 | `rdp-launch` | `rdp-mission-card` | 3 |
-| 19 | `rdp-game` | `rdp-puzzle` | 3 |
-| 20 | `rdp-game` | `rdp-instruction-button` | 3 |
-| 21 | `base` | `hints-button` | 2 |
-| 22 | `chat-final` | `chat-detective` | 2 |
+| 16 | `decipher-game` | `decipher-table` | 3 |
+| 17 | `decipher-done` | `decipher-result` | 3 |
+| 18 | `base` | `mission-tiles` | 2 |
+| 19 | `rdp-launch` | `rdp-mission-card` | 3 |
+| 20 | `rdp-game` | `rdp-puzzle` | 3 |
+| 21 | `rdp-game` | `rdp-instruction-button` | 3 |
+| 22 | `base` | `hints-button` | 2 |
+| 23 | `chat-final` | `chat-detective` | 2 |
+
+Шаг 11 — новый шаг «доступные инструменты помощи» (подсказки / инструкции к миссиям / пропуск миссии), визуально идентичен шагам 1–2: frosted-glass оверлей поверх `mission-tiles` (`missionTilesOverlay: true`), без привязки к конкретному целевому элементу.
 
 ---
 

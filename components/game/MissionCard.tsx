@@ -14,6 +14,7 @@ import {
   type RdpLaunchInput,
 } from "@/lib/validations/missions";
 import { ONBOARDING_TARGETS } from "@/constants/onboardingSteps";
+import { MissionInstructionButton } from "@/components/game/MissionInstructionButton";
 import { useLogStore } from "@/store/logStore";
 import type { RdpConnectResult } from "@/types/rdp";
 
@@ -27,6 +28,8 @@ const MISSION_ONBOARDING_ID: Record<MissionType, string> = {
 
 interface MissionConfig {
   label: string;
+  /** Название на плашке миссии (закрытая карточка на dashboard) — может отличаться от label в модалке/панели */
+  tileLabel: string;
   iconSrc: string;
   iconAlt: string;
 }
@@ -34,16 +37,19 @@ interface MissionConfig {
 const MISSION_CONFIG: Record<MissionType, MissionConfig> = {
   CRACK: {
     label: "Взломщик",
+    tileLabel: "Взломщик сайтов",
     iconSrc: "/assets/img/icon/cracker-icon.svg",
     iconAlt: "Иконка миссии Взломщик",
   },
   DECIPHER: {
     label: "Дешифратор",
+    tileLabel: "Дешифратор папок",
     iconSrc: "/assets/img/icon/decoder-icon.svg",
     iconAlt: "Иконка миссии Дешифратор",
   },
   RDP: {
     label: "Удаленный доступ",
+    tileLabel: "Удаленный доступ",
     iconSrc: "/assets/img/icon/remote-access-icon.svg",
     iconAlt: "Иконка миссии Удаленный доступ",
   },
@@ -208,7 +214,7 @@ function DecipherForm({ onLaunched }: DecipherFormProps): React.ReactElement {
       }
 
       if (!res.ok) {
-        setServerError("Путь или ключ не распознаны.");
+        setServerError("Путь или кодовое слово не распознаны.");
         await refreshLogs();
         return;
       }
@@ -250,7 +256,7 @@ function DecipherForm({ onLaunched }: DecipherFormProps): React.ReactElement {
 
       <div className="flex flex-col gap-2">
         <label htmlFor="decipher-cipherKey" className={LABEL_CLASS}>
-          Ключ
+          Кодовое слово
         </label>
         <input
           {...register("cipherKey", {
@@ -392,6 +398,7 @@ interface MissionModalProps {
   onClose: () => void;
   onLaunched: (slotKey: string) => void;
   onRdpLaunched?: (data: RdpConnectResult) => void;
+  instructionHint: string | null;
 }
 
 function MissionModal({
@@ -399,6 +406,7 @@ function MissionModal({
   onClose,
   onLaunched,
   onRdpLaunched,
+  instructionHint,
 }: MissionModalProps): React.ReactElement {
   const config = MISSION_CONFIG[missionType];
 
@@ -448,20 +456,23 @@ function MissionModal({
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Закрыть форму"
-            className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
-          >
-            <Image
-              src="/assets/icons/close.svg"
-              alt=""
-              width={16}
-              height={16}
-              aria-hidden="true"
-            />
-          </button>
+          <div className="flex items-center gap-2">
+            <MissionInstructionButton hintText={instructionHint} />
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Закрыть форму"
+              className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
+            >
+              <Image
+                src="/assets/icons/close.svg"
+                alt=""
+                width={16}
+                height={16}
+                aria-hidden="true"
+              />
+            </button>
+          </div>
         </div>
 
         {/* Modal body — форма центрирована */}
@@ -495,6 +506,8 @@ interface MissionCardProps {
   demo?: boolean;
   /** Вызывается при клике «Открыть» в demo-режиме вместо открытия модала */
   onDemoStart?: () => void;
+  /** Текст подсказки по значку «i» в окне запуска (AppSettings, настраивается в админке) */
+  instructionHint?: string | null;
 }
 
 export function MissionCard({
@@ -504,6 +517,7 @@ export function MissionCard({
   onRdpLaunched,
   demo = false,
   onDemoStart,
+  instructionHint = null,
 }: MissionCardProps): React.ReactElement {
   const [isOpen, setIsOpen] = useState(false);
   const config = MISSION_CONFIG[missionType];
@@ -537,7 +551,7 @@ export function MissionCard({
         {/* Card header */}
         <div className="border-b border-white/30 px-4 pb-3 pt-4">
           <span className="font-mono text-game-lg text-accent">
-            {config.label}
+            {config.tileLabel}
           </span>
         </div>
 
@@ -571,6 +585,7 @@ export function MissionCard({
           onClose={() => setIsOpen(false)}
           onLaunched={handleLaunched}
           onRdpLaunched={handleRdpLaunched}
+          instructionHint={instructionHint}
         />
       ) : null}
     </>

@@ -22,9 +22,6 @@ export const ONBOARDING_TARGETS = {
   RDP_INSTRUCTION_BUTTON: "rdp-instruction-button",
 } as const;
 
-/** Шаги с frosted-glass плашкой поверх mission-tiles (без кнопки «Назад») */
-export const MISSION_TILES_OVERLAY_STEP_COUNT = 2;
-
 /** Крупный размер текста для приветствия в шаге 1 */
 const BUBBLE_FONT_SIZE_HERO = 20;
 /** Размер шрифта пузырька по умолчанию */
@@ -55,6 +52,8 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     scene: "base",
     target: ONBOARDING_TARGETS.MISSION_TILES,
     placement: "center",
+    missionTilesOverlay: true,
+    bubbleCenterVertically: true,
     bubbleFontSize: BUBBLE_FONT_SIZE_HERO,
     bubbleLineHeight: BUBBLE_LINE_HEIGHT_HERO,
     bubbleLetterSpacing: BUBBLE_LETTER_SPACING_DEFAULT,
@@ -68,11 +67,12 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     scene: "base",
     target: ONBOARDING_TARGETS.MISSION_TILES,
     placement: "center",
+    missionTilesOverlay: true,
     bubbleFontSize: BUBBLE_FONT_SIZE_HERO,
     bubbleLineHeight: BUBBLE_LINE_HEIGHT_HERO,
     bubbleLetterSpacing: BUBBLE_LETTER_SPACING_DEFAULT,
     bubbleTextAlign: BUBBLE_TEXT_ALIGN_LEFT,
-    text: "Мы предоставляем нашим агентам самые передовые технологии для раскрытия дел любой сложности.\n\nДля начала вам доступны три инструмента:\n 1. Взлом сайта (для получения доступа к аккаунтам сторонних сайтов);\n2. Дешифратор (для получения доступа к папкам, защищенным паролем);\n3. Удаленный доступ (для подключения к личным компьютерам подозреваемых или свидетелей).\n\nДавайте остановимся подробнее на каждом из них.",
+    text: "Мы предоставляем нашим агентам самые передовые технологии для раскрытия дел любой сложности.\n\nДля начала вам доступны три инструмента:\n 1. Взлом сайта (для получения доступа к аккаунтам сторонних сайтов).\n2. Дешифратор (для получения доступа к папкам, защищенным паролем).\n3. Удаленный доступ (для подключения к личным компьютерам подозреваемых или свидетелей).\n\nДавайте остановимся подробнее на каждом из них.",
   },
 
   // ─── Шаг 3: Подсветка плашки Взломщика ─────────────────────────────────────
@@ -119,7 +119,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     bubbleGap: 0,
     bubbleTailSize: 12,
     bubbleShiftX: -50,
-    bubbleShiftY: -160,
+    bubbleShiftY: -180,
     bubbleFontSize: BUBBLE_FONT_SIZE_DEFAULT,
     bubbleLineHeight: BUBBLE_LINE_HEIGHT_COMPACT,
     bubbleLetterSpacing: BUBBLE_LETTER_SPACING_DEFAULT,
@@ -281,7 +281,7 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     bubbleFontSize: BUBBLE_FONT_SIZE_DEFAULT,
     bubbleLineHeight: BUBBLE_LINE_HEIGHT_MEDIUM,
     bubbleLetterSpacing: BUBBLE_LETTER_SPACING_DEFAULT,
-    text: "Все пароли будут храниться в истории операций для вашего удобства.",
+    text: "Все пароли будут храниться в истории действий для вашего удобства.",
     demoPayload: {
       crackDemo: {
         slotKey: "__demo_crack__",
@@ -314,9 +314,24 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 11: Подсветка плашки Дешифратора ─────────────────────────────────
+  // ─── Шаг 11: Доступные в любой момент инструменты помощи ──────────────────
   {
     id: 11,
+    scene: "base",
+    target: ONBOARDING_TARGETS.MISSION_TILES,
+    placement: "center",
+    missionTilesOverlay: true,
+    bubbleCenterVertically: true,
+    bubbleFontSize: BUBBLE_FONT_SIZE_HERO,
+    bubbleLineHeight: BUBBLE_LINE_HEIGHT_HERO,
+    bubbleLetterSpacing: BUBBLE_LETTER_SPACING_DEFAULT,
+    bubbleTextAlign: BUBBLE_TEXT_ALIGN_LEFT,
+    text: "Если вы чувствуете, что на вас уже обрушилось много информации, не переживайте. Во всего время расследования вам будут доступны:\n\n1. Подсказки.\n2. Инструкции к миссиям.\n3. Возможность пропуска миссии (после второй неудачной попытки).",
+  },
+
+  // ─── Шаг 12: Подсветка плашки Дешифратора ─────────────────────────────────
+  {
+    id: 12,
     scene: "base",
     target: ONBOARDING_TARGETS.DECIPHER_MISSION_CARD,
     placement: "top",
@@ -330,9 +345,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     text: "Перейдем к дешифратору.",
   },
 
-  // ─── Шаг 12: Форма запуска Дешифратора ────────────────────────────────────
+  // ─── Шаг 13: Форма запуска Дешифратора ────────────────────────────────────
   {
-    id: 12,
+    id: 13,
     scene: "decipher-launch",
     target: ONBOARDING_TARGETS.DECIPHER_FORM,
     placement: "top",
@@ -342,15 +357,15 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     bubbleFontSize: BUBBLE_FONT_SIZE_DEFAULT,
     bubbleLineHeight: BUBBLE_LINE_HEIGHT_COMPACT,
     bubbleLetterSpacing: BUBBLE_LETTER_SPACING_DEFAULT,
-    text: "Для получения пароля к закрытой папке необходимо ввести:\n\n• ссылку на папку (ее адрес, например, https://example.ru/folder) или путь к папке (будет указан при попытке ввода пароля);\n• ключ (представляет собой кодовое слово, чаще всего имеет значение для владельца папки).\n\nЗатем нажмите кнопку «Начать»",
+    text: "Для получения пароля к закрытой папке необходимо ввести:\n\n• ссылку на папку (ее адрес, например, https://example.ru/folder) или путь к папке (будет указан при попытке ввода пароля);\n• кодовое слово (чаще всего имеет значение для владельца или связано с содержимым папки).\n\nЗатем нажмите кнопку «Начать»",
     demoPayload: {
       decipherDemo: { slotKey: "__demo_decipher__", phase: "launch" },
     },
   },
 
-  // ─── Шаг 13: Таблица Playfair + ЛМОПРС ────────────────────────────────────
+  // ─── Шаг 14: Таблица Playfair + ЛМОПРС ────────────────────────────────────
   {
-    id: 13,
+    id: 14,
     scene: "decipher-game",
     target: ONBOARDING_TARGETS.DECIPHER_TABLE,
     placement: "top",
@@ -374,22 +389,22 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 14: Правила Playfair ──────────────────────────────────────────────
+  // ─── Шаг 15: Правила Playfair ──────────────────────────────────────────────
   {
-    id: 14,
+    id: 15,
     scene: "decipher-game",
     target: ONBOARDING_TARGETS.DECIPHER_TABLE,
     placement: "bottom",
-    bubbleAnchor: "bottom-left",
+    bubbleAnchor: "bottom-right",
     bubbleGap: 0,
     bubbleTailSize: 12,
     bubbleTailSide: "left",
-    bubbleShiftX: 20,
-    bubbleShiftY: -400,
+    bubbleShiftX: -70,
+    bubbleShiftY: -450,
     bubbleFontSize: BUBBLE_FONT_SIZE_DEFAULT,
     bubbleLineHeight: BUBBLE_LINE_HEIGHT_MEDIUM,
     bubbleLetterSpacing: BUBBLE_LETTER_SPACING_DEFAULT,
-    text: "Чтобы разгадать зашифрованное слово, вам нужно разделить шифр (ОВЧГФЛ) на пары букв (ОВ ЧГ ФЛ) и перекодировать их в соответствии с правилами:\n\nЕсли обе буквы попадают в одну и ту же строку таблицы, то каждую из них нужно заменить буквой следующую за ней (справа) в той же строке.\n\nЕсли обе буквы попадают в один и тот же столбец таблицы, то каждую из них нужно заменить буквой следующую за ней (вниз) в том же столбце.\n\nЕсли буквы находятся в разных строках и столбцах, то каждая заменяется буквой, находящейся на пересечении строки, содержащей эту букву, и столбца, где содержится вторая буква.",
+    text: "Разделите зашифрованное слово на пары букв (ОВ ЧГ ФЛ).\n\nЕсли обе буквы попадают в одну и ту же строку таблицы, то каждую из них нужно заменить буквой перед ней (слева) в той же строке.\n\nЕсли обе буквы попадают в один и тот же столбец таблицы, то каждую из них нужно заменить буквой следующую за ней (вниз) в том же столбце.\n\nЕсли буквы находятся в разных строках и столбцах, то каждая заменяется буквой, находящейся на пересечении строки, содержащей эту букву, и столбца, где содержится вторая буква.\n\nПомните, что поле циклично. Если строка или столбец закончились, возвращайтесь в их начало",
     demoPayload: {
       decipherDemo: {
         slotKey: "__demo_decipher__",
@@ -401,9 +416,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 15: РАКЕТА + «Подтвердить» ───────────────────────────────────────
+  // ─── Шаг 16: РАКЕТА + «Подтвердить» ───────────────────────────────────────
   {
-    id: 15,
+    id: 16,
     scene: "decipher-game",
     target: ONBOARDING_TARGETS.DECIPHER_CONFIRM,
     placement: "bottom",
@@ -427,9 +442,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 16: «Доступ предоставлен» + пароль папки ─────────────────────────
+  // ─── Шаг 17: «Доступ предоставлен» + пароль папки ─────────────────────────
   {
-    id: 16,
+    id: 17,
     scene: "decipher-done",
     target: ONBOARDING_TARGETS.DECIPHER_RESULT,
     placement: "bottom",
@@ -453,9 +468,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 17: Подсветка плашки Удаленного доступа ──────────────────────────
+  // ─── Шаг 18: Подсветка плашки Удаленного доступа ──────────────────────────
   {
-    id: 17,
+    id: 18,
     scene: "base",
     target: ONBOARDING_TARGETS.RDP_MISSION_CARD,
     placement: "top",
@@ -470,9 +485,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     text: "И, наконец, перейдем к удаленному доступу.\n\nОсталось чуть-чуть. Не увольняйтесь, пожалуйста.",
   },
 
-  // ─── Шаг 18: Форма запуска RDP ────────────────────────────────────────────
+  // ─── Шаг 19: Форма запуска RDP ────────────────────────────────────────────
   {
-    id: 18,
+    id: 19,
     scene: "rdp-launch",
     target: ONBOARDING_TARGETS.RDP_FORM,
     placement: "top",
@@ -482,15 +497,15 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     bubbleFontSize: BUBBLE_FONT_SIZE_DEFAULT,
     bubbleLineHeight: BUBBLE_LINE_HEIGHT_COMPACT,
     bubbleLetterSpacing: BUBBLE_LETTER_SPACING_DEFAULT,
-    text: "Для получения доступа к чужому компьютеру необходимо ввести IP адрес \n (например, 111.111.111.11).\n\nЗатем нажмите кнопку «Начать».",
+    text: "Для получения доступа к чужому компьютеру необходимо ввести \n IP адрес (например, 111.111.111.11).\n\nЗатем нажмите кнопку «Начать».",
     demoPayload: {
       rdpDemo: { phase: "launch" },
     },
   },
 
-  // ─── Шаг 19: Пазл-трубопровод + правила ───────────────────────────────────
+  // ─── Шаг 20: Пазл-трубопровод + правила ───────────────────────────────────
   {
-    id: 19,
+    id: 20,
     scene: "rdp-game",
     target: ONBOARDING_TARGETS.RDP_PUZZLE,
     placement: "top",
@@ -508,9 +523,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 20: Кнопка инструкции внутри RDP ─────────────────────────────────
+  // ─── Шаг 21: Кнопка инструкции внутри RDP ─────────────────────────────────
   {
-    id: 20,
+    id: 21,
     scene: "rdp-game",
     target: ONBOARDING_TARGETS.RDP_INSTRUCTION_BUTTON,
     placement: "top",
@@ -528,9 +543,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     },
   },
 
-  // ─── Шаг 21: Кнопка «ПОДСКАЗКА» ──────────────────────────────────────────
+  // ─── Шаг 22: Кнопка «ПОДСКАЗКА» ──────────────────────────────────────────
   {
-    id: 21,
+    id: 22,
     scene: "base",
     target: ONBOARDING_TARGETS.HINTS_BUTTON,
     placement: "bottom",
@@ -545,9 +560,9 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
     text: "Если инструкция не помогла и вы не знаете, что делать дальше, можете обратиться к подсказкам.",
   },
 
-  // ─── Шаг 22: Чат Детектива + завершение ───────────────────────────────────
+  // ─── Шаг 23: Чат Детектива + завершение ───────────────────────────────────
   {
-    id: 22,
+    id: 23,
     scene: "chat-final",
     target: ONBOARDING_TARGETS.CHAT_DETECTIVE,
     placement: "bottom",

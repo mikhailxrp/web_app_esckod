@@ -136,6 +136,9 @@ const DEFAULT_APP_SETTINGS = {
   defaultMarketingConsent: false,
   supportEmail: 'support@example.com',
   privacyPolicyText: '',
+  crackLaunchHint: '',
+  decipherLaunchHint: '',
+  rdpLaunchHint: '',
 } as const;
 
 async function seedAdminUser(): Promise<void> {
