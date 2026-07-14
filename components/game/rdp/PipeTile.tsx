@@ -1,8 +1,10 @@
 'use client';
 
+import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 
 import type { Tile, TileType } from '@/lib/rdp/types';
+import { HintTooltip } from '@/components/game/ui/HintTooltip';
 
 /**
  * SVG-пути для каждого типа плитки при rotation=0.
@@ -61,6 +63,12 @@ const roleLabel: Record<EndpointRole, string> = {
   exit: 'выхода',
 };
 
+/** Пояснение по клику на зафиксированную точку входа/выхода — она не крутится. */
+const LOCKED_ENDPOINT_HINT: Record<EndpointRole, string> = {
+  entry: 'Точка закреплена — с неё начинается труба.',
+  exit: 'Точка закреплена — сюда должна прийти труба.',
+};
+
 interface PipeTileProps {
   tile: Tile;
   onRotate: () => void;
@@ -81,7 +89,13 @@ export function PipeTile({
   endpoint,
   whiteMarker = false,
 }: PipeTileProps): ReactElement {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [lockedHintRect, setLockedHintRect] = useState<DOMRect | null>(null);
+
   const isClickable = !tile.isLocked && !disabled && tile.type !== 'EMPTY';
+  // Закрепленная точка входа/выхода — не крутится, но клик поясняет почему
+  // (иначе выглядит как баг: игрок жмет на первый квадрат, ничего не происходит).
+  const isLockedEndpoint = tile.isLocked && Boolean(endpoint);
   const path = PIPE_PATH[tile.type];
 
   const pairStyle = endpoint
@@ -99,74 +113,97 @@ export function PipeTile({
     ? `Точка ${roleLabel[endpoint.role]} линии ${endpoint.pairIndex + 1}`
     : `Плитка ${tile.id}, тип ${tile.type}, поворот ${tile.rotation}°`;
 
-  return (
-    <button
-      type="button"
-      onClick={isClickable ? onRotate : undefined}
-      disabled={!isClickable}
-      aria-label={ariaLabel}
-      aria-disabled={tile.isLocked || disabled || tile.type === 'EMPTY'}
-      className={[
-        'relative flex h-full w-full items-center justify-center rounded-sm border',
-        'border-white/10 bg-bg-secondary/60',
-        isClickable
-          ? 'cursor-pointer transition-colors hover:border-accent/50 hover:bg-bg-card'
-          : 'cursor-default',
-        tile.isLocked && !pairStyle ? 'border-accent/30 bg-bg-card' : '',
-        pairStyle ? `${pairStyle.border} bg-bg-card` : '',
-        tile.type === 'EMPTY' ? 'opacity-20' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
-      {path ? (
-        <div
-          className="absolute inset-0 transition-transform duration-200 ease-in-out"
-          style={{ transform: `rotate(${tile.rotation}deg)` }}
-        >
-          <svg
-            viewBox="0 0 100 100"
-            width="100%"
-            height="100%"
-            aria-hidden="true"
-            overflow="visible"
-          >
-            <path
-              d={path}
-              stroke="currentColor"
-              strokeWidth={STROKE_WIDTH}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-              className={strokeColorClass}
-            />
-            {/* Центральный узел для визуального соединения */}
-            <circle
-              cx={50}
-              cy={50}
-              r={CENTER_R}
-              fill="currentColor"
-              className={strokeColorClass}
-            />
-          </svg>
-        </div>
-      ) : null}
+  const handleClick = (): void => {
+    if (isClickable) {
+      onRotate();
+      return;
+    }
+    if (isLockedEndpoint) {
+      setLockedHintRect((prev) => (prev ? null : (buttonRef.current?.getBoundingClientRect() ?? null)));
+    }
+  };
 
-      {/*
-        Маркер точки — всегда залитый кружок (вход и выход). whiteMarker (сц.1):
-        белый. Иначе (сц.2): цвет = линия (пара 0 — teal, пара 1 — белый).
-        Роль вход/выход различается позицией (сверху/снизу).
-      */}
-      {endpoint && pairStyle ? (
-        <span
-          aria-hidden="true"
-          className={[
-            'pointer-events-none absolute left-1/2 z-10 h-3 w-3 -translate-x-1/2 rounded-full',
-            endpoint.role === 'entry' ? '-top-1.5' : '-bottom-1.5',
-            whiteMarker ? 'bg-white' : `bg-current ${pairStyle.marker}`,
-          ].join(' ')}
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={isClickable || isLockedEndpoint ? handleClick : undefined}
+        disabled={!isClickable && !isLockedEndpoint}
+        aria-label={ariaLabel}
+        aria-disabled={(tile.isLocked && !isLockedEndpoint) || disabled || tile.type === 'EMPTY'}
+        className={[
+          'relative flex h-full w-full items-center justify-center rounded-sm border',
+          'border-white/10 bg-bg-secondary/60',
+          isClickable
+            ? 'cursor-pointer transition-colors hover:border-accent/50 hover:bg-bg-card'
+            : isLockedEndpoint
+              ? 'cursor-not-allowed'
+              : 'cursor-default',
+          tile.isLocked && !pairStyle ? 'border-accent/30 bg-bg-card' : '',
+          pairStyle ? `${pairStyle.border} bg-bg-card` : '',
+          tile.type === 'EMPTY' ? 'opacity-20' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        {path ? (
+          <div
+            className="absolute inset-0 transition-transform duration-200 ease-in-out"
+            style={{ transform: `rotate(${tile.rotation}deg)` }}
+          >
+            <svg
+              viewBox="0 0 100 100"
+              width="100%"
+              height="100%"
+              aria-hidden="true"
+              overflow="visible"
+            >
+              <path
+                d={path}
+                stroke="currentColor"
+                strokeWidth={STROKE_WIDTH}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+                className={strokeColorClass}
+              />
+              {/* Центральный узел для визуального соединения */}
+              <circle
+                cx={50}
+                cy={50}
+                r={CENTER_R}
+                fill="currentColor"
+                className={strokeColorClass}
+              />
+            </svg>
+          </div>
+        ) : null}
+
+        {/*
+          Маркер точки — всегда залитый кружок (вход и выход). whiteMarker (сц.1):
+          белый. Иначе (сц.2): цвет = линия (пара 0 — teal, пара 1 — белый).
+          Роль вход/выход различается позицией (сверху/снизу).
+        */}
+        {endpoint && pairStyle ? (
+          <span
+            aria-hidden="true"
+            className={[
+              'pointer-events-none absolute left-1/2 z-10 h-3 w-3 -translate-x-1/2 rounded-full',
+              endpoint.role === 'entry' ? '-top-1.5' : '-bottom-1.5',
+              whiteMarker ? 'bg-white' : `bg-current ${pairStyle.marker}`,
+            ].join(' ')}
+          />
+        ) : null}
+      </button>
+
+      {lockedHintRect && endpoint ? (
+        <HintTooltip
+          text={LOCKED_ENDPOINT_HINT[endpoint.role]}
+          anchorRect={lockedHintRect}
+          onClose={() => setLockedHintRect(null)}
         />
       ) : null}
-    </button>
+    </>
   );
 }
