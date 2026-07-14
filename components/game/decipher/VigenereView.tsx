@@ -62,10 +62,10 @@ export function VigenereView({
       {/* Разделитель */}
       <div className="h-px w-full bg-border" aria-hidden="true" />
 
-      {/* Ключ */}
+      {/* Кодовое слово */}
       <div className="flex flex-col gap-2">
         <span className="font-mono text-game-xs uppercase tracking-game-wider text-content-secondary">
-          Ключ
+          Кодовое слово
         </span>
         <div className="flex flex-wrap gap-x-3 gap-y-2">
           {encLetters.map((_, idx) => {

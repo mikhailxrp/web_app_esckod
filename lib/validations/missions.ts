@@ -14,7 +14,7 @@ export const crackAttemptSchema = z.object({
 
 export const decipherLaunchSchema = z.object({
   folderPath: z.string().min(1, 'Укажите ссылку или путь к папке'),
-  cipherKey: z.string().min(1, 'Укажите ключ').transform((v) => v.toUpperCase()),
+  cipherKey: z.string().min(1, 'Укажите корректное кодовое слово').transform((v) => v.toUpperCase()),
 });
 
 export const decipherAttemptSchema = z.object({

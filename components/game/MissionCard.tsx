@@ -27,6 +27,8 @@ const MISSION_ONBOARDING_ID: Record<MissionType, string> = {
 
 interface MissionConfig {
   label: string;
+  /** Название на плашке миссии (закрытая карточка на dashboard) — может отличаться от label в модалке/панели */
+  tileLabel: string;
   iconSrc: string;
   iconAlt: string;
 }
@@ -34,16 +36,19 @@ interface MissionConfig {
 const MISSION_CONFIG: Record<MissionType, MissionConfig> = {
   CRACK: {
     label: "Взломщик",
+    tileLabel: "Взломщик сайтов",
     iconSrc: "/assets/img/icon/cracker-icon.svg",
     iconAlt: "Иконка миссии Взломщик",
   },
   DECIPHER: {
     label: "Дешифратор",
+    tileLabel: "Дешифратор папок",
     iconSrc: "/assets/img/icon/decoder-icon.svg",
     iconAlt: "Иконка миссии Дешифратор",
   },
   RDP: {
     label: "Удаленный доступ",
+    tileLabel: "Удаленный доступ",
     iconSrc: "/assets/img/icon/remote-access-icon.svg",
     iconAlt: "Иконка миссии Удаленный доступ",
   },
@@ -208,7 +213,7 @@ function DecipherForm({ onLaunched }: DecipherFormProps): React.ReactElement {
       }
 
       if (!res.ok) {
-        setServerError("Путь или ключ не распознаны.");
+        setServerError("Путь или кодовое слово не распознаны.");
         await refreshLogs();
         return;
       }
@@ -250,7 +255,7 @@ function DecipherForm({ onLaunched }: DecipherFormProps): React.ReactElement {
 
       <div className="flex flex-col gap-2">
         <label htmlFor="decipher-cipherKey" className={LABEL_CLASS}>
-          Ключ
+          Кодовое слово
         </label>
         <input
           {...register("cipherKey", {
@@ -537,7 +542,7 @@ export function MissionCard({
         {/* Card header */}
         <div className="border-b border-white/30 px-4 pb-3 pt-4">
           <span className="font-mono text-game-lg text-accent">
-            {config.label}
+            {config.tileLabel}
           </span>
         </div>
 
