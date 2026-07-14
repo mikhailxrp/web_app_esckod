@@ -789,6 +789,9 @@ model AppSettings {
   defaultMarketingConsent  Boolean  @default(false)   // дефолт для галки согласия на маркетинг
   supportEmail             String   @default("support@example.com")  // email техподдержки
   privacyPolicyText        String   @default("")  // HTML-текст политики обработки данных (Tiptap-редактор в админке)
+  crackLaunchHint          String   @default("")  // подсказка по значку «i» в окне запуска Взломщика
+  decipherLaunchHint       String   @default("")  // подсказка по значку «i» в окне запуска Дешифратора
+  rdpLaunchHint            String   @default("")  // подсказка по значку «i» в окне запуска Удалённого доступа
   finalReportQuestionId    String?  // указатель на финальный вопрос «Обвинить / Защитить»
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
@@ -806,6 +809,9 @@ model AppSettings {
 | `defaultMarketingConsent` | Начальное состояние галки маркетинга в форме регистрации                                | `GET /api/settings/registration-defaults` |
 | `supportEmail`            | Email техподдержки в сообщениях об ошибках регистрации (неверный ключ, лимит активаций) | `GET /api/settings/registration-defaults` |
 | `privacyPolicyText`       | HTML-текст политики обработки данных, редактируется на `/admin/privacy-policy`          | `GET/PATCH /api/admin/app-settings`, рендерится на публичной `/privacy-policy` |
+| `crackLaunchHint`         | Текст подсказки по значку «i» в окне запуска миссии «Взломщик» (одна на весь тип миссии, слот ещё не выбран) | `GET/PATCH /api/admin/app-settings`, показывается в `MissionModal` через `MissionInstructionButton` |
+| `decipherLaunchHint`      | То же для миссии «Дешифратор»                                                           | см. выше |
+| `rdpLaunchHint`           | То же для миссии «Удалённый доступ»                                                     | см. выше |
 | `finalReportQuestionId`   | ID вопроса с вариантами «Обвинить / Защитить», используемого в финальном отчёте         | `GET/PUT /api/admin/report/history`, `GET /api/admin/report/validate` |
 
 ⚠️ **Юридические требования:**
@@ -913,6 +919,7 @@ AdminAuditLog            (аудит — без каскада, пережива
 | `defaultMarketingConsent` | `false`                            |
 | `supportEmail`            | `"support@example.com"` (заглушка) |
 | `privacyPolicyText`       | `""` (не заполнено)                |
+| `crackLaunchHint` / `decipherLaunchHint` / `rdpLaunchHint` | `""` (значок «i» скрыт, пока не заполнено) |
 
 Заказчик меняет `supportEmail` на `/admin/settings` и заполняет `privacyPolicyText` через Tiptap-редактор на `/admin/privacy-policy` **до запуска в прод**. Без замены — UI админки показывает баннер-предупреждение.
 

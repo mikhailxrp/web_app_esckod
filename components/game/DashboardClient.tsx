@@ -94,12 +94,14 @@ interface DashboardClientProps {
   activeMissionTypes: MissionType[];
   playerLogin: string;
   onboardingDone: boolean;
+  missionLaunchHints: Record<MissionType, string | null>;
 }
 
 export function DashboardClient({
   activeMissionTypes,
   playerLogin,
   onboardingDone,
+  missionLaunchHints,
 }: DashboardClientProps): React.ReactElement {
   const refresh = useChatStore((s) => s.refresh);
   const refreshLogs = useLogStore((s) => s.refreshLogs);
@@ -208,6 +210,7 @@ export function DashboardClient({
                           onDecipherLaunched={setActiveDecipherSlotKey}
                           onRdpLaunched={setActiveRdpConnect}
                           demo={onboardingActive}
+                          instructionHint={missionLaunchHints[type]}
                         />
                       ))}
                     </div>

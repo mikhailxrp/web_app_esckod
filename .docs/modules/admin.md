@@ -457,7 +457,7 @@ UI и эндпоинты описаны там. В навигации админ
 
 Краткое напоминание:
 - `GET/PATCH /api/admin/app-settings`
-- 3 поля: `defaultMarketingConsent`, `supportEmail` (форма на `/admin/settings`), `privacyPolicyText` (Tiptap-редактор на `/admin/privacy-policy`)
+- Поля на `/admin/settings`: `defaultMarketingConsent`, `supportEmail`, `crackLaunchHint`/`decipherLaunchHint`/`rdpLaunchHint` (подсказки по значку «i» в окне запуска миссии — по одной на тип миссии); `privacyPolicyText` — отдельно, Tiptap-редактор на `/admin/privacy-policy`
 - Баннер при заглушках, модалка при `defaultMarketingConsent=true`
 
 ---

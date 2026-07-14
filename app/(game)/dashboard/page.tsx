@@ -20,11 +20,22 @@ export default async function DashboardPage(): Promise<React.ReactElement> {
     select: { onboardingDone: true },
   });
 
+  const appSettings = await prisma.appSettings.findFirst({
+    select: { crackLaunchHint: true, decipherLaunchHint: true, rdpLaunchHint: true },
+  });
+
+  const missionLaunchHints: Record<MissionType, string | null> = {
+    CRACK: appSettings?.crackLaunchHint || null,
+    DECIPHER: appSettings?.decipherLaunchHint || null,
+    RDP: appSettings?.rdpLaunchHint || null,
+  };
+
   return (
     <DashboardClient
       activeMissionTypes={activeMissionTypes}
       playerLogin={playerLogin}
       onboardingDone={user.onboardingDone}
+      missionLaunchHints={missionLaunchHints}
     />
   );
 }

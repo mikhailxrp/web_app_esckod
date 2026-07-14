@@ -21,16 +21,16 @@
 ## Цели модуля
 
 После завершения этого модуля:
-- Существует singleton-таблица `AppSettings` с тремя настраиваемыми полями
+- Существует singleton-таблица `AppSettings` с настраиваемыми полями
 - При первом деплое сидер создаёт ровно одну запись с дефолтами-заглушками
 - Публичный эндпоинт `GET /api/settings/registration-defaults` отдаёт нужные поля для формы регистрации
-- Админ через `/admin/settings` видит и редактирует `supportEmail`/`defaultMarketingConsent`, а через отдельную страницу `/admin/privacy-policy` (Tiptap-редактор) — текст политики конфиденциальности (`privacyPolicyText`)
+- Админ через `/admin/settings` видит и редактирует `supportEmail`/`defaultMarketingConsent`/подсказки к формам запуска миссий (`crackLaunchHint`/`decipherLaunchHint`/`rdpLaunchHint`), а через отдельную страницу `/admin/privacy-policy` (Tiptap-редактор) — текст политики конфиденциальности (`privacyPolicyText`)
 - Публичная страница `/privacy-policy` рендерит сохранённый текст политики для незалогиненных пользователей (ссылка с формы регистрации)
 - Админка предупреждает о юридических рисках (`defaultMarketingConsent=true`) и о незаполненных продакшен-значениях
 
 **Не входит в модуль:**
 - Email-рассылки и редактирование текста писем (out of scope, см. PRD)
-- Хранение настроек миссий — это в `MissionSlot` (per-slot)
+- Хранение per-slot настроек миссий (`hintText`, `folderPath` и т.д.) — это в `MissionSlot`. В `AppSettings` хранятся только `crackLaunchHint`/`decipherLaunchHint`/`rdpLaunchHint` — единый на весь тип миссии текст для окна запуска (`MissionModal`), которое ещё не знает, какой слот откроется
 - Настройки рейтлимитов — захардкожены в `lib/rateLimit.ts`
 
 ---
@@ -44,7 +44,7 @@
 - API на запись не имеет POST/DELETE — только PATCH существующей
 - Получение настроек — всегда через `findFirst()`, не через `findUnique({ where: { id } })`
 
-**Почему singleton, а не key-value таблица настроек:** при росте проекта проще добавить колонку в одну таблицу с типизацией, чем разбирать строки `{key: 'supportEmail', value: '...'}` без типов. У нас 3 поля, и больше не планируется без явного запроса.
+**Почему singleton, а не key-value таблица настроек:** при росте проекта проще добавить колонку в одну таблицу с типизацией, чем разбирать строки `{key: 'supportEmail', value: '...'}` без типов.
 
 ### 2. Разделение публичной и админской частей
 
@@ -112,6 +112,20 @@
 **Формат:** HTML, генерируемый `editor.getHTML()` (Tiptap `StarterKit`: заголовки, списки, цитаты, ссылки, форматирование текста). Валидация на сервере через Zod при PATCH — принимается любая непустая строка (санитизация не требуется, поле редактируется только админом через контролируемый редактор, а не произвольным HTML с клиента).
 
 **Редактируется НЕ на `/admin/settings`** — у поля отдельная страница `/admin/privacy-policy`, так как это content-редактирование, а не конфигурационное значение.
+
+---
+
+### `crackLaunchHint` / `decipherLaunchHint` / `rdpLaunchHint`: String
+
+**Что это:** текст подсказки, который показывается по значку «i» (`MissionInstructionButton`) в заголовке `MissionModal` — форме, открывающейся по кнопке «Открыть» на плашке миссии, **до** её запуска.
+
+**Дефолт:** `""` (не заполнено — значок «i» скрыт, `MissionInstructionButton` возвращает `null`)
+
+**Почему один текст на весь тип миссии, а не per-slot:** `MissionModal` знает только `missionType` (`CRACK` / `DECIPHER` / `RDP`) — конкретный `MissionSlot` сервер определяет только после отправки формы (по совпадению `folderPath`/`targetUrl`+`targetEmail`/IP). На момент показа модалки слот ещё не выбран, поэтому per-slot текст здесь невозможен — в отличие от `MissionSlot.hintText`, который показывается уже во время игры через `CrackHintButton`/`DecipherHintButton`/`RdpHintButton`.
+
+**Формат:** обычный текст (`ParagraphText` внутри `HintTooltip` рендерит абзацы по `\n\n`, без HTML — в отличие от `privacyPolicyText`).
+
+**Редактируется на `/admin/settings`** — три `textarea` рядом с `supportEmail`, отправляются тем же `PATCH /api/admin/app-settings`.
 
 ---
 
@@ -213,10 +227,13 @@ const updateSettingsSchema = z.object({
   defaultMarketingConsent: z.boolean().optional(),
   supportEmail: z.string().email().optional(),
   privacyPolicyText: z.string().optional(),
+  crackLaunchHint: z.string().optional(),
+  decipherLaunchHint: z.string().optional(),
+  rdpLaunchHint: z.string().optional(),
 });
 ```
 
-Все поля опциональны — клиент может прислать только то, что меняет. `AppSettingsForm` (`/admin/settings`) шлёт `supportEmail`/`defaultMarketingConsent`; `PrivacyPolicyEditorForm` (`/admin/privacy-policy`) шлёт только `privacyPolicyText` — оба используют один и тот же `PATCH`-эндпоинт с частичным телом.
+Все поля опциональны — клиент может прислать только то, что меняет. `AppSettingsForm` (`/admin/settings`) шлёт `supportEmail`/`defaultMarketingConsent`/`crackLaunchHint`/`decipherLaunchHint`/`rdpLaunchHint`; `PrivacyPolicyEditorForm` (`/admin/privacy-policy`) шлёт только `privacyPolicyText` — оба используют один и тот же `PATCH`-эндпоинт с частичным телом.
 
 **Алгоритм:**
 ```typescript
@@ -300,14 +317,18 @@ app/
 │           └── route.ts                      # GET, PATCH (Admin)
 
 components/
-└── admin/
-    ├── app-settings/
-    │   ├── AppSettingsForm.tsx               # Client Component, форма редактирования
-    │   ├── PlaceholderWarningBanner.tsx      # Client Component, баннер про заглушку email
-    │   └── MarketingConsentWarningModal.tsx  # Client Component, модалка про юр.риск
-    └── privacy-policy/
-        ├── PrivacyPolicyEditorForm.tsx       # Client Component, Tiptap-редактор + сохранение
-        └── EditorToolbar.tsx                 # Client Component, панель форматирования Tiptap
+├── admin/
+│   ├── app-settings/
+│   │   ├── AppSettingsForm.tsx               # Client Component, форма редактирования (+ 3 textarea launch-hint полей)
+│   │   ├── PlaceholderWarningBanner.tsx      # Client Component, баннер про заглушку email
+│   │   └── MarketingConsentWarningModal.tsx  # Client Component, модалка про юр.риск
+│   └── privacy-policy/
+│       ├── PrivacyPolicyEditorForm.tsx       # Client Component, Tiptap-редактор + сохранение
+│       └── EditorToolbar.tsx                 # Client Component, панель форматирования Tiptap
+└── game/
+    ├── MissionInstructionButton.tsx          # Client Component, значок «i» + HintTooltip в MissionModal (использует crackLaunchHint/decipherLaunchHint/rdpLaunchHint)
+    └── ui/
+        └── HintTooltip.tsx                   # переиспользуется из существующих CrackHintButton/DecipherHintButton/RdpHintButton
 
 lib/
 └── validations/

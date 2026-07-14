@@ -7,6 +7,9 @@ export const updateSettingsSchema = z.object({
     .optional(),
   privacyPolicyText: z.string().optional(),
   defaultMarketingConsent: z.boolean().optional(),
+  crackLaunchHint: z.string().optional(),
+  decipherLaunchHint: z.string().optional(),
+  rdpLaunchHint: z.string().optional(),
 });
 
 export type UpdateSettingsInput = z.infer<typeof updateSettingsSchema>;

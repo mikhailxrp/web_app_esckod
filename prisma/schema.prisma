@@ -374,6 +374,9 @@ model AppSettings {
   defaultMarketingConsent  Boolean  @default(false)
   supportEmail             String   @default("support@example.com")
   privacyPolicyText        String   @default("")
+  crackLaunchHint          String   @default("")
+  decipherLaunchHint       String   @default("")
+  rdpLaunchHint            String   @default("")
   finalReportQuestionId    String?
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt

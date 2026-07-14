@@ -14,6 +14,7 @@ import {
   type RdpLaunchInput,
 } from "@/lib/validations/missions";
 import { ONBOARDING_TARGETS } from "@/constants/onboardingSteps";
+import { MissionInstructionButton } from "@/components/game/MissionInstructionButton";
 import { useLogStore } from "@/store/logStore";
 import type { RdpConnectResult } from "@/types/rdp";
 
@@ -397,6 +398,7 @@ interface MissionModalProps {
   onClose: () => void;
   onLaunched: (slotKey: string) => void;
   onRdpLaunched?: (data: RdpConnectResult) => void;
+  instructionHint: string | null;
 }
 
 function MissionModal({
@@ -404,6 +406,7 @@ function MissionModal({
   onClose,
   onLaunched,
   onRdpLaunched,
+  instructionHint,
 }: MissionModalProps): React.ReactElement {
   const config = MISSION_CONFIG[missionType];
 
@@ -453,20 +456,23 @@ function MissionModal({
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Закрыть форму"
-            className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
-          >
-            <Image
-              src="/assets/icons/close.svg"
-              alt=""
-              width={16}
-              height={16}
-              aria-hidden="true"
-            />
-          </button>
+          <div className="flex items-center gap-2">
+            <MissionInstructionButton hintText={instructionHint} />
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Закрыть форму"
+              className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
+            >
+              <Image
+                src="/assets/icons/close.svg"
+                alt=""
+                width={16}
+                height={16}
+                aria-hidden="true"
+              />
+            </button>
+          </div>
         </div>
 
         {/* Modal body — форма центрирована */}
@@ -500,6 +506,8 @@ interface MissionCardProps {
   demo?: boolean;
   /** Вызывается при клике «Открыть» в demo-режиме вместо открытия модала */
   onDemoStart?: () => void;
+  /** Текст подсказки по значку «i» в окне запуска (AppSettings, настраивается в админке) */
+  instructionHint?: string | null;
 }
 
 export function MissionCard({
@@ -509,6 +517,7 @@ export function MissionCard({
   onRdpLaunched,
   demo = false,
   onDemoStart,
+  instructionHint = null,
 }: MissionCardProps): React.ReactElement {
   const [isOpen, setIsOpen] = useState(false);
   const config = MISSION_CONFIG[missionType];
@@ -576,6 +585,7 @@ export function MissionCard({
           onClose={() => setIsOpen(false)}
           onLaunched={handleLaunched}
           onRdpLaunched={handleRdpLaunched}
+          instructionHint={instructionHint}
         />
       ) : null}
     </>
