@@ -113,7 +113,7 @@ export function PdfViewer({
     >
       {/* Titlebar */}
       <div className="flex shrink-0 items-center gap-2 bg-gray-100 border-b border-gray-200 px-3 py-1.5">
-        <span className="flex-1 font-sans text-sm text-gray-800 font-medium">Скан</span>
+        <span className="flex-1 font-sans text-sm text-gray-800 font-medium">Файл</span>
 
         {/* Zoom controls */}
         <div className="flex items-center gap-0.5 mr-2">
