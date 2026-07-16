@@ -456,7 +456,7 @@ metadata.puzzleSolved = true;
 await writeLog({
   userId,
   templateKey: "rdp_puzzle_solved",
-  params: { logSubjectName },
+  params: { logSubjectName, ip: slot.correctIp },
   type: "SUCCESS",
 });
 ```

@@ -70,7 +70,7 @@ export function CrackCompletedView({
 
         {resultPassword ? (
           <div className="flex flex-col gap-1.5">
-            <span className="font-mono text-game-sm text-content-secondary">Ключ</span>
+            <span className="font-mono text-game-sm text-content-secondary">Пароль</span>
             <div className="relative">
               <input
                 readOnly

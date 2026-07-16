@@ -15,6 +15,9 @@ interface AppSettingsData {
   id: string;
   supportEmail: string;
   defaultMarketingConsent: boolean;
+  crackLaunchHint: string;
+  decipherLaunchHint: string;
+  rdpLaunchHint: string;
   updatedAt: string;
 }
 
@@ -42,6 +45,9 @@ export function AppSettingsForm({
     defaultValues: {
       supportEmail: initialData.supportEmail,
       defaultMarketingConsent: initialData.defaultMarketingConsent,
+      crackLaunchHint: initialData.crackLaunchHint,
+      decipherLaunchHint: initialData.decipherLaunchHint,
+      rdpLaunchHint: initialData.rdpLaunchHint,
     },
   });
 
@@ -74,6 +80,9 @@ export function AppSettingsForm({
       reset({
         supportEmail: json.supportEmail,
         defaultMarketingConsent: json.defaultMarketingConsent,
+        crackLaunchHint: json.crackLaunchHint,
+        decipherLaunchHint: json.decipherLaunchHint,
+        rdpLaunchHint: json.rdpLaunchHint,
       });
 
       showToast('success', 'Настройки сохранены.');
@@ -109,6 +118,9 @@ export function AppSettingsForm({
     reset({
       supportEmail: initialData.supportEmail,
       defaultMarketingConsent: initialData.defaultMarketingConsent,
+      crackLaunchHint: initialData.crackLaunchHint,
+      decipherLaunchHint: initialData.decipherLaunchHint,
+      rdpLaunchHint: initialData.rdpLaunchHint,
     });
   };
 
@@ -173,6 +185,72 @@ export function AppSettingsForm({
                 <option value="true">Включено</option>
               </select>
             </div>
+          </div>
+
+          <div className="my-6 border-t border-admin-card-border" />
+
+          <h3 className="text-sm font-semibold text-admin-input-text mb-1">
+            Инструкции к формам запуска миссий
+          </h3>
+          <p className="text-xs text-admin-placeholder mb-4">
+            Текст подсказки по значку «i» в окне запуска миссии (появляется по кнопке «Открыть» на плашке). Пустое поле — значок скрыт.
+          </p>
+
+          {/* crackLaunchHint */}
+          <div className="grid grid-cols-[220px_1fr] items-start gap-4 mb-5">
+            <label className="text-sm text-admin-label pt-2.5">
+              Взломщик сайтов
+            </label>
+            <textarea
+              rows={3}
+              placeholder="Например: введите адрес сайта и почту, доступ к которой нужно получить."
+              {...register('crackLaunchHint')}
+              className={[
+                inputBase,
+                'resize-y',
+                errors.crackLaunchHint
+                  ? 'border-red-400'
+                  : 'border-transparent focus:border-admin-accent',
+              ].join(' ')}
+            />
+          </div>
+
+          {/* decipherLaunchHint */}
+          <div className="grid grid-cols-[220px_1fr] items-start gap-4 mb-5">
+            <label className="text-sm text-admin-label pt-2.5">
+              Дешифратор папок
+            </label>
+            <textarea
+              rows={3}
+              placeholder="Например: введите путь к папке и кодовое слово."
+              {...register('decipherLaunchHint')}
+              className={[
+                inputBase,
+                'resize-y',
+                errors.decipherLaunchHint
+                  ? 'border-red-400'
+                  : 'border-transparent focus:border-admin-accent',
+              ].join(' ')}
+            />
+          </div>
+
+          {/* rdpLaunchHint */}
+          <div className="grid grid-cols-[220px_1fr] items-start gap-4 mb-2">
+            <label className="text-sm text-admin-label pt-2.5">
+              Удаленный доступ
+            </label>
+            <textarea
+              rows={3}
+              placeholder="Например: введите IP-адрес компьютера, к которому нужно подключиться."
+              {...register('rdpLaunchHint')}
+              className={[
+                inputBase,
+                'resize-y',
+                errors.rdpLaunchHint
+                  ? 'border-red-400'
+                  : 'border-transparent focus:border-admin-accent',
+              ].join(' ')}
+            />
           </div>
 
           {/* updatedAt */}

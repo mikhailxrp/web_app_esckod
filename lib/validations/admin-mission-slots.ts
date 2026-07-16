@@ -57,7 +57,7 @@ export const crackSlotSchema = z.object({
 export const decipherSlotSchema = z.object({
   cipherType: z.nativeEnum(CipherType),
   encryptedWord: z.string().trim().min(1, 'Зашифрованное слово обязательно'),
-  cipherKey: z.string().trim().min(1, 'Ключ шифра обязателен'),
+  cipherKey: z.string().trim().min(1, 'Кодовое слово шифра обязательно'),
   folderPassword: z.string().trim().min(1, 'Пароль папки обязателен'),
   folderPath: z.string().trim().min(1, 'Путь к папке обязателен'),
   unlocksRdpFolder: z.string().trim().min(1).nullable(),

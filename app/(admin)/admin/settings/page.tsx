@@ -25,6 +25,9 @@ export default async function SettingsPage(): Promise<React.ReactElement> {
     id: settings.id,
     supportEmail: settings.supportEmail,
     defaultMarketingConsent: settings.defaultMarketingConsent,
+    crackLaunchHint: settings.crackLaunchHint,
+    decipherLaunchHint: settings.decipherLaunchHint,
+    rdpLaunchHint: settings.rdpLaunchHint,
     updatedAt: settings.updatedAt.toISOString(),
   };
 

@@ -27,7 +27,7 @@ export function LogEntry({ log }: LogEntryProps): React.ReactElement {
         className="block h-px w-full bg-[repeating-linear-gradient(to_right,rgba(255,255,255,0.3)_0,rgba(255,255,255,0.3)_10px,transparent_10px,transparent_16px)]"
         aria-hidden="true"
       />
-      <span className={`justify-self-end text-right ${LOG_TYPE_CLASS[log.type]}`}>
+      <span className={`justify-self-end whitespace-pre-line text-right ${LOG_TYPE_CLASS[log.type]}`}>
         {log.message}
       </span>
     </div>

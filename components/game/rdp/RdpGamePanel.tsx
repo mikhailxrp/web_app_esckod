@@ -1,13 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
 
 import { PipesPuzzle } from "@/components/game/rdp/PipesPuzzle";
 import { RdpCompletedView } from "@/components/game/rdp/RdpCompletedView";
 import { RdpHintButton } from "@/components/game/rdp/RdpHintButton";
 import { WindowsSimulation } from "@/components/game/rdp/WindowsSimulation";
+import type { WindowsSimulationHandle } from "@/components/game/rdp/WindowsSimulation";
 import GameLoader from "@/components/ui/GameLoader";
 import { toast } from "@/components/ui/Toast";
 import type { PuzzleField } from "@/lib/rdp/types";
@@ -68,6 +69,7 @@ export function RdpGamePanel({
     isCompleted ? { phase: "completed" } : { phase: "loading" },
   );
   const [unlockedCount, setUnlockedCount] = useState(0);
+  const windowsSimRef = useRef<WindowsSimulationHandle>(null);
 
   const refreshLogs = useLogStore((s) => s.refreshLogs);
   const refreshChat = useChatStore((s) => s.refresh);
@@ -210,6 +212,21 @@ export function RdpGamePanel({
   const showCloseButton =
     stage.phase !== "files" || rdpScenario !== 1 || unlockedCount > 0;
 
+  // During the files stage, defer to WindowsSimulation first — it may have
+  // open PDF viewers that were never closed via their own (X), whose views
+  // never reached the server. Outside the files stage there's nothing to
+  // flush, so Minimize/Close behave exactly as before.
+  const handleMinimizeOrClose = useCallback(
+    (intent: "minimize" | "close"): void => {
+      if (stage.phase === "files" && windowsSimRef.current) {
+        windowsSimRef.current.requestClose(intent);
+      } else {
+        onClose();
+      }
+    },
+    [stage.phase, onClose],
+  );
+
   return (
     <article
       className="relative flex flex-col overflow-hidden rounded-game-lg border border-white bg-[rgba(255,255,255,0.08)] shadow-game-card"
@@ -252,7 +269,7 @@ export function RdpGamePanel({
             <div className="relative group">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={() => handleMinimizeOrClose("minimize")}
                 aria-label="Свернуть — прогресс сохранен"
                 className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
               >
@@ -280,22 +297,34 @@ export function RdpGamePanel({
             </div>
           ) : null}
 
-          {/* Close (X) — hidden during files stage for scenario 1 until first folder unlocked */}
+          {/* Close (X) — hidden during files stage for scenario 1 until first folder unlocked.
+              Styled distinctly from Minimize (error tone, not accent) since this is the
+              button most often confused with the small (X) inside a PDF/folder window —
+              a visible tooltip here (matching Minimize) makes its purpose clear before the
+              click, not just via aria-label. */}
           {showCloseButton ? (
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Закрыть удаленный доступ"
-              className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-accent"
-            >
-              <Image
-                src="/assets/icons/close.svg"
-                alt=""
-                width={16}
-                height={16}
-                aria-hidden="true"
-              />
-            </button>
+            <div className="relative group">
+              <button
+                type="button"
+                onClick={() => handleMinimizeOrClose("close")}
+                aria-label="Закрыть удаленный доступ"
+                className="flex size-7 items-center justify-center rounded-game-sm border border-border transition-colors hover:border-border-error"
+              >
+                <Image
+                  src="/assets/icons/close.svg"
+                  alt=""
+                  width={16}
+                  height={16}
+                  aria-hidden="true"
+                />
+              </button>
+              <span
+                className="pointer-events-none absolute right-0 top-full mt-1.5 whitespace-nowrap rounded-game-sm border border-border bg-bg-secondary px-2 py-1 font-mono text-game-xs text-content-secondary opacity-0 group-hover:opacity-100 transition-opacity z-50"
+                role="tooltip"
+              >
+                Закрыть окно удаленного доступа
+              </span>
+            </div>
           ) : null}
         </div>
       </div>
@@ -373,10 +402,12 @@ export function RdpGamePanel({
 
         {stage.phase === "files" ? (
           <WindowsSimulation
+            ref={windowsSimRef}
             slotKey={slotKey}
             rdpScenario={rdpScenario as RdpScenario}
             onCompleted={() => void handleCompleted()}
             onUnlockedCountChange={setUnlockedCount}
+            onCloseMission={onClose}
           />
         ) : null}
 

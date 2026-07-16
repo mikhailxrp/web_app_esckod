@@ -114,9 +114,12 @@ function isPairConnected(
  * Вычисляет прогресс связности пазла (0..1).
  *
  * Метрика зависит от числа линий:
- * - 1 линия (сц.1, может содержать decoy-обманки) — клеточная метрика неверна
- *   (обманки никогда не достижимы), поэтому считаем по факту соединения пары:
- *   0 или 1.
+ * - 1 линия (сц.1, может содержать decoy-обманки) — доля клеток пути (непустые
+ *   плитки), достижимых BFS от входа, среди `pathTileCount` — суммарной длины
+ *   «настоящего» пути без decoy-обманок (обманки в этот путь не входят, см.
+ *   `pipesPuzzleGenerator.ts`). Если `pathTileCount` не задан (старое
+ *   сохраненное поле или demo-фикстура без него) — используем факт соединения
+ *   пары: 0 или 1.
  * - ≥2 линий (сц.2, без обманок) — плавная метрика: доля достижимых непустых
  *   плиток (все непустые плитки лежат на путях).
  */
@@ -125,7 +128,12 @@ export function computePuzzleProgress(field: PuzzleField): number {
   if (pairs === 0) return 1;
 
   if (pairs === 1) {
-    return isPairConnected(field, field.entries[0], field.exits[0]) ? 1 : 0;
+    if (!field.pathTileCount) {
+      return isPairConnected(field, field.entries[0], field.exits[0]) ? 1 : 0;
+    }
+
+    const reachable = bfsReachable(field);
+    return Math.min(1, reachable.size / field.pathTileCount);
   }
 
   const nonEmpty = field.tiles.filter((t) => t.type !== 'EMPTY');

@@ -84,9 +84,9 @@ const MIN_PATH_CORNERS: Record<Scenario, number> = {
  *
  * Это нижний порог (floor): DFS с goal-jitter естественно петляет длиннее, и
  * фактическая плотность выходит ~60% (сц.1) / ~65% (сц.2) — поле «гуще» и
- * заметно разбросаннее двух прежних блобов у границы. Все клетки остаются «на
- * пути» — инвариант solver'а и прогресс-бара цел (decoy-плитки сломали бы
- * `isLocallySolved`/`computePuzzleProgress`).
+ * заметно разбросаннее двух прежних блобов у границы. Длина пути (без учета
+ * decoy-обманок, добавленных позже) сохраняется как `pathTileCount` —
+ * знаменатель для `computePuzzleProgress` в сц.1.
  *
  * Сознательно НЕ «под завязку»: запас до полного заполнения держит укладку двух
  * вершинно-непересекающихся путей надежной (низкий риск исчерпания попыток —
@@ -487,9 +487,17 @@ export const buildSolvedField = (
         dirs = [directionBetween(cell, prev), directionBetween(cell, next)];
       } else {
         // Endpoint: коннектор к единственному соседу + «наружу» сетки.
+        // outward фиксирован по роли (entry→N, exit→S), а НЕ OPPOSITE(inward):
+        // UI всегда рисует маркер-точку у верхнего края тайла для entry и у
+        // нижнего для exit (PipesPuzzle.tsx, `-top-1.5`/`-bottom-1.5`) — вне
+        // зависимости от того, в какую сторону путь уходит от угла. При
+        // OPPOSITE(inward) путь, уходящий от угла вбок (E/W), давал
+        // горизонтальный outward-коннектор, который визуально не совпадал с
+        // точкой над/под тайлом — первый сегмент казался «не выходящим» из
+        // точки и провоцировал игрока покрутить его, хотя тайл заблокирован.
         const inwardNeighbor = prev ?? next;
         const inward = directionBetween(cell, inwardNeighbor);
-        const outward = OPPOSITE[inward]; // у углового endpoint всегда за границей
+        const outward: Direction = prev ? 'S' : 'N';
         dirs = [inward, outward];
       }
 
@@ -516,6 +524,7 @@ export const buildSolvedField = (
     tiles,
     entries: endpoints.entries.map((p) => ({ ...p })),
     exits: endpoints.exits.map((p) => ({ ...p })),
+    pathTileCount: pathSet.size,
   };
 };
 

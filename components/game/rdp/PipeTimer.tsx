@@ -3,8 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 
-const LOW_THRESHOLD_SECONDS = 20;
-
 function computeRemaining(timerStartedAt: string, timerSeconds: number): number {
   const elapsed = Math.floor((Date.now() - new Date(timerStartedAt).getTime()) / 1000);
   return Math.max(0, timerSeconds - elapsed);
@@ -42,18 +40,14 @@ export function PipeTimer({ timerStartedAt, timerSeconds, onExpire }: PipeTimerP
 
   const minutes = Math.floor(remaining / 60);
   const seconds = remaining % 60;
-  const isLow = remaining <= LOW_THRESHOLD_SECONDS;
 
   return (
     <div
-      className={[
-        'font-mono tabular-nums transition-colors',
-        isLow ? 'text-semantic-error' : 'text-accent',
-      ].join(' ')}
+      className="font-mono tabular-nums text-semantic-error"
       aria-live="polite"
       aria-label={`Оставшееся время: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`}
     >
-      <span className="text-[1.225rem] font-bold tracking-widest">
+      <span className="text-game-xl font-bold tracking-widest">
         {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
       </span>
     </div>

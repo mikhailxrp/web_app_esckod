@@ -138,7 +138,7 @@ export function AudioPlayer({
             <button
               key={`${src}-${index}`}
               type="button"
-              onClick={() => seekByBar(index + 1)}
+              onClick={() => seekByBar(index)}
               aria-label={`Перейти к позиции ${index + 1}`}
               className={[
                 'w-1.5 rounded-full transition-colors',

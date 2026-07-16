@@ -23,7 +23,10 @@ export function HintTooltip({
   onClose,
 }: HintTooltipProps): ReactElement {
   const top = anchorRect.bottom + window.scrollY + GAP;
-  const left = anchorRect.right + window.scrollX - TOOLTIP_WIDTH;
+  const left = Math.min(
+    anchorRect.left + window.scrollX,
+    window.innerWidth + window.scrollX - TOOLTIP_WIDTH - GAP,
+  );
 
   return createPortal(
     <div
@@ -33,7 +36,7 @@ export function HintTooltip({
     >
       <span
         aria-hidden="true"
-        className="absolute -top-2 right-[14px] h-0 w-0 border-x-8 border-b-8 border-x-transparent border-b-white/30"
+        className="absolute -top-2 left-[14px] h-0 w-0 border-x-8 border-b-8 border-x-transparent border-b-white/30"
       />
 
       <div className="mb-2 flex items-start justify-between gap-2">
