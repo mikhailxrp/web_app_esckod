@@ -487,9 +487,17 @@ export const buildSolvedField = (
         dirs = [directionBetween(cell, prev), directionBetween(cell, next)];
       } else {
         // Endpoint: коннектор к единственному соседу + «наружу» сетки.
+        // outward фиксирован по роли (entry→N, exit→S), а НЕ OPPOSITE(inward):
+        // UI всегда рисует маркер-точку у верхнего края тайла для entry и у
+        // нижнего для exit (PipesPuzzle.tsx, `-top-1.5`/`-bottom-1.5`) — вне
+        // зависимости от того, в какую сторону путь уходит от угла. При
+        // OPPOSITE(inward) путь, уходящий от угла вбок (E/W), давал
+        // горизонтальный outward-коннектор, который визуально не совпадал с
+        // точкой над/под тайлом — первый сегмент казался «не выходящим» из
+        // точки и провоцировал игрока покрутить его, хотя тайл заблокирован.
         const inwardNeighbor = prev ?? next;
         const inward = directionBetween(cell, inwardNeighbor);
-        const outward = OPPOSITE[inward]; // у углового endpoint всегда за границей
+        const outward: Direction = prev ? 'S' : 'N';
         dirs = [inward, outward];
       }
 

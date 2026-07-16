@@ -734,6 +734,7 @@ export async function checkPuzzle(
       missionType: true,
       isActive: true,
       logSubjectName: true,
+      correctIp: true,
     },
   });
 
@@ -787,6 +788,7 @@ export async function checkPuzzle(
           type: LogType.SUCCESS,
           message: renderLogMessage("rdp_puzzle_solved", {
             logSubjectName: slot.logSubjectName ?? "—",
+            ip: slot.correctIp ?? "—",
           }),
         },
       });

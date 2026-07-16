@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 
 import { FolderContent } from '@/components/game/rdp/FolderContent';
 import { FolderIcon } from '@/components/game/rdp/FolderIcon';
 import { FolderPasswordPrompt } from '@/components/game/rdp/FolderPasswordPrompt';
 import { PdfViewer } from '@/components/game/rdp/PdfViewer';
+import { RdpCloseWarningModal } from '@/components/game/rdp/RdpCloseWarningModal';
 import { SessionLostModal } from '@/components/game/rdp/SessionLostModal';
 import { SessionTerminatedModal } from '@/components/game/rdp/SessionTerminatedModal';
 import { fetchWithVersion } from '@/lib/api/fetchWithVersion';
@@ -58,16 +59,23 @@ interface WindowsSimulationProps {
   rdpScenario: RdpScenario;
   onCompleted: () => void;
   onUnlockedCountChange: (count: number) => void;
+  /** Real close/minimize of the mission window (bubbled from RdpGamePanel). */
+  onCloseMission: () => void;
+}
+
+export interface WindowsSimulationHandle {
+  /** RdpGamePanel calls this instead of closing directly, so we get a chance
+   *  to flush any still-open PDF viewers first (see requestClose below). */
+  requestClose: (intent: 'minimize' | 'close') => void;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export function WindowsSimulation({
-  slotKey,
-  rdpScenario,
-  onCompleted,
-  onUnlockedCountChange,
-}: WindowsSimulationProps): ReactElement {
+export const WindowsSimulation = forwardRef<WindowsSimulationHandle, WindowsSimulationProps>(
+  function WindowsSimulation(
+    { slotKey, rdpScenario, onCompleted, onUnlockedCountChange, onCloseMission },
+    ref,
+  ): ReactElement {
   const showTriggeredMessage = useChatStore((s) => s.showTriggeredMessage);
   const refreshLogs = useLogStore((s) => s.refreshLogs);
 
@@ -80,6 +88,12 @@ export function WindowsSimulation({
   const [passwordFolder, setPasswordFolder] = useState<RdpFolderView | null>(null);
   // Scenario 1: плашка «файлы скрыты» → клик → показать SessionLostModal
   const [showSessionLostModal, setShowSessionLostModal] = useState(false);
+  // Игрок попытался свернуть/закрыть окно миссии, пока есть незакрытые PDF-окна
+  const [closeWarning, setCloseWarning] = useState<{
+    intent: 'minimize' | 'close';
+    fileNames: string[];
+  } | null>(null);
+  const [isClosingWithFlush, setIsClosingWithFlush] = useState(false);
 
   // Track cascading position per window (stable across re-renders)
   const windowPositions = useRef<Map<WindowId, number>>(new Map());
@@ -87,11 +101,15 @@ export function WindowsSimulation({
   // Stable refs to avoid stale closures in callbacks
   const onCompletedRef = useRef(onCompleted);
   const onUnlockedCountChangeRef = useRef(onUnlockedCountChange);
+  const onCloseMissionRef = useRef(onCloseMission);
   useEffect(() => {
     onCompletedRef.current = onCompleted;
   });
   useEffect(() => {
     onUnlockedCountChangeRef.current = onUnlockedCountChange;
+  });
+  useEffect(() => {
+    onCloseMissionRef.current = onCloseMission;
   });
 
   const getScenarioFinal = useCallback((): RdpScenarioFinal => {
@@ -255,7 +273,9 @@ export function WindowsSimulation({
     [folders, openExplorer, reportUnlockedCount, loadFiles],
   );
 
-  const handleViewerClose = useCallback(
+  // Общая обработка ответа /file-viewed — переиспользуется и одиночным
+  // закрытием PDF-окна, и «пакетным» флашем при сворачивании/закрытии миссии.
+  const applyFileViewedResult = useCallback(
     (windowId: WindowId, result: RdpFileViewedResult): void => {
       closeWindow(windowId);
       setVersion(result.version);
@@ -275,6 +295,104 @@ export function WindowsSimulation({
     },
     [closeWindow, showTriggeredMessage, refreshLogs],
   );
+
+  const handleViewerClose = useCallback(
+    (windowId: WindowId, result: RdpFileViewedResult): void => {
+      applyFileViewedResult(windowId, result);
+    },
+    [applyFileViewedResult],
+  );
+
+  // Игрок открыл PDF, но так и не закрыл его собственным крестиком, а вместо
+  // этого пытается свернуть/закрыть окно миссии целиком. Без этого шага
+  // file-viewed для таких файлов никогда не ушёл бы на сервер — просмотр
+  // «терялся» бы молча, и автоматический сюжетный триггер (потеря доступа /
+  // чат Марины) не сработал бы, хотя игрок реально открывал и читал файл.
+  // Репортим по очереди, последовательно продвигая expectedVersion.
+  const flushOpenViewers = useCallback(async (): Promise<boolean> => {
+    const viewerWindows = windows.filter(
+      (w): w is ViewerWindow => w.type === 'viewer',
+    );
+
+    let currentVersion = version;
+    let didTrigger = false;
+
+    for (const w of viewerWindows) {
+      try {
+        const res = await fetchWithVersion(`/api/missions/rdp/${slotKey}/file-viewed`, {
+          body: { fileId: w.file.id, expectedVersion: currentVersion },
+          onConflict: async () => {
+            await loadFiles();
+          },
+        });
+
+        if (res.status === 409) {
+          // onConflict уже перезагрузил актуальное состояние — локальный
+          // список windows устарел, дальше по этой пачке не идём.
+          return didTrigger;
+        }
+
+        if (!res.ok) {
+          // Не блокируем закрытие из-за отдельного сбоя — просто оставляем
+          // это окно как есть, не теряя его молча из вида.
+          continue;
+        }
+
+        const result = (await res.json()) as RdpFileViewedResult;
+        currentVersion = result.version;
+        applyFileViewedResult(w.id, result);
+        if (result.triggered && result.scenarioFinal) {
+          didTrigger = true;
+        }
+      } catch (err) {
+        console.error('[WindowsSimulation.flushOpenViewers]', err);
+      }
+    }
+
+    return didTrigger;
+  }, [windows, version, slotKey, loadFiles, applyFileViewedResult]);
+
+  const requestClose = useCallback(
+    (intent: 'minimize' | 'close'): void => {
+      // Only intercept while actually browsing files. Once the story trigger
+      // has already fired (or while loading/erroring), there is nothing
+      // meaningful left to flush — any leftover `windows` entries are stale
+      // and the SessionLost/SessionTerminated overlay may already be asking
+      // for the player's attention, so don't stack another modal on top.
+      if (stage.phase !== 'browsing') {
+        onCloseMissionRef.current();
+        return;
+      }
+
+      const openFileNames = windows
+        .filter((w): w is ViewerWindow => w.type === 'viewer')
+        .map((w) => w.file.name);
+
+      if (openFileNames.length === 0) {
+        onCloseMissionRef.current();
+        return;
+      }
+
+      setCloseWarning({ intent, fileNames: openFileNames });
+    },
+    [stage.phase, windows],
+  );
+
+  useImperativeHandle(ref, () => ({ requestClose }), [requestClose]);
+
+  const handleConfirmClose = useCallback(async (): Promise<void> => {
+    setIsClosingWithFlush(true);
+    const didTrigger = await flushOpenViewers();
+    setIsClosingWithFlush(false);
+    setCloseWarning(null);
+
+    // Если флаш только что активировал сюжетный триггер — не закрываем окно
+    // миссии молча, даём игроку увидеть тот же экран, что он увидел бы,
+    // закрыв файл правильно (SessionLostModal / SessionTerminatedModal).
+    if (!didTrigger) {
+      onCloseMissionRef.current();
+    }
+  }, [flushOpenViewers]);
 
   // ─── Render ──────────────────────────────────────────────────────────────
 
@@ -442,6 +560,20 @@ export function WindowsSimulation({
           onConflict={handleConflict}
         />
       ) : null}
+
+      {/* Попытка свернуть/закрыть миссию с незакрытыми PDF-окнами */}
+      {closeWarning ? (
+        <RdpCloseWarningModal
+          intent={closeWarning.intent}
+          fileNames={closeWarning.fileNames}
+          busy={isClosingWithFlush}
+          onConfirm={() => void handleConfirmClose()}
+          onCancel={() => setCloseWarning(null)}
+        />
+      ) : null}
     </div>
   );
-}
+  },
+);
+
+WindowsSimulation.displayName = 'WindowsSimulation';
