@@ -20,7 +20,7 @@ jobs:
             cd /apps/esckod-prod
             git reset --hard HEAD
             git pull origin main
-            npm install
+            npm ci
             ./node_modules/.bin/prisma migrate deploy
             ./node_modules/.bin/prisma generate
             npm run build
