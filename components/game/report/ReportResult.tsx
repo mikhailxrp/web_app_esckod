@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { ParagraphText } from "@/components/game/ui/ParagraphText";
 
 interface AnswerItem {
   questionText: string;
@@ -181,12 +182,12 @@ export function ReportResult({
                 className="rounded-game-lg border border-white/80 bg-[rgba(255,255,255,0.1)] p-4 backdrop-blur-sm"
               >
                 {block.text && (
-                  <p
+                  <div
                     className="mb-3 font-mono font-normal tracking-wide"
                     style={{ fontSize: 16, color: "#44DFD7", lineHeight: 1.25 }}
                   >
-                    {block.text}
-                  </p>
+                    <ParagraphText text={block.text} linkify />
+                  </div>
                 )}
                 <div className="flex flex-wrap items-start gap-3">
                   {blockImages.map((img) => (

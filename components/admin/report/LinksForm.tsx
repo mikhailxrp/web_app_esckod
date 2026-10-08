@@ -271,6 +271,9 @@ export function LinksForm({ initialBlocks }: LinksFormProps): React.ReactElement
                     className={textareaBase}
                     placeholder="Текст для блока"
                   />
+                  <p className="text-xs text-admin-placeholder mt-1.5">
+                    Пустая строка — новый абзац. Адреса вида https://… у игрока станут кликабельными ссылками.
+                  </p>
                 </div>
 
                 {/* Файлы блока */}

@@ -60,7 +60,6 @@ export function DecipherCompletedView({
             <div className="relative">
               <input
                 readOnly
-                type="password"
                 value={folderPassword}
                 aria-label="Пароль от папки"
                 className={`${FIELD_CLASS} pr-12`}
