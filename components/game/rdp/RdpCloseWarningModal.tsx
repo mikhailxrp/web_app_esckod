@@ -47,13 +47,12 @@ export function RdpCloseWarningModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="font-accent text-game-sm uppercase tracking-game-wide text-content-primary">
-          Файл ещё открыт
+          Файл еще открыт
         </h2>
         <p className="font-mono text-game-sm text-content-secondary">
-          Вы открывали файл, но не закрыли его крестиком в его собственном
-          окне. При {intent === 'minimize' ? 'сворачивании' : 'закрытии'}{' '}
-          окна удалённого доступа он будет автоматически отмечен как
-          просмотренный:
+          {intent === 'minimize'
+            ? 'Вы уверены, что хотите свернуть окно удаленного доступа?'
+            : 'Вы уверены что хотите прервать сеанс удаленного доступа?'}
         </p>
 
         <ul className="flex flex-col gap-1 font-mono text-game-sm text-content-primary">
