@@ -74,7 +74,6 @@ export function CrackCompletedView({
             <div className="relative">
               <input
                 readOnly
-                type="password"
                 value={resultPassword}
                 aria-label="Пароль"
                 className={`${FIELD_CLASS} pr-12`}
