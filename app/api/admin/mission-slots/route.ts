@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { type MissionSlot, Prisma } from '@prisma/client';
+import { CipherType, type MissionSlot, Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { getMissionSlotWarnings } from '@/lib/admin/missionSlotWarnings';
 import { adminAuth as auth } from '@/lib/auth-admin';
+import { getPlayfairConfigError } from '@/lib/decipher/playfair';
 import { prisma } from '@/lib/prisma';
 import { createMissionSlotSchema } from '@/lib/validations/admin-mission-slots';
 
@@ -148,6 +149,13 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   if (!parsed.success) {
     return validationErrorResponse(parsed.error.errors[0]?.message);
+  }
+
+  if (parsed.data.missionType === 'DECIPHER' && parsed.data.cipherType === CipherType.PLAYFAIR) {
+    const playfairError = getPlayfairConfigError(parsed.data.encryptedWord, parsed.data.cipherKey);
+    if (playfairError) {
+      return validationErrorResponse(playfairError);
+    }
   }
 
   try {

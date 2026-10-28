@@ -7,6 +7,7 @@ import {
   RDP_TIMER_SECONDS_MAX,
   RDP_TIMER_SECONDS_MIN,
 } from '@/constants/missionSlotLimits';
+import { normalizeRu } from '@/constants/russianAlphabet';
 
 const PLAYFAIR_RESTRICTED_RE = /[ЮЯ]/;
 
@@ -20,6 +21,13 @@ function playfairRefine(
       code: z.ZodIssueCode.custom,
       path: ['encryptedWord'],
       message: 'Playfair: буквы Ю и Я недопустимы — они не входят в таблицу 6×6',
+    });
+  }
+  if (normalizeRu(data.encryptedWord).length % 2 !== 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['encryptedWord'],
+      message: 'Playfair: число букв должно быть чётным — шифр работает парами',
     });
   }
   if (PLAYFAIR_RESTRICTED_RE.test(data.cipherKey)) {
