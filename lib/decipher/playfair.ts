@@ -99,3 +99,26 @@ export function decipherPlayfair(encryptedWord: string, key: string): string {
 
   return result;
 }
+
+const PLAYFAIR_CONFIG_ERROR_MESSAGES: Record<string, string> = {
+  PLAYFAIR_ODD_LENGTH: 'Playfair: число букв должно быть чётным — шифр работает парами',
+  PLAYFAIR_CHAR_NOT_FOUND: 'Playfair: в слове или ключе есть буква вне таблицы 6×6',
+  PLAYFAIR_EMPTY_CELL:
+    'Playfair: с этим ключом слово не расшифровывается — пара букв попадает на пустую ячейку таблицы',
+};
+
+/**
+ * Пробная расшифровка для админки: возвращает текст ошибки конфигурации слота или null.
+ * ТОЛЬКО СЕРВЕР — вызывается из API-маршрутов слотов, чтобы не сохранить нерасшифровываемый слот.
+ */
+export function getPlayfairConfigError(encryptedWord: string, key: string): string | null {
+  try {
+    decipherPlayfair(encryptedWord, key);
+    return null;
+  } catch (error) {
+    if (error instanceof Error && error.message in PLAYFAIR_CONFIG_ERROR_MESSAGES) {
+      return PLAYFAIR_CONFIG_ERROR_MESSAGES[error.message];
+    }
+    throw error;
+  }
+}

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { type MissionSlot, MissionType } from '@prisma/client';
+import { CipherType, type MissionSlot, MissionType } from '@prisma/client';
 import { writeAuditLog } from '@/lib/admin/auditLog';
 import { getMissionSlotWarnings } from '@/lib/admin/missionSlotWarnings';
 import { adminAuth as auth } from '@/lib/auth-admin';
+import { getPlayfairConfigError } from '@/lib/decipher/playfair';
 import { prisma } from '@/lib/prisma';
 import {
   updateCrackMissionSlotSchema,
@@ -175,6 +176,13 @@ export async function PATCH(
 
     if (!parsed.success) {
       return validationErrorResponse(parsed.error.errors[0]?.message);
+    }
+
+    if ('cipherType' in parsed.data && parsed.data.cipherType === CipherType.PLAYFAIR) {
+      const playfairError = getPlayfairConfigError(parsed.data.encryptedWord, parsed.data.cipherKey);
+      if (playfairError) {
+        return validationErrorResponse(playfairError);
+      }
     }
 
     if (parsed.data.isActive === false) {
