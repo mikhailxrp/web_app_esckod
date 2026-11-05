@@ -4,6 +4,10 @@ on:
   push:
     branches: [dev]
 
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -14,15 +18,17 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
           script: |
+            set -e
             export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
             cd /apps/esckod-dev
-            git reset --hard HEAD
-            git pull origin dev
+            git fetch origin dev
+            git reset --hard origin/dev
             npm ci
             ./node_modules/.bin/prisma migrate deploy
             ./node_modules/.bin/prisma generate
             npm run build
-            pm2 restart esckod-dev || pm2 start /root/.nvm/versions/node/v20.20.2/bin/node --name "esckod-dev" -- /apps/esckod-dev/node_modules/.bin/next start -p 3001
+            pm2 restart esckod-dev --update-env
             pm2 save
