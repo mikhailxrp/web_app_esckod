@@ -1,0 +1,865 @@
+{
+  "version": 1,
+  "scripts": [
+    {
+      "code": "det_01_intro",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Привет! Будем работать вместе. Я мог бы поздравить тебя с первым заданием, но праздновать нечего. \n\nКаждое новое дело – для кого-то трагедия. Давай поможем людям разобраться в произошедшем. Я – детектив, можешь звать меня Гоша. Я буду ездить на допросы, собирать информацию и расследовать дело. Ты – мои глаза и руки внутри этих ваших современных штучек. Раньше взламывали двери, а теперь вот папки.\n\nТы не подумай, я не совсем дундук, но лучше каждому заниматься тем, что он умеет. Твои действия в системе и их результаты мне видны. Так что все, что знаешь ты, знаю и я. Твой предшественник придумал, так реально оперативнее. Тебе уже провели инструктаж, поэтому за работу! Первым делом нужно изучить сайт компании, этих P2 Digital Group. Лови ссылку:  https://example.com. Посмотри, можно ли их взломать и узнать побольше полезного.",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": true,
+      "isEnd": false
+    },
+    {
+      "code": "det_02_player_intro",
+      "chatType": "DETECTIVE",
+      "author": "PLAYER",
+      "text": null,
+      "hasChoices": true,
+      "choices": [
+        {
+          "label": "Привет! Приятно познакомиться! Все понятно, приступаю к работе.",
+          "value": "option_1"
+        },
+        {
+          "label": "Привет! Ничего не понятно, но по ходу дела разберемся! А что случилось с моим предшественником?",
+          "value": "option_2"
+        },
+        {
+          "label": "Привет! Ок.",
+          "value": "option_3"
+        }
+      ],
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_02_wait",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": null,
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_03_after_crack1",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Вот чем можешь заняться после изучения сайта: подключись к компьютеру погибшего, Виктора Пака. Удалось найти его IP адрес: 192.168.1.10. Есть ли там что-то важное, или он успел все стереть? Как вернусь с допросов, напишу. Работай пока",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_04_player_crack1",
+      "chatType": "DETECTIVE",
+      "author": "PLAYER",
+      "text": null,
+      "hasChoices": true,
+      "choices": [
+        {
+          "label": "Сейчас разберусь с сайтом и подключусь.",
+          "value": "option_1"
+        },
+        {
+          "label": "А обед в нашем графике предусмотрен?",
+          "value": "option_2"
+        },
+        {
+          "label": "Ок.",
+          "value": "option_3"
+        }
+      ],
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_04_wait",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": null,
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_05_after_rdp",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Как успехи? Я успел провести допрос жены погибшего, Елены, и его бизнес-партнера и друга, Евгения. Кидаю тебе записи, может, заметишь то, на что я не обратил внимания. А еще я захватил из дома Виктора Пака несколько бумаг, открой конверт в коробке и погляди на них.",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_06_audio_files",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Файл 1 — допрос Евгения.\n\nТУТ РАСШИФРОВКА АУДИО",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_06_audio_files_elena",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Файл 2 - Аудио допрос Елены.\nРасшифровка тут",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_07_player_rdp",
+      "chatType": "DETECTIVE",
+      "author": "PLAYER",
+      "text": null,
+      "hasChoices": true,
+      "choices": [
+        {
+          "label": "На сайте компании и на компьютере жертвы есть зашифрованные папки. Может, найду подсказку к одной из них в записях допросов.",
+          "value": "option_1"
+        },
+        {
+          "label": "А как скинуть мем, если тут можно прикреплять файлы?",
+          "value": "option_2"
+        },
+        {
+          "label": "Хорошо. А вы часто что-то упускаете?",
+          "value": "option_3"
+        }
+      ],
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_07_wait",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": null,
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_08_after_decipher",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Новичок, кажется, что наша главная зацепка - Светлана. Как ты думаешь, где получится накопать больше полезной информации про нее? Детский дом, группа анонимных алкоголиков или юристы P2?",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_09_player_branch",
+      "chatType": "DETECTIVE",
+      "author": "PLAYER",
+      "text": null,
+      "hasChoices": true,
+      "choices": [
+        {
+          "label": "Сходи в детский дом, там может быть ее характеристика и контакты знакомых с тех времен.",
+          "value": "orphanage"
+        },
+        {
+          "label": "Анонимные алкоголики. Звучит весело. Они друг про друга должны много знать.",
+          "value": "aa"
+        },
+        {
+          "label": "Думаю, надо к юристам Р2. Нужны факты, а не догадки.",
+          "value": "lawyers"
+        }
+      ],
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_10_branch_aa",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Хорошо, наведаюсь туда. А ты пока можешь изучить сайт вуза, который называла Елена. Вот он: https://example.com",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_10_branch_lawyers",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Хорошо, наведаюсь туда. А ты пока можешь изучить сайт вуза, который называла Елена. Вот он: https://example.com",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_10_branch_orphanage",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Хорошо, наведаюсь туда. А ты пока можешь изучить сайт вуза, который называла Елена. Вот он: https://example.com.",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_10_wait_aa",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": null,
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_10_wait_lawyers",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": null,
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_10_wait_orphanage",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": null,
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_11_branch_aa",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Плохие новости, у нас появились новые жертвы – сотрудники компании Каперон Консалт. \n\nТе самые, кто купил у наших Р2 ИИ-ассистента. \n\nСовпадение? \n\nКак и у Виктора нет никаких доказательств насильственной смерти, у двоих была прощальная записка. Версия полиции могла быть верной ровно до этого момента. Чуйка подсказывает, что источник – этот самый ИИ-ассистент, но если это так, то тебе нужно напрячь извилины, новичок. \n\nЯ тут без тебя не справлюсь. Перепроверь все, нам нельзя ничего упускать! Кстати, лови еще одну запись допроса. Изучи внимательно и поскорее. Мы не знаем, когда может произойти следующий случай.",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_11_branch_lawyers",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Плохие новости, у нас появились новые жертвы – сотрудники компании Каперон Консалт. Те самые, кто купил у наших Р2 ИИ-ассистента. \n\nСовпадение? \n\nКак и у Виктора нет никаких доказательств насильственной смерти, у двоих была прощальная записка. Версия полиции могла быть верной ровно до этого момента. Чуйка подсказывает, что источник – этот самый ИИ-ассистент, но если это так, то тебе нужно напрячь извилины, новичок. \n\nЯ тут без тебя не справлюсь. Перепроверь все, нам нельзя ничего упускать! \n\nКстати, лови еще одну запись допроса. Изучи внимательно и поскорее. Мы не знаем, когда может произойти следующий случай.",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_11_branch_orphanage",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Плохие новости, у нас появились новые жертвы – сотрудники компании Каперон Консалт. Те самые, кто купил у наших Р2 ИИ-ассистента. \n\nСовпадение? \n\nКак и у Виктора нет никаких доказательств насильственной смерти, у двоих была прощальная записка. Версия полиции могла быть верной ровно до этого момента. Чуйка подсказывает, что источник – этот самый ИИ-ассистент, но если это так, то тебе нужно напрячь извилины, новичок. \n\nЯ тут без тебя не справлюсь. Перепроверь все, нам нельзя ничего упускать! \n\nКстати, лови еще одну запись допроса. Изучи внимательно и поскорее. Мы не знаем, когда может произойти следующий случай.",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_12_audio_aa",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Аудио допрос из группы анонимных алкоголиков.\nТут расшифровка аудио",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_12_audio_lawyers",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Аудио допрос юристов Р2.\nРасшифровка аудио",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_12_audio_orphanage",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Аудио допрос из детского дома.\n\nРасшифровка Аудио",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_13_player_after_crack2",
+      "chatType": "DETECTIVE",
+      "author": "PLAYER",
+      "text": null,
+      "hasChoices": true,
+      "choices": [
+        {
+          "label": "Что за черт. Сейчас все перепроверю.",
+          "value": "option_1"
+        },
+        {
+          "label": "Гоша, а ничо тот факт, что я тут первый день?",
+          "value": "option_2"
+        },
+        {
+          "label": "Перепроверять не надо, я знаю, что делать.",
+          "value": "option_3"
+        }
+      ],
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_13_wait_marina",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": null,
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_14_final_prompt",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Видел вашу переписку. Давай так, новичок. У меня работы полон…ноутбук. Сможешь сдать вместо меня финальный отчет? Я приму любое твое решение, но хорошенько подумай о последствиях. Это хороший урок для первого дела. Выбор никогда не бывает легким.",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_15_player_final",
+      "chatType": "DETECTIVE",
+      "author": "PLAYER",
+      "text": null,
+      "hasChoices": true,
+      "choices": [
+        {
+          "label": "Мне нужно подумать, это сложный выбор.",
+          "value": "option_1"
+        },
+        {
+          "label": "Я, кажется, понимаю, почему ушел мой предшественник.",
+          "value": "option_2"
+        },
+        {
+          "label": "Для меня все очевидно, сложности в выборе нет. Кидай форму отчета.",
+          "value": "option_3"
+        }
+      ],
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "det_16_end",
+      "chatType": "DETECTIVE",
+      "author": "DETECTIVE",
+      "text": "Жду твоего решения, новичок.",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": true
+    },
+    {
+      "code": "marina_01_intro",
+      "chatType": "MARINA",
+      "author": "ANONYMOUS",
+      "text": "Тебе нравится когда копаются в твоих личных вещах? Это никому не нравится, верно? Хотя разные бывают… Я тоже могу взламывать, используя личные данные. Почту, скажем. {{user.email}}, например Думаю, такое знакомство дает больше представления о собеседнике, чем болтовня в кафе.",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": true,
+      "isEnd": false
+    },
+    {
+      "code": "marina_02_player_intro",
+      "chatType": "MARINA",
+      "author": "PLAYER",
+      "text": null,
+      "hasChoices": true,
+      "choices": [
+        {
+          "label": "В отличие от тебя, мне нечего скрывать.",
+          "value": "option_1"
+        },
+        {
+          "label": "А теперь меееедленно убери руки от клавиатуры… Скоро на них окажутся наручники.",
+          "value": "option_2"
+        },
+        {
+          "label": "Ну попробуй, мою защиту даже тебе не обойти.",
+          "value": "option_3"
+        }
+      ],
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "marina_03_response",
+      "chatType": "MARINA",
+      "author": "ANONYMOUS",
+      "text": "Дерзко. А мы могли бы сработаться. Давай представим, что существуют сотни вирусов, способов выманить твои личные данные, продать их, шантажировать тебя и что это все может делать тот же человек, кто продает тебе защиту от этих вирусов. То есть он тебе их подсаживает, а потом хочет, чтобы ты заплатил за их удаление. Ты бы стал работать с таким человеком?",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "marina_04_player_response",
+      "chatType": "MARINA",
+      "author": "PLAYER",
+      "text": null,
+      "hasChoices": true,
+      "choices": [
+        {
+          "label": "Я проверяю работодателей перед трудоустройством.",
+          "value": "option_1"
+        },
+        {
+          "label": "На стороне зла есть печеньки, но у меня аллергия на глютен.",
+          "value": "option_2"
+        },
+        {
+          "label": "За хорошую зарплату можно и договориться с принципами.",
+          "value": "option_3"
+        }
+      ],
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "marina_05_story",
+      "chatType": "MARINA",
+      "author": "ANONYMOUS",
+      "text": "Я столкнулась с таким выбором еще в институте. Хотя погоди, выбора не было. У меня просто забрали возможность отказаться, а вместе с этим забрали еще и жизнь. Спустя много лет, когда я снова смогла быть собой, первое, чего я желала – месть. Их же оружием. Вирус не должен был коснуться Вити, я чувствовала, что он искренне раскаивается, он помогал мне. И те бедные люди… Мне нужен был только Женя, он – угроза, самый опасный вирус. Он и его отец никогда не позволили бы мне жить своей жизнью. Они украли ее у меня, спрятали и напичкали лекарствами словно я – пешка, а они – властители этого мира. Я хотела и все еще хочу бороться с несправедливостью, без жертв, без потерь, но чтобы виновные получили по заслугам. Я совершила ошибку и мне никогда не простить себя за гибель этих людей. Но я хочу искупить вину. Знаешь разницу между пчелой и осой? Если ты решишь объявить меня виновной, Женя уйдет безнаказанным и продолжит наживаться на других. Но я приму судьбу пчелы, ужалив лишь один раз, промахнувшись и погибнув. Но есть и второй путь. Если ты меня отпустишь, мы можем работать вместе. Два хакера против кибермошенников и злодеев из корпораций. Обещаю, никаких жертв, жало осы в чехле. И все решения будут только за тобой. Сейчас моя судьба в твоих руках. Тебе решать, кто я: пчела или оса.",
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": false
+    },
+    {
+      "code": "marina_end",
+      "chatType": "MARINA",
+      "author": "MARINA",
+      "text": null,
+      "hasChoices": false,
+      "choices": null,
+      "isStart": false,
+      "isEnd": true
+    },
+    {
+      "code": "marina_final_choice",
+      "chatType": "MARINA",
+      "author": "PLAYER",
+      "text": null,
+      "hasChoices": true,
+      "choices": [
+        {
+          "label": "Мне надо подумать.",
+          "value": "option_1"
+        },
+        {
+          "label": "А есть третий вариант? Шмель, например...",
+          "value": "option_2"
+        },
+        {
+          "label": "Я уже знаю ответ, скоро о нем узнаешь и ты.",
+          "value": "option_3"
+        }
+      ],
+      "isStart": false,
+      "isEnd": false
+    }
+  ],
+  "transitions": [
+    {
+      "fromCode": "det_01_intro",
+      "toCode": "det_02_player_intro",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_02_player_intro",
+      "toCode": "det_02_wait",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_1",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_02_player_intro",
+      "toCode": "det_02_wait",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_2",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_02_player_intro",
+      "toCode": "det_02_wait",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_3",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_02_wait",
+      "toCode": "det_03_after_crack1",
+      "conditionType": "TRIGGER",
+      "conditionValue": "crack_completed:CRACK_P2",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_03_after_crack1",
+      "toCode": "det_04_player_crack1",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_04_player_crack1",
+      "toCode": "det_04_wait",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_1",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_04_player_crack1",
+      "toCode": "det_04_wait",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_2",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_04_player_crack1",
+      "toCode": "det_04_wait",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_3",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_04_wait",
+      "toCode": "det_05_after_rdp",
+      "conditionType": "TRIGGER",
+      "conditionValue": "rdp_completed:RDP_VICTOR",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_05_after_rdp",
+      "toCode": "det_06_audio_files_elena",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_06_audio_files",
+      "toCode": "det_07_player_rdp",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_06_audio_files_elena",
+      "toCode": "det_06_audio_files",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_07_player_rdp",
+      "toCode": "det_07_wait",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_1",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_07_player_rdp",
+      "toCode": "det_07_wait",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_2",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_07_player_rdp",
+      "toCode": "det_07_wait",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_3",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_07_wait",
+      "toCode": "det_08_after_decipher",
+      "conditionType": "TRIGGER",
+      "conditionValue": "decipher_completed:DECIPHER_SHANTAZH",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_08_after_decipher",
+      "toCode": "det_09_player_branch",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_09_player_branch",
+      "toCode": "det_10_branch_aa",
+      "conditionType": "CHOICE",
+      "conditionValue": "aa",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_09_player_branch",
+      "toCode": "det_10_branch_lawyers",
+      "conditionType": "CHOICE",
+      "conditionValue": "lawyers",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_09_player_branch",
+      "toCode": "det_10_branch_orphanage",
+      "conditionType": "CHOICE",
+      "conditionValue": "orphanage",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_10_branch_aa",
+      "toCode": "det_10_wait_aa",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_10_branch_lawyers",
+      "toCode": "det_10_wait_lawyers",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_10_branch_orphanage",
+      "toCode": "det_10_wait_orphanage",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_10_wait_aa",
+      "toCode": "det_11_branch_aa",
+      "conditionType": "TRIGGER",
+      "conditionValue": "crack_completed:CRACK_VUZ",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_10_wait_lawyers",
+      "toCode": "det_11_branch_lawyers",
+      "conditionType": "TRIGGER",
+      "conditionValue": "crack_completed:CRACK_VUZ",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_10_wait_orphanage",
+      "toCode": "det_11_branch_orphanage",
+      "conditionType": "TRIGGER",
+      "conditionValue": "crack_completed:CRACK_VUZ",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_11_branch_aa",
+      "toCode": "det_12_audio_aa",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_11_branch_lawyers",
+      "toCode": "det_12_audio_lawyers",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_11_branch_orphanage",
+      "toCode": "det_12_audio_orphanage",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_12_audio_aa",
+      "toCode": "det_13_player_after_crack2",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_12_audio_lawyers",
+      "toCode": "det_13_player_after_crack2",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_12_audio_orphanage",
+      "toCode": "det_13_player_after_crack2",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_13_player_after_crack2",
+      "toCode": "det_13_wait_marina",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_1",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_13_player_after_crack2",
+      "toCode": "det_13_wait_marina",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_2",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_13_player_after_crack2",
+      "toCode": "det_13_wait_marina",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_3",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_13_wait_marina",
+      "toCode": "det_14_final_prompt",
+      "conditionType": "TRIGGER",
+      "conditionValue": "final_choice_made",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_14_final_prompt",
+      "toCode": "det_15_player_final",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "det_15_player_final",
+      "toCode": "det_16_end",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_1",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_15_player_final",
+      "toCode": "det_16_end",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_2",
+      "priority": 0
+    },
+    {
+      "fromCode": "det_15_player_final",
+      "toCode": "det_16_end",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_3",
+      "priority": 0
+    },
+    {
+      "fromCode": "marina_01_intro",
+      "toCode": "marina_02_player_intro",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "marina_02_player_intro",
+      "toCode": "marina_03_response",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_1",
+      "priority": 0
+    },
+    {
+      "fromCode": "marina_02_player_intro",
+      "toCode": "marina_03_response",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_2",
+      "priority": 0
+    },
+    {
+      "fromCode": "marina_02_player_intro",
+      "toCode": "marina_03_response",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_3",
+      "priority": 0
+    },
+    {
+      "fromCode": "marina_03_response",
+      "toCode": "marina_04_player_response",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "marina_04_player_response",
+      "toCode": "marina_05_story",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_1",
+      "priority": 0
+    },
+    {
+      "fromCode": "marina_04_player_response",
+      "toCode": "marina_05_story",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_2",
+      "priority": 0
+    },
+    {
+      "fromCode": "marina_04_player_response",
+      "toCode": "marina_05_story",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_3",
+      "priority": 0
+    },
+    {
+      "fromCode": "marina_05_story",
+      "toCode": "marina_final_choice",
+      "conditionType": "ALWAYS",
+      "conditionValue": null,
+      "priority": 0
+    },
+    {
+      "fromCode": "marina_final_choice",
+      "toCode": "marina_end",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_1",
+      "priority": 0
+    },
+    {
+      "fromCode": "marina_final_choice",
+      "toCode": "marina_end",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_2",
+      "priority": 0
+    },
+    {
+      "fromCode": "marina_final_choice",
+      "toCode": "marina_end",
+      "conditionType": "CHOICE",
+      "conditionValue": "option_3",
+      "priority": 0
+    }
+  ]
+}

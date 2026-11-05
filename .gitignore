@@ -54,3 +54,6 @@ components/game/chat/DebugTriggerPanel.tsx
 debug-module.md
 
 .gigacode
+
+# Ответы игры: файл копируется на сервер вручную, в публичный репозиторий не попадает
+prisma/data/game-settings.json
